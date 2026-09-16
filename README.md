@@ -84,7 +84,7 @@ Se recomienda [Bun](https://bun.sh) como gestor de paquetes (el repo incluye `bu
 
 ```sh
 git clone <this-repository-url>
-cd micro-motion-grid
+cd urban-mobility-hub
 bun install   # o: npm install
 bun run dev   # o: npm run dev
 ```
