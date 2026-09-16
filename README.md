@@ -1,90 +1,73 @@
 # Urban Mobility Hub
 
-Crea una Progressive Web App (PWA) completa en React utilizando Vite, Tailwind CSS, shadcn/ui, Lucide Icons y Framer Motion. El proyecto es un MVP para una plataforma multimodal de micromovilidad, logística, alquiler y venta de vehículos urbanos.
+Plataforma multimodal de micromovilidad, logística y venta de vehículos urbanos. El proyecto integra en una sola solución la **venta** y el **alquiler** de patinetas eléctricas, bicicletas y drones urbanos, con seguimiento de flota en tiempo real sobre un mapa interactivo y un sistema de seguridad IoT basado en gemelos digitales (*digital twins*).
 
-[1. DISEÑO Y UI/UX (Design System)]
+> Proyecto académico — Ingeniería de Software II, Universidad Autónoma de Bucaramanga (UNAB).
 
-Tema: Obligatoriamente Dark Mode. Diseño minimalista, premium y muy limpio (estilo Uber Black pero tecnológico).
+## Estado actual
 
-Colores: Fondo negro profundo (bg-zinc-950), acentos en Azul Oscuro Vibrante / Azul Eléctrico (blue-600 a blue-400), y textos en blanco nítido.
+Este repositorio corresponde al **primer avance** del proyecto: el portal de negocio y la aplicación web (PWA) donde la flota se **simula mediante gemelos digitales** (a futuro, hardware IoT real con placas Raspberry Pi). No opera con vehículos físicos todavía.
 
-Tipografía: Sans-serif moderna (Inter o similar).
+## Funcionalidades
 
-Comportamiento Responsivo (CRÍTICO):
+### Landing page (`/`)
+Portal de negocio responsivo: en desktop muestra la landing comercial completa (servicios, "Quiénes somos", CTA hacia la demo); en móvil entra directo a la app de mapa, con la info comercial en el menú lateral.
 
-En Desktop (>768px): Muestra una Landing Page comercial completa con Navbar superior y botón "Ir a la Web App / Probar Demo".
+### App de usuario (`/app`)
+- Control dual **Alquilar vs. Comprar** sobre el mapa.
+- **Mapa interactivo multicapa** con la flota simulada: patinetas disponibles, hubs/puntos de recolección y stock de venta.
+- Alquiler en estación o a domicilio; catálogo e-commerce en modo compra.
+- Panel de detalle por hub: capacidad, vehículos disponibles para alquiler y venta.
+- **Flujo de desbloqueo** (simulado): escáner QR → verificación de casco por cámara → inicio de viaje.
 
-En Mobile (<768px): Entra directamente a la "App" (Mapa interactivo). La info comercial ("Quiénes somos", "Servicios") se ubica en el menú hamburguesa lateral.
+### Panel de telemetría / digital twin (`/admin`)
+- Métricas de flota: vehículos activos, batería promedio, hubs operativos.
+- Tabla de flota en vivo (ID, tipo, modo, batería, GPS/hub, alertas IoT).
+- **Simulador de triggers**: sin casco, accidente/caída, pérdida de GPS, con alertas inmediatas.
 
-[2. VISTAS PRINCIPALES Y COMPONENTES]
+La flota, los hubs y los vehículos se modelan con **datos simulados en memoria** compartidos entre el mapa y el dashboard, para que ambas vistas lean de la misma fuente.
 
-A. Landing Page (Vista PC)
+## Stack técnico
 
-Hero Section: Título impactante sobre micromovilidad, alquiler por uso y venta de vehículos urbanos. Botón CTA principal.
+| Capa | Tecnología |
+|------|------------|
+| Framework | [TanStack Start](https://tanstack.com/start) (React 19, SSR, file-based routing) |
+| Build | Vite + Nitro (target Cloudflare) |
+| UI | Tailwind CSS 4 + [shadcn/ui](https://ui.shadcn.com) |
+| Estado/servidor | TanStack Router + TanStack Query |
+| Gráficas | Recharts |
+| Animaciones | Framer Motion |
+| Lenguaje | TypeScript |
 
-Sección Servicios: Tarjetas para:
+## Cómo correr
 
-Alquiler Multimodal: Patinetas, Drones y Bicis (por minutos o a domicilio).
-
-Venta Directa: Compra de vehículos nuevos y seminuevos de la flota.
-
-Puntos de Servicio / Hubs: Red de estaciones físicas para recolección, devolución y recarga.
-
-Sección Quiénes Somos: Explicación del backend IoT con Gemelos Digitales. Badge técnico: "Próximamente: App Nativa iOS/Android en Kotlin Multiplatform".
-
-B. App / Interfaz de Usuario (Vista Mobile / Demo)
-
-Control Superior Dual (Alquilar vs. Comprar):
-
-Un Segmented Control / Toggle prominente en la parte superior del mapa que permite alternar la experiencia entre "Alquilar" y "Comprar".
-
-Mapa Interactivo Multicapa:
-
-En modo "Alquilar": Muestra dos sub-opciones ("En Punto / Estación" vs. "A Domicilio"). Muestra iconos de patinetas sueltas y de Puntos de Recolección (Hubs).
-
-En modo "Comprar": El mapa destaca los Puntos de Recolección con stock de venta e incluye una pestaña inferior desplegable con un catálogo e-commerce (tarjetas de productos: precio, spec técnica y botón "Comprar / Reservar").
-
-Puntos de Recolección (Hubs): Al hacer clic en un icono de Hub/Estación en el mapa, abre un panel que muestra: Nombre del punto (ej. "Hub Central"), Capacidad actual, Patinetas disponibles para alquiler y Vehículos disponibles para compra.
-
-Bottom Sheet (Panel Inferior para Alquiler): Al seleccionar un vehículo individual, muestra Batería %, Tarifa por minuto y botón "Desbloquear".
-
-C. Flujo de Desbloqueo y Seguridad (Simulación)
-
-Al presionar "Desbloquear" en una patineta de alquiler:
-
-Paso 1 - Scanner QR: Simulación de visor de cámara escaneando código QR en el vehículo. Incluir botón inactivo: "Desbloquear vía NFC / Wallet (Próximamente)".
-
-Paso 2 - Helmet Check (IA): Cámara frontal simulada analizando rostro y presencia de casco. Mensaje: "Verificando uso de casco por seguridad...". Tras 3 segundos: Check verde de validación y botón "Iniciar Viaje".
-
-D. Dashboard de Telemetría (Digital Twin / Vista Profesores)
-
-Ruta accesible desde un icono de engranaje en /admin o /digital-twin.
-
-Panel de Control IoT:
-
-Métricas generales: Vehículos Activos, Batería Promedio, Puntos de Recolección Activos.
-
-Tabla de Flota en vivo: ID, Tipo (Scooter/Dron), Modo (Alquiler/Venta), Estado de Batería, Ubicación GPS / Hub asignado, y Alertas IoT.
-
-Simulador de Triggers: Botones interactivos para simular: "Usuario sin casco", "Accidente / Caída detectada", "Pérdida de señal GPS". Muestra un Toast alert rojo inmediato en pantalla.
-
-[3. NOTAS TÉCNICAS]
-
-Usa React Router para rutas (/, /admin).
-
-Mockea un array de datos unificado que contenga tanto los Puntos de Recolección (Hubs) como los Vehículos (marcando si son para alquiler o venta), para que el Mapa y el Dashboard de profesores lean de la misma fuente.
-
-Utiliza framer-motion para animaciones fluidas al cambiar entre la vista de mapa, compras y modales de seguridad.
-
-## Development
-
-Stack: TanStack Start (React 19) + Vite + Tailwind CSS 4 + shadcn/ui.
-
-Se recomienda [Bun](https://bun.sh) como gestor de paquetes (el repo incluye `bun.lock`); `npm install` también funciona.
+Requiere [Bun](https://bun.sh) (recomendado, el repo usa `bun.lock`) o Node.js + npm.
 
 ```sh
-git clone <this-repository-url>
+git clone https://github.com/Joserraldo/urban-mobility-hub.git
 cd urban-mobility-hub
-bun install   # o: npm install
-bun run dev   # o: npm run dev
+bun install
+
+bun run dev       # servidor de desarrollo en http://localhost:8080
+bun run build     # build de producción (.output/)
+bun run preview   # previsualizar el build
+bun run lint      # ESLint
 ```
+
+## Estructura del proyecto
+
+```
+src/
+├── routes/          # Rutas (TanStack Start, file-based): /, /app, /admin
+├── components/
+│   ├── mobility/    # App de mapa, flujo de desbloqueo, dashboard de telemetría
+│   ├── Landing.tsx  # Portal de negocio
+│   └── ui/          # Primitivas shadcn/ui
+├── lib/             # Datos simulados de flota/hubs y utilidades
+├── server.ts        # Entradas de servidor (wrapper SSR)
+└── start.ts         # createStart + middlewares (CSRF en server functions)
+```
+
+## Documentación
+
+La especificación de requisitos (SRS) y el análisis de riesgos del proyecto se mantienen en la carpeta `Documents/` del curso (no versionada en este repo por estar en revisión activa con el docente).
