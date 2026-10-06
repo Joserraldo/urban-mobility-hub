@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MisReservasRouteImport } from './routes/mis-reservas'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoSlugRouteImport } from './routes/catalogo.$slug'
@@ -45,6 +46,11 @@ const FaqRoute = FaqRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MisReservasRoute = MisReservasRouteImport.update({
+  id: '/mis-reservas',
+  path: '/mis-reservas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegistroRoute = RegistroRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/mis-reservas': typeof MisReservasRoute
   '/registro': typeof RegistroRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/mis-reservas': typeof MisReservasRoute
   '/registro': typeof RegistroRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/mis-reservas': typeof MisReservasRoute
   '/registro': typeof RegistroRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/faq'
     | '/login'
+    | '/mis-reservas'
     | '/registro'
     | '/catalogo/$slug'
     | '/guias/$slug'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/faq'
     | '/login'
+    | '/mis-reservas'
     | '/registro'
     | '/catalogo/$slug'
     | '/guias/$slug'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/faq'
     | '/login'
+    | '/mis-reservas'
     | '/registro'
     | '/catalogo/$slug'
     | '/guias/$slug'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
+  MisReservasRoute: typeof MisReservasRoute
   RegistroRoute: typeof RegistroRoute
   CatalogoSlugRoute: typeof CatalogoSlugRoute
   GuiasSlugRoute: typeof GuiasSlugRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mis-reservas': {
+      id: '/mis-reservas'
+      path: '/mis-reservas'
+      fullPath: '/mis-reservas'
+      preLoaderRoute: typeof MisReservasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/registro': {
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
+  MisReservasRoute: MisReservasRoute,
   RegistroRoute: RegistroRoute,
   CatalogoSlugRoute: CatalogoSlugRoute,
   GuiasSlugRoute: GuiasSlugRoute,

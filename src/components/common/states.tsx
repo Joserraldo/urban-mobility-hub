@@ -39,7 +39,7 @@ export function ErrorState({
   testId = "state-error",
 }: {
   message?: string;
-  onRetry?: () => void;
+  onRetry?: (() => void) | undefined;
   testId?: string;
 }) {
   return (

@@ -41,7 +41,10 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
       ...(hubId ? { hubId } : {}),
       ...(mode === "sale" ? { price: Number(get("price")), condition: get("condition") as "nuevo" | "seminuevo" } : { pricePerMinute: Number(get("price")), delivery: f.get("delivery") === "on" }),
     };
-    if (!base.id || !base.model || !(Number(get("price")) > 0)) return toast.error("Completa identificador, modelo y precio");
+    if (!base.id || !base.model || !(Number(get("price")) > 0)) {
+      toast.error("Completa identificador, modelo y precio");
+      return;
+    }
     try {
       await ds.saveVehicle(base);
       await refresh();
@@ -67,7 +70,10 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
       charging: 0,
       active: true,
     };
-    if (!hub.id || !hub.name || !hub.capacity || Number.isNaN(hub.lat) || Number.isNaN(hub.lng)) return toast.error("Completa todos los campos del hub");
+    if (!hub.id || !hub.name || !hub.capacity || Number.isNaN(hub.lat) || Number.isNaN(hub.lng)) {
+      toast.error("Completa todos los campos del hub");
+      return;
+    }
     try {
       await ds.saveHub(hub);
       await refresh();

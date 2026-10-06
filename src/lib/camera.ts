@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 export type CameraStatus = "idle" | "requesting" | "on" | "denied" | "unsupported";
 
 /** Herramientas de simulación visibles (no hay vehículos ni cámaras de casco reales: SRS 2.4). */
-export const DEMO_TOOLS = (import.meta.env.VITE_DEMO_TOOLS as string | undefined) !== "false";
+export const DEMO_TOOLS = (import.meta.env["VITE_DEMO_TOOLS"] as string | undefined) !== "false";
 
 /** Abre la cámara del dispositivo y devuelve el <video> donde se muestra. Se libera al desmontar. */
 export function useCamera(enabled: boolean, facing: "user" | "environment" = "user") {

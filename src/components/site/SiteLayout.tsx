@@ -161,7 +161,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function PageHeading({ title, lead, eyebrow }: { title: string; lead?: string; eyebrow?: string }) {
+export function PageHeading({ title, lead, eyebrow }: { title: string; lead?: string | undefined; eyebrow?: string | undefined }) {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-6 pt-12 sm:px-6">
       {eyebrow && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">{eyebrow}</p>}

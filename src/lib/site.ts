@@ -4,7 +4,7 @@ export const SITE = {
   name: "NODO Mobility",
   legalName: "NODO Mobility — Plataforma Multimodal de Micromovilidad",
   url:
-    (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "") ??
+    (import.meta.env["VITE_SITE_URL"] as string | undefined)?.replace(/\/$/, "") ??
     "https://urban-mobility-hub.pages.dev",
   locale: "es_CO",
   description:

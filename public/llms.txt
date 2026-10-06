@@ -1,0 +1,15 @@
+# NODO Mobility
+
+> Plataforma de micromovilidad en Bucaramanga (Colombia): alquiler por minuto y venta de patinetas eléctricas, bicicletas eléctricas y drones de carga, con hubs, desbloqueo por QR + verificación de casco y alertas IoT. Proyecto académico (UNAB, Ingeniería de Software II) en fase de simulación.
+
+## Páginas principales
+- [Inicio](https://urban-mobility-hub.pages.dev/): qué es y cómo funciona
+- [Catálogo de venta](https://urban-mobility-hub.pages.dev/catalogo): vehículos con precio en COP, condición y ficha técnica
+- [Hubs](https://urban-mobility-hub.pages.dev/hubs): puntos de recogida, devolución y carga
+- [Preguntas frecuentes](https://urban-mobility-hub.pages.dev/faq): respuestas directas
+- [Guías](https://urban-mobility-hub.pages.dev/guias): contenido explicativo
+
+## Datos clave
+- Tarifas de alquiler: patineta 450-520 COP/min, bicicleta eléctrica 380 COP/min, dron 1.200 COP/min.
+- Desbloqueo en 3 pasos: QR, verificación de casco, iniciar viaje.
+- Datos biométricos cifrados y con consentimiento (Ley 1581 de 2012).

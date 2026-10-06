@@ -53,11 +53,16 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
     void import("leaflet").then((mod) => {
       const L = (mod as unknown as { default?: typeof import("leaflet") }).default ?? mod;
       if (disposed || !el.current) return;
-      const map = L.map(el.current, { center: CENTER, zoom: 13, zoomControl: true, attributionControl: true });
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      const map = L.map(el.current, { center: CENTER, zoom: 14, zoomControl: true, attributionControl: true });
+      // Proveedor de teselas configurable por .env (VITE_MAP_TILES_URL, VITE_MAP_API_KEY, VITE_MAP_ATTRIBUTION).
+      // Por defecto OpenStreetMap (sin clave); el tema oscuro se aplica por CSS.
+      const key = (import.meta.env["VITE_MAP_API_KEY"] as string | undefined) ?? "";
+      const tiles = ((import.meta.env["VITE_MAP_TILES_URL"] as string | undefined) ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png").replace("{key}", key);
+      L.tileLayer(tiles, {
         maxZoom: 19,
-        subdomains: "abcd",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution:
+          (import.meta.env["VITE_MAP_ATTRIBUTION"] as string | undefined) ??
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
       state.current.L = L;
       state.current.map = map;
@@ -68,7 +73,7 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
     return () => {
       disposed = true;
       s.map?.remove();
-      s.map = undefined;
+      delete s.map;
       s.vehicleMarkers.clear();
       s.hubMarkers.clear();
       s.sigs.clear();
