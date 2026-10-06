@@ -37,7 +37,7 @@ Documents/
 
 # QA
 coverage/
-tests/results/e2e-artifacts/
+tests/results/
 playwright-report/
 test-results/
 
