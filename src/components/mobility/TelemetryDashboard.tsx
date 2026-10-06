@@ -20,7 +20,15 @@ import { VehicleIcon } from "@/components/common/vehicle-icon";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getDataSource } from "@/lib/data";
 import {
   keys,
@@ -137,8 +145,13 @@ export function TelemetryDashboard() {
   };
 
   const reset = async (vehicleId: string) => {
-    await getDataSource().clearAlert(vehicleId);
-    void qc.invalidateQueries({ queryKey: keys.vehicles });
+    try {
+      await getDataSource().clearAlert(vehicleId);
+      await qc.invalidateQueries({ queryKey: keys.vehicles });
+      toast.success("Estado del vehículo restablecido");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo restablecer el vehículo");
+    }
   };
 
   return (
@@ -202,21 +215,27 @@ export function TelemetryDashboard() {
               digital.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                Vehículo objetivo
-                <select
-                  value={target}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  data-testid="sim-vehicle-select"
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                >
-                  {rentals.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.id} · {v.model}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="space-y-1.5">
+                <Label htmlFor="sim-vehicle" className="text-xs text-muted-foreground">
+                  Vehículo objetivo
+                </Label>
+                <Select value={target} onValueChange={setTargetId}>
+                  <SelectTrigger
+                    id="sim-vehicle"
+                    data-testid="sim-vehicle-select"
+                    className="h-10 w-full"
+                  >
+                    <SelectValue placeholder="Elige un vehículo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rentals.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.id} · {v.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 variant="ghost"
                 className="self-end"

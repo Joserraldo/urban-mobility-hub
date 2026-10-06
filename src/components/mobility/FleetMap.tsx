@@ -16,9 +16,15 @@ const svg = (inner: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 const ICONS: Record<VehicleKind | "hub", string> = {
   scooter: svg('<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'),
-  bike: svg('<circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>'),
-  drone: svg('<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>'),
-  hub: svg('<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+  bike: svg(
+    '<circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>',
+  ),
+  drone: svg(
+    '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  ),
+  hub: svg(
+    '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  ),
 };
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -34,7 +40,16 @@ type Props = {
   onReady?: () => void;
 };
 
-export default function FleetMap({ vehicles, hubs, layers, selectedHubId, selectedVehicleId, onSelectHub, onSelectVehicle, onReady }: Props) {
+export default function FleetMap({
+  vehicles,
+  hubs,
+  layers,
+  selectedHubId,
+  selectedVehicleId,
+  onSelectHub,
+  onSelectVehicle,
+  onReady,
+}: Props) {
   const el = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const state = useRef<{
@@ -53,11 +68,19 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
     void import("leaflet").then((mod) => {
       const L = (mod as unknown as { default?: typeof import("leaflet") }).default ?? mod;
       if (disposed || !el.current) return;
-      const map = L.map(el.current, { center: CENTER, zoom: 14, zoomControl: true, attributionControl: true });
+      const map = L.map(el.current, {
+        center: CENTER,
+        zoom: 14,
+        zoomControl: true,
+        attributionControl: true,
+      });
       // Proveedor de teselas configurable por .env (VITE_MAP_TILES_URL, VITE_MAP_API_KEY, VITE_MAP_ATTRIBUTION).
       // Por defecto OpenStreetMap (sin clave); el tema oscuro se aplica por CSS.
       const key = (import.meta.env["VITE_MAP_API_KEY"] as string | undefined) ?? "";
-      const tiles = ((import.meta.env["VITE_MAP_TILES_URL"] as string | undefined) ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png").replace("{key}", key);
+      const tiles = (
+        (import.meta.env["VITE_MAP_TILES_URL"] as string | undefined) ??
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ).replace("{key}", key);
       L.tileLayer(tiles, {
         maxZoom: 19,
         attribution:
@@ -100,7 +123,9 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
         iconSize: [44, 44],
         iconAnchor: [22, 22],
         html: `<button type="button" data-testid="hub-marker-${h.id}" aria-label="${escapeHtml(h.name)}${h.active ? "" : " (inactivo)"}" aria-pressed="${selectedHubId === h.id}" class="umh-hub ${selectedHubId === h.id ? "is-selected" : ""} ${h.active ? "" : "is-inactive"}">${ICONS.hub}${
-          layers.sale && saleCount > 0 ? `<span class="umh-sale" data-testid="sale-badge-${h.id}" title="${saleCount} en venta">${saleCount}</span>` : ""
+          layers.sale && saleCount > 0
+            ? `<span class="umh-sale" data-testid="sale-badge-${h.id}" title="${saleCount} en venta">${saleCount}</span>`
+            : ""
         }</button>`,
       });
       const sig = `${selectedHubId === h.id}|${h.active}|${layers.sale}|${saleCount}`;
@@ -134,7 +159,7 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
         className: "umh-marker",
         iconSize: [36, 36],
         iconAnchor: [18, 18],
-        html: `<button type="button" data-testid="vehicle-marker-${v.id}" data-alert="${v.alert}" aria-label="${escapeHtml(kindLabel[v.kind])} ${v.id}${bad ? `, alerta: ${alertLabel[v.alert]}` : ""}" class="umh-vehicle ${bad ? "is-alert" : ""} ${selectedVehicleId === v.id ? "is-selected" : ""}">${ICONS[v.kind]}</button>`,
+        html: `<button type="button" data-testid="vehicle-marker-${v.id}" data-alert="${v.alert}" aria-pressed="${selectedVehicleId === v.id}" aria-label="${escapeHtml(kindLabel[v.kind])} ${v.id}${bad ? `, alerta: ${alertLabel[v.alert]}` : ""}" class="umh-vehicle ${bad ? "is-alert" : ""} ${selectedVehicleId === v.id ? "is-selected" : ""}">${ICONS[v.kind]}</button>`,
       });
       const sig = `${v.alert}|${selectedVehicleId === v.id}`;
       const existing = vehicleMarkers.get(v.id);
@@ -142,7 +167,11 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
         existing.setLatLng([v.lat, v.lng]);
         if (state.current.sigs.get(`v:${v.id}`) !== sig) existing.setIcon(icon);
       } else {
-        const m = L.marker([v.lat, v.lng], { icon, keyboard: false, title: `${kindLabel[v.kind]} ${v.id}` }).addTo(map);
+        const m = L.marker([v.lat, v.lng], {
+          icon,
+          keyboard: false,
+          title: `${kindLabel[v.kind]} ${v.id}`,
+        }).addTo(map);
         m.on("click", () => handlers.current.onSelectVehicle(v.id));
         vehicleMarkers.set(v.id, m);
       }
@@ -150,5 +179,13 @@ export default function FleetMap({ vehicles, hubs, layers, selectedHubId, select
     }
   }, [ready, vehicles, layers.vehicles, selectedVehicleId]);
 
-  return <div ref={el} className="absolute inset-0 bg-background" data-testid="fleet-map" role="region" aria-label="Mapa de flota y hubs" />;
+  return (
+    <div
+      ref={el}
+      className="absolute inset-0 bg-background"
+      data-testid="fleet-map"
+      role="region"
+      aria-label="Mapa de flota y hubs"
+    />
+  );
 }

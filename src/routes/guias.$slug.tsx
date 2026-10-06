@@ -44,8 +44,8 @@ export const Route = createFileRoute("/guias/$slug")({
   },
   notFoundComponent: () => (
     <SiteLayout>
-      <div className="mx-auto max-w-xl px-4 py-20 text-center">
-        <h1 className="text-3xl font-bold">Guía no encontrada</h1>
+      <div className="mx-auto max-w-xl px-4 py-20 text-center" data-testid="guide-not-found">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Guía no encontrada</h1>
         <Link to="/guias" className="mt-6 inline-block">
           <Button>Ver todas las guías</Button>
         </Link>
@@ -64,11 +64,16 @@ function GuidePage() {
           <Link to="/guias" className="hover:text-foreground">
             Guías
           </Link>{" "}
-          · <time dateTime={g.published}>{new Date(g.published).toLocaleDateString("es-CO", { dateStyle: "long" })}</time> · {g.readingMinutes}{" "}
-          min de lectura
+          ·{" "}
+          <time dateTime={g.published}>
+            {new Date(g.published).toLocaleDateString("es-CO", { dateStyle: "long" })}
+          </time>{" "}
+          · {g.readingMinutes} min de lectura
         </p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{g.title}</h1>
-        <p className="mt-5 rounded-2xl border border-primary/40 bg-primary/10 p-5 text-lg">{g.summary}</p>
+        <p className="mt-5 rounded-2xl border border-primary/40 bg-primary/10 p-5 text-lg">
+          {g.summary}
+        </p>
         {g.sections.map((s) => (
           <section key={s.heading} className="mt-10">
             <h2 className="text-2xl font-semibold">{s.heading}</h2>

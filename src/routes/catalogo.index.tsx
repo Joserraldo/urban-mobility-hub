@@ -4,6 +4,7 @@ import { VehicleCard } from "@/components/catalog/VehicleCard";
 import { RouteError, RoutePending } from "@/components/common/route-states";
 import { EmptyState } from "@/components/common/states";
 import { PageHeading, SiteLayout } from "@/components/site/SiteLayout";
+import { Button } from "@/components/ui/button";
 import { getDataSource } from "@/lib/data";
 import type { VehicleKind } from "@/lib/data/types";
 import { formatCOP, kindPlural, vehicleSlug } from "@/lib/format";
@@ -65,8 +66,9 @@ function CatalogPage() {
           <Link
             to="/catalogo"
             search={{}}
+            aria-current={!tipo ? "page" : undefined}
             data-testid="filter-all"
-            className={`rounded-full border px-4 py-1.5 text-sm ${!tipo ? "border-primary bg-primary/20" : "border-border text-muted-foreground"}`}
+            className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${!tipo ? "border-primary bg-primary/20 text-foreground" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}
           >
             Todos ({vehicles.length})
           </Link>
@@ -75,15 +77,42 @@ function CatalogPage() {
               key={k}
               to="/catalogo"
               search={{ tipo: k }}
+              aria-current={tipo === k ? "page" : undefined}
               data-testid={`filter-${k}`}
-              className={`rounded-full border px-4 py-1.5 text-sm ${tipo === k ? "border-primary bg-primary/20" : "border-border text-muted-foreground"}`}
+              className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${tipo === k ? "border-primary bg-primary/20 text-foreground" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}
             >
               {kindPlural[k]}
             </Link>
           ))}
         </nav>
-        {shown.length === 0 ? (
-          <EmptyState title="No hay vehículos de este tipo en venta" hint="Prueba con otra categoría." />
+        {vehicles.length === 0 ? (
+          <EmptyState
+            title="Todavía no hay vehículos en venta"
+            hint="El catálogo se actualiza a diario. Mientras tanto, explora los hubs."
+            action={
+              <Link to="/hubs" className="mt-2">
+                <Button size="sm" variant="secondary">
+                  Ver hubs
+                </Button>
+              </Link>
+            }
+          />
+        ) : shown.length === 0 ? (
+          <EmptyState
+            title={
+              tipo
+                ? `No hay ${kindPlural[tipo].toLowerCase()} en venta`
+                : "No hay vehículos en venta"
+            }
+            hint="Prueba con otra categoría."
+            action={
+              <Link to="/catalogo" className="mt-2">
+                <Button size="sm" variant="secondary">
+                  Ver todos
+                </Button>
+              </Link>
+            }
+          />
         ) : (
           <ul data-testid="catalog-list" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {shown.map((v) => (

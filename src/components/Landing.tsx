@@ -17,6 +17,7 @@ import {
 
 import heroImage from "@/assets/hero-mobility.jpg";
 import { VehicleCard } from "@/components/catalog/VehicleCard";
+import { EmptyState } from "@/components/common/states";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,32 @@ const services = [
 ];
 
 const steps = [
-  { icon: Route, title: "Elige", text: "Encuentra un vehículo o un hub en el mapa y revisa batería y tarifa." },
-  { icon: QrCode, title: "Verifica", text: "Escanea el QR y confirma tu casco con la cámara. Sin casco no hay viaje." },
-  { icon: Timer, title: "Viaja", text: "Inicia el viaje; pagas por minuto y lo devuelves en cualquier hub." },
+  {
+    icon: Route,
+    title: "Elige",
+    text: "Encuentra un vehículo o un hub en el mapa y revisa batería y tarifa.",
+  },
+  {
+    icon: QrCode,
+    title: "Verifica",
+    text: "Escanea el QR y confirma tu casco con la cámara. Sin casco no hay viaje.",
+  },
+  {
+    icon: Timer,
+    title: "Viaja",
+    text: "Inicia el viaje; pagas por minuto y lo devuelves en cualquier hub.",
+  },
 ];
 
-export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; featured: Vehicle[]; vehicleCount: number }) {
+export function Landing({
+  hubs,
+  featured,
+  vehicleCount,
+}: {
+  hubs: Hub[];
+  featured: Vehicle[];
+  vehicleCount: number;
+}) {
   return (
     <SiteLayout>
       {/* Hero */}
@@ -63,11 +84,13 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
               Flota conectada · Gemelos digitales en vivo
             </Badge>
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl xl:text-6xl">
-              Micromovilidad en Bucaramanga: <span className="text-gradient">alquila por minuto</span>, recibe a domicilio o compra.
+              Micromovilidad en Bucaramanga:{" "}
+              <span className="text-gradient">alquila por minuto</span>, recibe a domicilio o
+              compra.
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">
-              Patinetas eléctricas, bicicletas eléctricas y drones de carga sobre una red de hubs inteligentes, con verificación de casco y
-              alertas de seguridad en tiempo real.
+              Patinetas eléctricas, bicicletas eléctricas y drones de carga sobre una red de hubs
+              inteligentes, con verificación de casco y alertas de seguridad en tiempo real.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/app" data-testid="landing-cta-demo">
@@ -115,21 +138,30 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
           ¿Qué es NODO Mobility?
         </h2>
         <p className="mt-3 max-w-3xl text-muted-foreground">
-          NODO Mobility es una plataforma de micromovilidad que permite <strong className="text-foreground">alquilar por minuto</strong> o{" "}
-          <strong className="text-foreground">comprar</strong> patinetas eléctricas, bicicletas eléctricas y drones de carga, y operar la flota
-          desde un panel con gemelos digitales. Funciona en Bucaramanga, Santander (Colombia), como proyecto académico de la Universidad
+          NODO Mobility es una plataforma de micromovilidad que permite{" "}
+          <strong className="text-foreground">alquilar por minuto</strong> o{" "}
+          <strong className="text-foreground">comprar</strong> patinetas eléctricas, bicicletas
+          eléctricas y drones de carga, y operar la flota desde un panel con gemelos digitales.
+          Funciona en Bucaramanga, Santander (Colombia), como proyecto académico de la Universidad
           Autónoma de Bucaramanga en fase de simulación.
         </p>
       </section>
 
       {/* Servicios */}
-      <section id="servicios" aria-labelledby="servicios-t" className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <section
+        id="servicios"
+        aria-labelledby="servicios-t"
+        className="mx-auto max-w-6xl px-4 py-10 sm:px-6"
+      >
         <h2 id="servicios-t" className="text-3xl font-bold tracking-tight">
           Una plataforma, tres servicios
         </h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {services.map((s) => (
-            <article key={s.title} className="rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-primary/60">
+            <article
+              key={s.title}
+              className="rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-primary/60"
+            >
               <span className="flex size-11 items-center justify-center rounded-xl bg-primary/20">
                 <s.icon className="size-5 text-primary-glow" aria-hidden />
               </span>
@@ -181,9 +213,29 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((v) => (
-            <VehicleCard key={v.id} vehicle={v} hubName={hubs.find((h) => h.id === v.hubId)?.name} />
-          ))}
+          {featured.length === 0 ? (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <EmptyState
+                title="Todavía no hay vehículos publicados en venta"
+                hint="El catálogo se actualiza a diario. Vuelve pronto para ver los nuevos ingresos."
+                action={
+                  <Link to="/app" className="mt-2">
+                    <Button size="sm" variant="secondary">
+                      Explorar el mapa
+                    </Button>
+                  </Link>
+                }
+              />
+            </div>
+          ) : (
+            featured.map((v) => (
+              <VehicleCard
+                key={v.id}
+                vehicle={v}
+                hubName={hubs.find((h) => h.id === v.hubId)?.name}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -193,9 +245,11 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
           <div className="space-y-5">
             <h2 className="text-3xl font-bold tracking-tight">Quiénes somos</h2>
             <p className="text-muted-foreground">
-              Somos un equipo de tres estudiantes de Ingeniería de Sistemas de la Universidad Autónoma de Bucaramanga. Construimos una
-              plataforma donde cada vehículo tiene un <strong className="text-foreground">gemelo digital</strong>: una réplica en vivo con su
-              posición, batería y alertas, que permite al operador monitorear la flota y validar condiciones de seguridad antes de cada viaje.
+              Somos un equipo de tres estudiantes de Ingeniería de Sistemas de la Universidad
+              Autónoma de Bucaramanga. Construimos una plataforma donde cada vehículo tiene un{" "}
+              <strong className="text-foreground">gemelo digital</strong>: una réplica en vivo con
+              su posición, batería y alertas, que permite al operador monitorear la flota y validar
+              condiciones de seguridad antes de cada viaje.
             </p>
             <ul className="space-y-3 text-sm text-muted-foreground">
               {(
@@ -218,14 +272,16 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
           </div>
 
           <div id="red" className="rounded-3xl border border-border bg-surface p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Red de hubs</h3>
-            <ul className="mt-5 space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Red de hubs
+            </h3>
+            <ul className="mt-3 divide-y divide-border">
               {hubs.map((h) => (
                 <li key={h.id}>
                   <Link
                     to="/hubs/$hubId"
                     params={{ hubId: h.id }}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:border-primary/60"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5 transition-colors hover:text-primary-glow"
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{h.name}</span>
@@ -249,7 +305,7 @@ export function Landing({ hubs, featured, vehicleCount }: { hubs: Hub[]; feature
           Preguntas frecuentes
         </h2>
         <dl className="mt-8 grid gap-4 md:grid-cols-2">
-          {FAQ.slice(1, 5).map((f) => (
+          {FAQ.slice(0, 4).map((f) => (
             <div key={f.q} className="rounded-2xl border border-border bg-surface p-5">
               <dt className="font-semibold">{f.q}</dt>
               <dd className="mt-2 text-sm text-muted-foreground">{f.a}</dd>

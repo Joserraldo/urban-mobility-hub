@@ -13,12 +13,17 @@ import { formatCOP, kindLabel } from "@/lib/format";
 
 // Gestión de catálogo y hubs por el operador (H7 / RF-21..22). RNF-08: agregar no exige cambios de modelo.
 
-const selectClass = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
+const selectClass =
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hub[] }) {
   const qc = useQueryClient();
   const ds = getDataSource();
-  const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: keys.vehicles }), qc.invalidateQueries({ queryKey: keys.hubs })]);
+  const refresh = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: keys.vehicles }),
+      qc.invalidateQueries({ queryKey: keys.hubs }),
+    ]);
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "No se pudo guardar");
 
   const [mode, setMode] = useState<VehicleMode>("sale");
@@ -39,7 +44,9 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
       lng: hub?.lng ?? -73.1098,
       alert: "ok",
       ...(hubId ? { hubId } : {}),
-      ...(mode === "sale" ? { price: Number(get("price")), condition: get("condition") as "nuevo" | "seminuevo" } : { pricePerMinute: Number(get("price")), delivery: f.get("delivery") === "on" }),
+      ...(mode === "sale"
+        ? { price: Number(get("price")), condition: get("condition") as "nuevo" | "seminuevo" }
+        : { pricePerMinute: Number(get("price")), delivery: f.get("delivery") === "on" }),
     };
     if (!base.id || !base.model || !(Number(get("price")) > 0)) {
       toast.error("Completa identificador, modelo y precio");
@@ -96,20 +103,30 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
   };
 
   return (
-    <section aria-labelledby="cat-t" data-testid="admin-catalog" className="space-y-6 rounded-2xl border border-border bg-surface p-5">
+    <section
+      aria-labelledby="cat-t"
+      data-testid="admin-catalog"
+      className="space-y-6 rounded-2xl border border-border bg-surface p-5"
+    >
       <div>
-        <h2 id="cat-t" className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <h2
+          id="cat-t"
+          className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+        >
           Gestión de catálogo y hubs
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">Agrega o elimina vehículos y hubs; el mapa y la tienda se actualizan sin cambios de código.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Agrega o elimina vehículos y hubs; el mapa y la tienda se actualizan sin cambios de
+          código.
+        </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-4">
           <h3 className="font-semibold">Vehículos ({vehicles.length})</h3>
           <form onSubmit={addVehicle} className="grid grid-cols-2 gap-3" data-testid="vehicle-form">
-            <Field id="v-id" label="Identificador" name="id" placeholder="SV-5010" />
-            <Field id="v-model" label="Modelo" name="model" />
+            <Field id="v-id" label="Identificador" name="id" placeholder="SV-5010" required />
+            <Field id="v-model" label="Modelo" name="model" required />
             <div className="space-y-1.5">
               <Label htmlFor="v-kind">Tipo</Label>
               <select id="v-kind" name="kind" className={selectClass}>
@@ -122,15 +139,32 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="v-mode">Modo</Label>
-              <select id="v-mode" value={mode} onChange={(e) => setMode(e.target.value as VehicleMode)} className={selectClass}>
+              <select
+                id="v-mode"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as VehicleMode)}
+                className={selectClass}
+              >
                 <option value="sale">Venta</option>
                 <option value="rent">Alquiler</option>
               </select>
             </div>
-            <Field id="v-price" label={mode === "sale" ? "Precio (COP)" : "Tarifa por minuto (COP)"} name="price" type="number" />
-            <Field id="v-battery" label="Batería (%)" name="battery" type="number" placeholder="100" />
+            <Field
+              id="v-price"
+              label={mode === "sale" ? "Precio (COP)" : "Tarifa por minuto (COP)"}
+              name="price"
+              type="number"
+              required
+            />
+            <Field
+              id="v-battery"
+              label="Batería (%)"
+              name="battery"
+              type="number"
+              placeholder="100"
+            />
             <div className="col-span-2">
-              <Field id="v-spec" label="Especificación" name="spec" />
+              <Field id="v-spec" label="Especificación" name="spec" required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="v-hub">Hub</Label>
@@ -153,7 +187,8 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
               </div>
             ) : (
               <label className="flex items-end gap-2 pb-2 text-sm">
-                <input type="checkbox" name="delivery" className="accent-[var(--primary)]" /> Apto para domicilio
+                <input type="checkbox" name="delivery" className="accent-[var(--primary)]" /> Apto
+                para domicilio
               </label>
             )}
             <Button type="submit" className="col-span-2" data-testid="vehicle-save">
@@ -163,11 +198,22 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
           </form>
           <ul className="max-h-64 space-y-2 overflow-y-auto" data-testid="vehicle-admin-list">
             {vehicles.map((v) => (
-              <li key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-xs">
+              <li
+                key={v.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-xs"
+              >
                 <span className="min-w-0 truncate">
-                  {v.id} · {v.model} · {v.mode === "sale" ? formatCOP(v.price ?? 0) : `${formatCOP(v.pricePerMinute ?? 0)}/min`}
+                  {v.id} · {v.model} ·{" "}
+                  {v.mode === "sale"
+                    ? formatCOP(v.price ?? 0)
+                    : `${formatCOP(v.pricePerMinute ?? 0)}/min`}
                 </span>
-                <Button size="icon" variant="ghost" aria-label={`Eliminar ${v.id}`} onClick={() => void remove("vehicle", v.id)}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Eliminar ${v.id}`}
+                  onClick={() => void remove("vehicle", v.id)}
+                >
                   <Trash2 className="size-4 text-destructive" />
                 </Button>
               </li>
@@ -178,12 +224,28 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
         <div className="space-y-4">
           <h3 className="font-semibold">Hubs ({hubs.length})</h3>
           <form onSubmit={addHub} className="grid grid-cols-2 gap-3" data-testid="hub-form">
-            <Field id="h-id" label="Identificador" name="id" placeholder="HUB-05" />
-            <Field id="h-name" label="Nombre" name="name" />
-            <Field id="h-zone" label="Zona" name="zone" />
-            <Field id="h-cap" label="Capacidad" name="capacity" type="number" />
-            <Field id="h-lat" label="Latitud" name="lat" type="number" step="any" placeholder="7.1139" />
-            <Field id="h-lng" label="Longitud" name="lng" type="number" step="any" placeholder="-73.1098" />
+            <Field id="h-id" label="Identificador" name="id" placeholder="HUB-05" required />
+            <Field id="h-name" label="Nombre" name="name" required />
+            <Field id="h-zone" label="Zona" name="zone" required />
+            <Field id="h-cap" label="Capacidad" name="capacity" type="number" required />
+            <Field
+              id="h-lat"
+              label="Latitud"
+              name="lat"
+              type="number"
+              step="any"
+              placeholder="7.1139"
+              required
+            />
+            <Field
+              id="h-lng"
+              label="Longitud"
+              name="lng"
+              type="number"
+              step="any"
+              placeholder="-73.1098"
+              required
+            />
             <Button type="submit" className="col-span-2" data-testid="hub-save">
               <Plus className="mr-2 size-4" aria-hidden />
               Guardar hub
@@ -191,11 +253,19 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
           </form>
           <ul className="space-y-2" data-testid="hub-admin-list">
             {hubs.map((h) => (
-              <li key={h.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-xs">
+              <li
+                key={h.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-xs"
+              >
                 <span className="min-w-0 truncate">
                   {h.id} · {h.name} · {h.occupied}/{h.capacity}
                 </span>
-                <Button size="icon" variant="ghost" aria-label={`Eliminar ${h.id}`} onClick={() => void remove("hub", h.id)}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Eliminar ${h.id}`}
+                  onClick={() => void remove("hub", h.id)}
+                >
                   <Trash2 className="size-4 text-destructive" />
                 </Button>
               </li>
@@ -207,11 +277,26 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
   );
 }
 
-function Field({ id, label, name, type = "text", ...rest }: { id: string; label: string; name: string; type?: string; placeholder?: string; step?: string }) {
+function Field({
+  id,
+  label,
+  name,
+  type = "text",
+  required,
+  ...rest
+}: {
+  id: string;
+  label: string;
+  name: string;
+  type?: string;
+  placeholder?: string;
+  step?: string;
+  required?: boolean;
+}) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} name={name} type={type} {...rest} />
+      <Input id={id} name={name} type={type} required={required} {...rest} />
     </div>
   );
 }

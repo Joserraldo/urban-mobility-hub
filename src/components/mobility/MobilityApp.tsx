@@ -81,7 +81,11 @@ export function MobilityApp() {
     >
       {/* Mapa */}
       {isClient && (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 map-grid" data-testid="map-loading" aria-hidden />
+          }
+        >
           <FleetMap
             vehicles={vehicles}
             hubs={hubs}

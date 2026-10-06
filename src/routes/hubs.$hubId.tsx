@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 
 import { RouteError, RoutePending } from "@/components/common/route-states";
 import { EmptyState } from "@/components/common/states";
+import { VehicleIcon } from "@/components/common/vehicle-icon";
 import { VehicleCard } from "@/components/catalog/VehicleCard";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,11 @@ export const Route = createFileRoute("/hubs/$hubId")({
     const hub = await ds.getHub(params.hubId.toUpperCase());
     if (!hub) throw notFound();
     const vehicles = (await ds.listVehicles()).filter((v) => v.hubId === hub.id);
-    return { hub, forSale: vehicles.filter((v) => v.mode === "sale"), forRent: vehicles.filter((v) => v.mode === "rent") };
+    return {
+      hub,
+      forSale: vehicles.filter((v) => v.mode === "sale"),
+      forRent: vehicles.filter((v) => v.mode === "rent"),
+    };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
@@ -41,7 +46,13 @@ export const Route = createFileRoute("/hubs/$hubId")({
           url: `${SITE.url}${path}`,
           parentOrganization: { "@id": `${SITE.url}/#organization` },
           description: `Hub NODO Mobility en ${h.zone}: alquiler, devolución, carga y venta de vehículos urbanos.`,
-          address: { "@type": "PostalAddress", addressLocality: SITE.city, addressRegion: "Santander", addressCountry: "CO", streetAddress: h.zone },
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: SITE.city,
+            addressRegion: "Santander",
+            addressCountry: "CO",
+            streetAddress: h.zone,
+          },
           geo: { "@type": "GeoCoordinates", latitude: h.lat, longitude: h.lng },
         },
       ],
@@ -67,7 +78,10 @@ function HubPage() {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <nav aria-label="Ruta de navegación" className="flex items-center gap-1 text-sm text-muted-foreground">
+        <nav
+          aria-label="Ruta de navegación"
+          className="flex items-center gap-1 text-sm text-muted-foreground"
+        >
           <Link to="/" className="hover:text-foreground">
             Inicio
           </Link>
@@ -82,7 +96,8 @@ function HubPage() {
         </nav>
         <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">{h.name}</h1>
         <p className="mt-2 text-muted-foreground">
-          {h.zone} · Coordenadas {h.lat.toFixed(4)}, {h.lng.toFixed(4)} · {h.active ? "Hub activo" : "Hub inactivo"}
+          {h.zone} · Coordenadas {h.lat.toFixed(4)}, {h.lng.toFixed(4)} ·{" "}
+          {h.active ? "Hub activo" : "Hub inactivo"}
         </p>
 
         <dl className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -97,12 +112,23 @@ function HubPage() {
             </div>
           ))}
         </dl>
-        <Progress value={(h.occupied / h.capacity) * 100} className="mt-4" aria-label="Ocupación del hub" />
+        <Progress
+          value={(h.occupied / h.capacity) * 100}
+          className="mt-4"
+          aria-label="Ocupación del hub"
+        />
 
         <section aria-labelledby="alq" className="mt-12">
-          <h2 id="alq" className="text-2xl font-bold">
-            Disponibles para alquiler ({forRent.length})
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 id="alq" className="text-2xl font-bold">
+              Disponibles para alquiler ({forRent.length})
+            </h2>
+            {forRent.length > 0 && (
+              <Link to="/app" className="text-sm text-primary-glow hover:underline">
+                Alquilar desde el mapa
+              </Link>
+            )}
+          </div>
           {forRent.length === 0 ? (
             <div className="mt-4">
               <EmptyState title="Sin vehículos de alquiler en este hub" />
@@ -110,9 +136,22 @@ function HubPage() {
           ) : (
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {forRent.map((v) => (
-                <li key={v.id} className="rounded-xl border border-border bg-surface p-4 text-sm">
-                  <span className="font-medium">{v.model}</span> · {kindLabel[v.kind]} · {v.battery}% batería ·{" "}
-                  {formatCOP(v.pricePerMinute ?? 0)}/min
+                <li
+                  key={v.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/20">
+                    <VehicleIcon kind={v.kind} className="size-5 text-primary-glow" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {v.model} · {v.id}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {kindLabel[v.kind]} · {v.battery}% batería ·{" "}
+                      {formatCOP(v.pricePerMinute ?? 0)}/min
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>

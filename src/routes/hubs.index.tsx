@@ -54,17 +54,26 @@ function HubsPage() {
         ) : (
           <ul data-testid="hub-list" className="grid gap-6 md:grid-cols-2">
             {hubs.map((h) => (
-              <li key={h.id} className="rounded-2xl border border-border bg-surface p-6">
+              <li
+                key={h.id}
+                className="relative rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-primary/60"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold">
-                      <Link to="/hubs/$hubId" params={{ hubId: h.id }} className="hover:text-primary-glow">
+                      <Link
+                        to="/hubs/$hubId"
+                        params={{ hubId: h.id }}
+                        className="after:absolute after:inset-0 hover:text-primary-glow"
+                      >
                         {h.name}
                       </Link>
                     </h2>
                     <p className="text-sm text-muted-foreground">{h.zone}</p>
                   </div>
-                  <Badge variant={h.active ? "default" : "secondary"}>{h.active ? "Activo" : "Inactivo"}</Badge>
+                  <Badge variant={h.active ? "default" : "secondary"}>
+                    {h.active ? "Activo" : "Inactivo"}
+                  </Badge>
                 </div>
                 <div className="mt-4">
                   <div className="flex justify-between text-xs text-muted-foreground">
@@ -73,7 +82,11 @@ function HubsPage() {
                       {h.occupied}/{h.capacity} espacios
                     </span>
                   </div>
-                  <Progress value={(h.occupied / h.capacity) * 100} className="mt-2" aria-label={`Ocupación de ${h.name}`} />
+                  <Progress
+                    value={(h.occupied / h.capacity) * 100}
+                    className="mt-2"
+                    aria-label={`Ocupación de ${h.name}`}
+                  />
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <BatteryCharging className="size-3.5 text-success" aria-hidden />
                     {h.charging} vehículos en carga
