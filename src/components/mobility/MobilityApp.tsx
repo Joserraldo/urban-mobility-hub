@@ -71,10 +71,14 @@ export function MobilityApp() {
 
   const loading = hubsQ.isPending || vehiclesQ.isPending;
   const error = hubsQ.isError || vehiclesQ.isError;
-  const sheet = "absolute inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-border bg-surface p-5 shadow-panel md:inset-x-auto md:bottom-4 md:left-4 md:w-[420px] md:rounded-3xl md:border";
+  const sheet =
+    "absolute inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-border bg-surface p-5 shadow-panel md:inset-x-auto md:bottom-4 md:left-4 md:w-[420px] md:rounded-3xl md:border";
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-background" data-testid="app-root">
+    <div
+      className="relative h-[100dvh] w-full overflow-hidden bg-background"
+      data-testid="app-root"
+    >
       {/* Mapa */}
       {isClient && (
         <Suspense fallback={null}>
@@ -110,7 +114,11 @@ export function MobilityApp() {
             />
           )}
           {!loading && !error && hubs.length === 0 && vehicles.length === 0 && (
-            <EmptyState title="Aún no hay hubs ni vehículos" hint="Cuando el operador los registre aparecerán aquí." testId="app-empty" />
+            <EmptyState
+              title="Aún no hay hubs ni vehículos"
+              hint="Cuando el operador los registre aparecerán aquí."
+              testId="app-empty"
+            />
           )}
         </div>
       )}
@@ -130,22 +138,40 @@ export function MobilityApp() {
           </div>
           <div className="flex gap-2">
             {me?.role === "operator" && (
-              <Link to="/admin" aria-label="Panel del operador" data-testid="app-link-admin">
-                <Button size="icon" variant="secondary" className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur">
-                  <Settings className="size-5" />
-                </Button>
-              </Link>
-            )}
-            <Link to={me ? "/mis-reservas" : "/login"} aria-label={me ? "Mis reservas" : "Ingresar"} data-testid="app-link-account">
-              <Button size="icon" variant="secondary" className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur">
-                <UserIcon className="size-5" />
+              <Button
+                asChild
+                size="icon"
+                variant="secondary"
+                className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur"
+              >
+                <Link to="/admin" aria-label="Panel del operador" data-testid="app-link-admin">
+                  <Settings className="size-5" aria-hidden />
+                </Link>
               </Button>
-            </Link>
+            )}
+            <Button
+              asChild
+              size="icon"
+              variant="secondary"
+              className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur"
+            >
+              <Link
+                to={me ? "/mis-reservas" : "/login"}
+                aria-label={me ? "Mis reservas" : "Ingresar"}
+                data-testid="app-link-account"
+              >
+                <UserIcon className="size-5" aria-hidden />
+              </Link>
+            </Button>
           </div>
         </div>
 
         {/* Alquilar / Comprar */}
-        <div role="group" aria-label="Modo" className="pointer-events-auto rounded-full border border-border bg-surface-elevated/95 p-1 backdrop-blur">
+        <div
+          role="group"
+          aria-label="Modo"
+          className="pointer-events-auto rounded-full border border-border bg-surface-elevated/95 p-1 backdrop-blur"
+        >
           <div className="relative grid grid-cols-2">
             <motion.div
               layout
@@ -196,7 +222,9 @@ export function MobilityApp() {
                 aria-pressed={submode === value}
                 onClick={() => setSubmode(value)}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium backdrop-blur transition-colors ${
-                  submode === value ? "border-primary bg-primary/20 text-foreground" : "border-border bg-surface/80 text-muted-foreground"
+                  submode === value
+                    ? "border-primary bg-primary/20 text-foreground"
+                    : "border-border bg-surface/80 text-muted-foreground"
                 }`}
               >
                 <Icon className="size-3.5" aria-hidden />
@@ -218,7 +246,11 @@ export function MobilityApp() {
         </div>
 
         {layersOpen && (
-          <div role="group" aria-label="Capas del mapa" className="pointer-events-auto flex flex-wrap gap-2 rounded-2xl border border-border bg-surface-elevated/95 p-3 backdrop-blur">
+          <div
+            role="group"
+            aria-label="Capas del mapa"
+            className="pointer-events-auto flex flex-wrap gap-2 rounded-2xl border border-border bg-surface-elevated/95 p-3 backdrop-blur"
+          >
             {(
               [
                 ["vehicles", "Vehículos"],
@@ -256,7 +288,11 @@ export function MobilityApp() {
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
             className={`${sheet} max-h-[70dvh] overflow-y-auto`}
           >
-            <PanelHeader title={hub.name} subtitle={`${hub.zone} · ${hub.id}`} onClose={closePanels} />
+            <PanelHeader
+              title={hub.name}
+              subtitle={`${hub.zone} · ${hub.id}`}
+              onClose={closePanels}
+            />
             <div className="mt-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -267,7 +303,11 @@ export function MobilityApp() {
                   <span>Ocupados</span>
                   <span data-testid="hub-occupied">{hub.occupied}</span>
                 </div>
-                <Progress value={(hub.occupied / hub.capacity) * 100} className="mt-2" aria-label="Ocupación del hub" />
+                <Progress
+                  value={(hub.occupied / hub.capacity) * 100}
+                  className="mt-2"
+                  aria-label="Ocupación del hub"
+                />
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <BatteryCharging className="size-3.5 text-success" aria-hidden />
                   <span data-testid="hub-charging">{hub.charging}</span> vehículos en carga
@@ -277,7 +317,11 @@ export function MobilityApp() {
                 title="Disponibles para alquiler"
                 items={rentals.filter((v) => v.hubId === hub.id)}
                 action={(v) => (
-                  <Button size="sm" onClick={() => setUnlocking(v)} data-testid={`btn-unlock-${v.id}`}>
+                  <Button
+                    size="sm"
+                    onClick={() => setUnlocking(v)}
+                    data-testid={`btn-unlock-${v.id}`}
+                  >
                     Desbloquear
                   </Button>
                 )}
@@ -316,7 +360,11 @@ export function MobilityApp() {
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
             className={sheet}
           >
-            <PanelHeader title={`${kindLabel[vehicle.kind]} · ${vehicle.model}`} subtitle={vehicle.id} onClose={closePanels} />
+            <PanelHeader
+              title={`${kindLabel[vehicle.kind]} · ${vehicle.model}`}
+              subtitle={vehicle.id}
+              onClose={closePanels}
+            />
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Stat label="Batería" value={`${vehicle.battery}%`} accent={vehicle.battery < 25} />
               <Stat label="Tarifa" value={`${formatCOP(vehicle.pricePerMinute ?? 0)} / min`} />
@@ -333,12 +381,20 @@ export function MobilityApp() {
                 redirectTo="/app"
                 defaultModality={submode}
                 trigger={
-                  <Button variant="secondary" disabled={vehicle.alert !== "ok"} data-testid={`btn-reserve-${vehicle.id}`}>
+                  <Button
+                    variant="secondary"
+                    disabled={vehicle.alert !== "ok"}
+                    data-testid={`btn-reserve-${vehicle.id}`}
+                  >
                     Reservar
                   </Button>
                 }
               />
-              <Button disabled={vehicle.alert !== "ok"} onClick={() => setUnlocking(vehicle)} data-testid={`btn-unlock-${vehicle.id}`}>
+              <Button
+                disabled={vehicle.alert !== "ok"}
+                onClick={() => setUnlocking(vehicle)}
+                data-testid={`btn-unlock-${vehicle.id}`}
+              >
                 Desbloquear
               </Button>
             </div>
@@ -368,12 +424,23 @@ export function MobilityApp() {
               <span className="text-sm font-semibold">Catálogo de venta</span>
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 {forSale.length} vehículos
-                <ChevronUp className={`size-4 transition-transform ${catalogOpen ? "rotate-180" : ""}`} aria-hidden />
+                <ChevronUp
+                  className={`size-4 transition-transform ${catalogOpen ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
               </span>
             </button>
-            <div data-testid="catalog-list" className="max-h-[58dvh] space-y-3 overflow-y-auto px-5 pb-8">
+            <div
+              data-testid="catalog-list"
+              className="max-h-[58dvh] space-y-3 overflow-y-auto px-5 pb-8"
+            >
               {loading && <LoadingState rows={2} />}
-              {!loading && forSale.length === 0 && <EmptyState title="No hay vehículos en venta" hint="Vuelve pronto: el catálogo se actualiza a diario." />}
+              {!loading && forSale.length === 0 && (
+                <EmptyState
+                  title="No hay vehículos en venta"
+                  hint="Vuelve pronto: el catálogo se actualiza a diario."
+                />
+              )}
               {forSale.map((v) => {
                 const hubName = hubs.find((h) => h.id === v.hubId)?.name;
                 return (
@@ -398,7 +465,9 @@ export function MobilityApp() {
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="text-base font-bold text-primary-glow">{formatCOP(v.price ?? 0)}</span>
+                      <span className="text-base font-bold text-primary-glow">
+                        {formatCOP(v.price ?? 0)}
+                      </span>
                       <BuyDialog
                         vehicle={v}
                         hubName={hubName}
@@ -428,19 +497,35 @@ export function MobilityApp() {
         </p>
       )}
 
-      <AnimatePresence>{unlocking && <UnlockFlow vehicle={unlocking} onClose={() => setUnlocking(null)} />}</AnimatePresence>
+      <AnimatePresence>
+        {unlocking && <UnlockFlow vehicle={unlocking} onClose={() => setUnlocking(null)} />}
+      </AnimatePresence>
     </div>
   );
 }
 
-function PanelHeader({ title, subtitle, onClose }: { title: string; subtitle: string; onClose: () => void }) {
+function PanelHeader({
+  title,
+  subtitle,
+  onClose,
+}: {
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+}) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
       <div className="min-w-0">
         <h2 className="truncate text-lg font-semibold">{title}</h2>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
-      <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar panel" data-testid="panel-close">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label="Cerrar panel"
+        data-testid="panel-close"
+      >
         <X className="size-5" />
       </Button>
     </div>
@@ -451,18 +536,32 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   return (
     <div className="rounded-xl border border-border bg-surface-elevated p-3">
       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-base font-semibold ${accent ? "text-destructive" : "text-foreground"}`}>{value}</p>
+      <p
+        className={`mt-1 text-base font-semibold ${accent ? "text-destructive" : "text-foreground"}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
-function HubList({ title, items, action }: { title: string; items: Vehicle[]; action: (v: Vehicle) => React.ReactNode }) {
+function HubList({
+  title,
+  items,
+  action,
+}: {
+  title: string;
+  items: Vehicle[];
+  action: (v: Vehicle) => React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         {title} ({items.length})
       </h3>
-      {items.length === 0 && <p className="text-xs text-muted-foreground">Sin unidades en este punto.</p>}
+      {items.length === 0 && (
+        <p className="text-xs text-muted-foreground">Sin unidades en este punto.</p>
+      )}
       {items.map((v) => (
         <div
           key={v.id}
@@ -473,7 +572,9 @@ function HubList({ title, items, action }: { title: string; items: Vehicle[]; ac
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{v.model}</p>
             <p className="truncate text-[11px] text-muted-foreground">
-              {v.mode === "rent" ? `${v.battery}% batería · ${formatCOP(v.pricePerMinute ?? 0)}/min` : formatCOP(v.price ?? 0)}
+              {v.mode === "rent"
+                ? `${v.battery}% batería · ${formatCOP(v.pricePerMinute ?? 0)}/min`
+                : formatCOP(v.price ?? 0)}
             </p>
           </div>
           {action(v)}

@@ -10,7 +10,6 @@ export const Route = createFileRoute("/app")({
       description:
         "Mapa interactivo para alquilar patinetas, bicicletas eléctricas y drones o comprar vehículos urbanos en los hubs NODO, con desbloqueo por QR y verificación de casco.",
       path: "/app",
-      noindex: true,
     }),
   component: MobilityApp,
 });

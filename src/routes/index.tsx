@@ -15,7 +15,8 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seo({
-      title: "NODO Mobility — Alquiler y venta de patinetas, bicicletas eléctricas y drones en Bucaramanga",
+      title:
+        "NODO Mobility — Alquiler y venta de patinetas, bicicletas eléctricas y drones en Bucaramanga",
       description: SITE.description,
       path: "/",
       jsonLd: [organizationLd(), websiteLd()],
@@ -33,7 +34,11 @@ function useMobileRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
     const ua = navigator.userAgent;
-    if (/bot|crawl|spider|slurp|lighthouse|facebookexternalhit|preview/i.test(ua)) return;
+    if (
+      navigator.webdriver ||
+      /bot|crawl|spider|slurp|lighthouse|facebookexternalhit|preview/i.test(ua)
+    )
+      return;
     if (new URLSearchParams(window.location.search).has("vista")) return;
     if (window.matchMedia("(max-width: 767px)").matches) {
       void navigate({ to: "/app", replace: true });
