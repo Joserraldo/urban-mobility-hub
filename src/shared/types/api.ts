@@ -40,7 +40,9 @@ export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(120),
   password: z.string().min(8).max(128),
   /** Aceptación explícita del tratamiento de datos personales (Ley 1581). Debe ser true. */
-  consent: z.literal(true, { errorMap: () => ({ message: "Debes aceptar el tratamiento de datos" }) }),
+  consent: z.literal(true, {
+    errorMap: () => ({ message: "Debes aceptar el tratamiento de datos" }),
+  }),
 });
 export type RegisterRequest = z.infer<typeof registerSchema>;
 

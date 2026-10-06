@@ -25,7 +25,8 @@ export const keys = {
 export const useHubs = () => useQuery({ queryKey: keys.hubs, queryFn: () => ds().listHubs() });
 export const useVehicles = () =>
   useQuery({ queryKey: keys.vehicles, queryFn: () => ds().listVehicles() });
-export const useAlerts = () => useQuery({ queryKey: keys.alerts, queryFn: () => ds().listAlerts() });
+export const useAlerts = () =>
+  useQuery({ queryKey: keys.alerts, queryFn: () => ds().listAlerts() });
 export const useMe = () =>
   useQuery({ queryKey: keys.me, queryFn: () => ds().me(), staleTime: 60_000 });
 export const useReservations = (enabled = true) =>
@@ -70,7 +71,10 @@ export function useAuthActions() {
   const refresh = () => qc.invalidateQueries({ queryKey: keys.me });
   return {
     login: useMutation({ mutationFn: (i: LoginInput) => ds().login(i), onSuccess: refresh }),
-    register: useMutation({ mutationFn: (i: RegisterInput) => ds().register(i), onSuccess: refresh }),
+    register: useMutation({
+      mutationFn: (i: RegisterInput) => ds().register(i),
+      onSuccess: refresh,
+    }),
     logout: useMutation({
       mutationFn: () => ds().logout(),
       onSuccess: () => {

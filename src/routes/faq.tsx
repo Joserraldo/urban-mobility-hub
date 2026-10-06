@@ -7,7 +7,8 @@ import { breadcrumbLd, faqLd, seo } from "@/lib/site";
 export const Route = createFileRoute("/faq")({
   head: () =>
     seo({
-      title: "Preguntas frecuentes sobre alquiler y compra de patinetas, bicicletas eléctricas y drones",
+      title:
+        "Preguntas frecuentes sobre alquiler y compra de patinetas, bicicletas eléctricas y drones",
       description:
         "Respuestas directas: cuánto cuesta alquilar, cómo se desbloquea un vehículo, qué pasa sin casco, qué alertas se monitorean y cómo se protegen tus datos biométricos.",
       path: "/faq",
@@ -32,7 +33,11 @@ function FaqPage() {
       />
       <div className="mx-auto max-w-3xl space-y-4 px-4 pb-16 sm:px-6" data-testid="faq-list">
         {FAQ.map((f, i) => (
-          <section key={f.q} aria-labelledby={`faq-${i}`} className="rounded-2xl border border-border bg-surface p-6">
+          <section
+            key={f.q}
+            aria-labelledby={`faq-${i}`}
+            className="rounded-2xl border border-border bg-surface p-6"
+          >
             <h2 id={`faq-${i}`} className="text-lg font-semibold">
               {f.q}
             </h2>

@@ -8,21 +8,42 @@ const base = process.argv[2] ?? "http://localhost:8080";
 const root = path.resolve(import.meta.dirname, "..");
 const pantallas = JSON.parse(fs.readFileSync(path.join(root, "_tools/pantallas.json"), "utf8"));
 const chromeDir = path.join(os.homedir(), ".cache/puppeteer/chrome");
-const exe = process.env.CHROME_PATH ?? path.join(chromeDir, fs.readdirSync(chromeDir)[0], "chrome-win64/chrome.exe");
+const exe =
+  process.env.CHROME_PATH ??
+  path.join(chromeDir, fs.readdirSync(chromeDir)[0], "chrome-win64/chrome.exe");
 fs.mkdirSync(path.join(root, "interfaces/img"), { recursive: true });
 const browser = await chromium.launch({ executablePath: exe });
 const res = [];
 for (const p of pantallas) {
-  const ctx = await browser.newContext({ viewport: { width: p.vp[0], height: p.vp[1] }, locale: "es-CO" });
+  const ctx = await browser.newContext({
+    viewport: { width: p.vp[0], height: p.vp[1] },
+    locale: "es-CO",
+  });
   const page = await ctx.newPage();
-  let ok = true, nota = "";
+  let ok = true,
+    nota = "";
   try {
     const r = await page.goto(base + p.url, { waitUntil: "networkidle", timeout: 30000 });
-    if (r && r.status() >= 400) { ok = false; nota = `HTTP ${r.status()}`; }
-    for (const s of p.steps ?? []) { try { await page.click(s.click, { timeout: 4000 }); } catch { nota += ` (no se halló ${s.click})`; } }
+    if (r && r.status() >= 400) {
+      ok = false;
+      nota = `HTTP ${r.status()}`;
+    }
+    for (const s of p.steps ?? []) {
+      try {
+        await page.click(s.click, { timeout: 4000 });
+      } catch {
+        nota += ` (no se halló ${s.click})`;
+      }
+    }
     await page.waitForTimeout(p.wait ?? 500);
-    await page.screenshot({ path: path.join(root, `interfaces/img/${p.id}.png`), fullPage: !!p.full });
-  } catch (e) { ok = false; nota = String(e.message).split("\n")[0]; }
+    await page.screenshot({
+      path: path.join(root, `interfaces/img/${p.id}.png`),
+      fullPage: !!p.full,
+    });
+  } catch (e) {
+    ok = false;
+    nota = String(e.message).split("\n")[0];
+  }
   console.log(ok ? "OK  " : "FALLO", p.id, nota);
   res.push({ ...p, ok, nota });
   await ctx.close();

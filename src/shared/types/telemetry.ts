@@ -36,8 +36,7 @@ export interface AlertMessage {
 
 /** Cuerpo de `POST /api/ingest`: telemetría o alerta forzada. */
 export type IngestPayload =
-  | ({ kind: "telemetry" } & TelemetryMessage)
-  | ({ kind: "alert" } & AlertMessage);
+  ({ kind: "telemetry" } & TelemetryMessage) | ({ kind: "alert" } & AlertMessage);
 
 export const mqttTopics = {
   telemetry: (vehicleId: string) => `umh/vehicle/${vehicleId}/telemetry`,

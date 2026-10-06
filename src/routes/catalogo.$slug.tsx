@@ -48,7 +48,10 @@ export const Route = createFileRoute("/catalogo/$slug")({
             priceCurrency: "COP",
             price: v.price ?? 0,
             availability: "https://schema.org/InStock",
-            itemCondition: v.condition === "nuevo" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+            itemCondition:
+              v.condition === "nuevo"
+                ? "https://schema.org/NewCondition"
+                : "https://schema.org/UsedCondition",
             seller: { "@type": "Organization", name: SITE.name },
           },
         },
@@ -59,7 +62,9 @@ export const Route = createFileRoute("/catalogo/$slug")({
     <SiteLayout>
       <div className="mx-auto max-w-xl px-4 py-20 text-center" data-testid="vehicle-not-found">
         <h1 className="text-3xl font-bold">Vehículo no disponible</h1>
-        <p className="mt-3 text-muted-foreground">Es posible que ya se haya vendido o que el enlace sea incorrecto.</p>
+        <p className="mt-3 text-muted-foreground">
+          Es posible que ya se haya vendido o que el enlace sea incorrecto.
+        </p>
         <Link to="/catalogo" className="mt-6 inline-block">
           <Button>Ver el catálogo</Button>
         </Link>
@@ -77,7 +82,10 @@ function VehiclePage() {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <nav aria-label="Ruta de navegación" className="flex items-center gap-1 text-sm text-muted-foreground">
+        <nav
+          aria-label="Ruta de navegación"
+          className="flex items-center gap-1 text-sm text-muted-foreground"
+        >
           <Link to="/" className="hover:text-foreground">
             Inicio
           </Link>
@@ -91,13 +99,18 @@ function VehiclePage() {
           </span>
         </nav>
 
-        <article data-testid="vehicle-detail" className="mt-8 grid gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
+        <article
+          data-testid="vehicle-detail"
+          className="mt-8 grid gap-8 md:grid-cols-[auto_minmax(0,1fr)]"
+        >
           <span className="flex size-32 items-center justify-center rounded-3xl bg-primary/20 md:size-48">
             <VehicleIcon kind={v.kind} className="size-16 text-primary-glow md:size-24" />
           </span>
           <div className="space-y-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-primary-glow">{kindLabel[v.kind]}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-primary-glow">
+                {kindLabel[v.kind]}
+              </p>
               <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{v.model}</h1>
             </div>
             <p className="text-3xl font-bold text-primary-glow">{formatCOP(v.price ?? 0)}</p>
@@ -109,11 +122,15 @@ function VehiclePage() {
             </div>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-xl border border-border bg-surface p-4">
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Especificación técnica</dt>
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Especificación técnica
+                </dt>
                 <dd className="mt-1 font-medium">{v.spec}</dd>
               </div>
               <div className="rounded-xl border border-border bg-surface p-4">
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Disponible en</dt>
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Disponible en
+                </dt>
                 <dd className="mt-1 flex items-center gap-1.5 font-medium">
                   <MapPin className="size-4 text-primary-glow" aria-hidden />
                   {hub ? (

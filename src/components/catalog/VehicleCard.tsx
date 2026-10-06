@@ -7,7 +7,13 @@ import type { Vehicle } from "@/lib/data/types";
 import { formatCOP, kindLabel, vehicleSlug } from "@/lib/format";
 
 /** Tarjeta pública de un vehículo en venta (catálogo SEO, RF-02). */
-export function VehicleCard({ vehicle: v, hubName }: { vehicle: Vehicle; hubName: string | undefined }) {
+export function VehicleCard({
+  vehicle: v,
+  hubName,
+}: {
+  vehicle: Vehicle;
+  hubName: string | undefined;
+}) {
   return (
     <article
       data-testid={`vehicle-card-${v.id}`}
@@ -16,9 +22,15 @@ export function VehicleCard({ vehicle: v, hubName }: { vehicle: Vehicle; hubName
       <span className="flex size-11 items-center justify-center rounded-xl bg-primary/20">
         <VehicleIcon kind={v.kind} className="size-5 text-primary-glow" />
       </span>
-      <p className="mt-4 text-xs uppercase tracking-wide text-muted-foreground">{kindLabel[v.kind]}</p>
+      <p className="mt-4 text-xs uppercase tracking-wide text-muted-foreground">
+        {kindLabel[v.kind]}
+      </p>
       <h3 className="mt-1 text-lg font-semibold">
-        <Link to="/catalogo/$slug" params={{ slug: vehicleSlug(v) }} className="after:absolute after:inset-0 hover:text-primary-glow">
+        <Link
+          to="/catalogo/$slug"
+          params={{ slug: vehicleSlug(v) }}
+          className="after:absolute after:inset-0 hover:text-primary-glow"
+        >
           {v.model}
         </Link>
       </h3>

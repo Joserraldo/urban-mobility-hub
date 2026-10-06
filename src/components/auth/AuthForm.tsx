@@ -8,10 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthActions } from "@/lib/data/queries";
 
-const safeRedirect = (r: string | undefined) => (r && r.startsWith("/") && !r.startsWith("//") ? r : "/app");
+const safeRedirect = (r: string | undefined) =>
+  r && r.startsWith("/") && !r.startsWith("//") ? r : "/app";
 
 /** Login y registro (RNF-05, RD11). El registro exige consentimiento expreso Ley 1581 de 2012. */
-export function AuthForm({ mode, redirect }: { mode: "login" | "register"; redirect?: string | undefined }) {
+export function AuthForm({
+  mode,
+  redirect,
+}: {
+  mode: "login" | "register";
+  redirect?: string | undefined;
+}) {
   const navigate = useNavigate();
   const { login, register } = useAuthActions();
   const [name, setName] = useState("");
@@ -25,8 +32,10 @@ export function AuthForm({ mode, redirect }: { mode: "login" | "register"; redir
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (isRegister && password.length < 8) return setError("La contraseña debe tener al menos 8 caracteres.");
-    if (isRegister && !consent) return setError("Debes aceptar el tratamiento de datos personales para registrarte.");
+    if (isRegister && password.length < 8)
+      return setError("La contraseña debe tener al menos 8 caracteres.");
+    if (isRegister && !consent)
+      return setError("Debes aceptar el tratamiento de datos personales para registrarte.");
     try {
       if (isRegister) await register.mutateAsync({ name, email, password, consent });
       else await login.mutateAsync({ email, password });
@@ -37,11 +46,23 @@ export function AuthForm({ mode, redirect }: { mode: "login" | "register"; redir
   };
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-5" data-testid={isRegister ? "register-form" : "login-form"}>
+    <form
+      onSubmit={submit}
+      noValidate
+      className="space-y-5"
+      data-testid={isRegister ? "register-form" : "login-form"}
+    >
       {isRegister && (
         <div className="space-y-1.5">
           <Label htmlFor="auth-name">Nombre completo</Label>
-          <Input id="auth-name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} data-testid="auth-name" />
+          <Input
+            id="auth-name"
+            autoComplete="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-testid="auth-name"
+          />
         </div>
       )}
       <div className="space-y-1.5">
@@ -68,22 +89,37 @@ export function AuthForm({ mode, redirect }: { mode: "login" | "register"; redir
           onChange={(e) => setPassword(e.target.value)}
           data-testid="auth-password"
         />
-        {isRegister && <p className="text-xs text-muted-foreground">Mínimo 8 caracteres. Se almacena cifrada, nunca en texto plano.</p>}
+        {isRegister && (
+          <p className="text-xs text-muted-foreground">
+            Mínimo 8 caracteres. Se almacena cifrada, nunca en texto plano.
+          </p>
+        )}
       </div>
 
       {isRegister && (
         <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-elevated p-4">
-          <Checkbox id="auth-consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} data-testid="auth-consent" className="mt-0.5" />
+          <Checkbox
+            id="auth-consent"
+            checked={consent}
+            onCheckedChange={(v) => setConsent(v === true)}
+            data-testid="auth-consent"
+            className="mt-0.5"
+          />
           <Label htmlFor="auth-consent" className="text-sm font-normal leading-relaxed">
-            Autorizo de forma expresa e informada el tratamiento de mis datos personales y, si decido activarlo, de mi plantilla facial
-            (dato biométrico) para el desbloqueo de vehículos, conforme a la Ley 1581 de 2012. La plantilla se guarda cifrada y puedo
+            Autorizo de forma expresa e informada el tratamiento de mis datos personales y, si
+            decido activarlo, de mi plantilla facial (dato biométrico) para el desbloqueo de
+            vehículos, conforme a la Ley 1581 de 2012. La plantilla se guarda cifrada y puedo
             revocar esta autorización en cualquier momento.
           </Label>
         </div>
       )}
 
       {error && (
-        <p role="alert" data-testid="auth-error" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+        <p
+          role="alert"
+          data-testid="auth-error"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm"
+        >
           {error}
         </p>
       )}
@@ -97,14 +133,24 @@ export function AuthForm({ mode, redirect }: { mode: "login" | "register"; redir
         {isRegister ? (
           <>
             ¿Ya tienes cuenta?{" "}
-            <Link to="/login" search={redirect ? { redirect } : {}} className="text-primary-glow hover:underline" data-testid="auth-switch">
+            <Link
+              to="/login"
+              search={redirect ? { redirect } : {}}
+              className="text-primary-glow hover:underline"
+              data-testid="auth-switch"
+            >
               Ingresa
             </Link>
           </>
         ) : (
           <>
             ¿Eres nuevo?{" "}
-            <Link to="/registro" search={redirect ? { redirect } : {}} className="text-primary-glow hover:underline" data-testid="auth-switch">
+            <Link
+              to="/registro"
+              search={redirect ? { redirect } : {}}
+              className="text-primary-glow hover:underline"
+              data-testid="auth-switch"
+            >
               Crea tu cuenta
             </Link>
           </>

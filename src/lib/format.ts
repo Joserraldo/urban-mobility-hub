@@ -1,9 +1,4 @@
-import type {
-  ActiveAlertType,
-  AlertType,
-  ReservationStatus,
-  VehicleKind,
-} from "./data/types";
+import type { ActiveAlertType, AlertType, ReservationStatus, VehicleKind } from "./data/types";
 
 export const kindLabel: Record<VehicleKind, string> = {
   scooter: "Patineta eléctrica",
@@ -25,7 +20,12 @@ export const alertLabel: Record<AlertType, string> = {
   "low-battery": "Batería crítica",
 };
 
-export const activeAlertTypes: ActiveAlertType[] = ["no-helmet", "crash", "gps-lost", "low-battery"];
+export const activeAlertTypes: ActiveAlertType[] = [
+  "no-helmet",
+  "crash",
+  "gps-lost",
+  "low-battery",
+];
 
 export const statusLabel: Record<ReservationStatus, string> = {
   requested: "Solicitada",

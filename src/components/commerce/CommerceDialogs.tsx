@@ -26,11 +26,15 @@ import {
 } from "@/lib/data/types";
 import { formatCOP, kindLabel, statusLabel } from "@/lib/format";
 
-const messageOf = (e: unknown) => (e instanceof DataError || e instanceof Error ? e.message : "Error inesperado");
+const messageOf = (e: unknown) =>
+  e instanceof DataError || e instanceof Error ? e.message : "Error inesperado";
 
 function LoginRequired({ redirectTo }: { redirectTo: string }) {
   return (
-    <div data-testid="login-required" className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4 text-sm">
+    <div
+      data-testid="login-required"
+      className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4 text-sm"
+    >
       <p>Para continuar necesitas una cuenta.</p>
       <div className="flex gap-2">
         <Link to="/login" search={{ redirect: redirectTo }}>
@@ -96,7 +100,8 @@ export function BuyDialog({
         <DialogHeader>
           <DialogTitle>Comprar {vehicle.model}</DialogTitle>
           <DialogDescription>
-            {kindLabel[vehicle.kind]} · {vehicle.condition} · recogida en {hubName ?? "hub asignado"}
+            {kindLabel[vehicle.kind]} · {vehicle.condition} · recogida en{" "}
+            {hubName ?? "hub asignado"}
           </DialogDescription>
         </DialogHeader>
         {done ? (
@@ -104,7 +109,8 @@ export function BuyDialog({
             <CheckCircle2 className="mx-auto size-10 text-success" aria-hidden />
             <p className="font-semibold">¡Compra confirmada!</p>
             <p className="text-sm text-muted-foreground">
-              Referencia {done.id}. Recoge tu vehículo en {hubName ?? "el hub"}. Puedes verla en «Mis reservas y compras».
+              Referencia {done.id}. Recoge tu vehículo en {hubName ?? "el hub"}. Puedes verla en
+              «Mis reservas y compras».
             </p>
             <Link to="/mis-reservas">
               <Button variant="secondary">Ver mis compras</Button>
@@ -114,7 +120,9 @@ export function BuyDialog({
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border border-border bg-surface-elevated p-4">
               <span className="text-sm text-muted-foreground">Total</span>
-              <span className="text-xl font-bold text-primary-glow">{formatCOP(vehicle.price ?? 0)}</span>
+              <span className="text-xl font-bold text-primary-glow">
+                {formatCOP(vehicle.price ?? 0)}
+              </span>
             </div>
             {!me && <LoginRequired redirectTo={redirectTo} />}
             {error && (
@@ -122,7 +130,12 @@ export function BuyDialog({
                 {error}
               </p>
             )}
-            <Button className="w-full" disabled={!me || busy} onClick={confirm} data-testid="checkout-confirm">
+            <Button
+              className="w-full"
+              disabled={!me || busy}
+              onClick={confirm}
+              data-testid="checkout-confirm"
+            >
               {busy && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />}
               Confirmar compra
             </Button>
@@ -193,7 +206,8 @@ export function ReserveDialog({
         <DialogHeader>
           <DialogTitle>Reservar {vehicle.model}</DialogTitle>
           <DialogDescription>
-            {kindLabel[vehicle.kind]} · {formatCOP(vehicle.pricePerMinute ?? 0)} por minuto · batería {vehicle.battery}%
+            {kindLabel[vehicle.kind]} · {formatCOP(vehicle.pricePerMinute ?? 0)} por minuto ·
+            batería {vehicle.battery}%
           </DialogDescription>
         </DialogHeader>
         {done ? (
@@ -246,7 +260,11 @@ export function ReserveDialog({
                   );
                 })}
               </div>
-              {!vehicle.delivery && <p className="text-xs text-muted-foreground">Este vehículo no admite entrega a domicilio.</p>}
+              {!vehicle.delivery && (
+                <p className="text-xs text-muted-foreground">
+                  Este vehículo no admite entrega a domicilio.
+                </p>
+              )}
             </fieldset>
             {modality === "delivery" && (
               <div className="space-y-1.5">

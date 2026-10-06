@@ -1,10 +1,10 @@
 import puppeteer from "puppeteer";
-const [,, url, out, w="1280", h="900", full="0"] = process.argv;
+const [, , url, out, w = "1280", h = "900", full = "0"] = process.argv;
 const b = await puppeteer.launch({ args: ["--no-sandbox"] });
 const p = await b.newPage();
 await p.setViewport({ width: +w, height: +h });
-p.on("pageerror", e => console.log("PAGEERR", e.message));
+p.on("pageerror", (e) => console.log("PAGEERR", e.message));
 await p.goto(url, { waitUntil: "networkidle2", timeout: 45000 });
-await new Promise(r => setTimeout(r, 1500));
+await new Promise((r) => setTimeout(r, 1500));
 await p.screenshot({ path: out, fullPage: full === "1" });
 await b.close();

@@ -33,7 +33,9 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const qc = useQueryClient();
   const { data: me } = useMe();
   const [session, setSession] = useState<UnlockSession | null>(null);
-  const [initError, setInitError] = useState<{ message: string; unauthorized: boolean } | null>(null);
+  const [initError, setInitError] = useState<{ message: string; unauthorized: boolean } | null>(
+    null,
+  );
   const [busy, setBusy] = useState<null | "qr" | "helmet" | "face" | "start">(null);
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
@@ -43,7 +45,10 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const [attempt, setAttempt] = useState(0);
 
   const step = session?.step ?? "qr";
-  const camera = useCamera(!!session && (step === "qr" || step === "helmet") && !reservation, step === "helmet" ? "user" : "environment");
+  const camera = useCamera(
+    !!session && (step === "qr" || step === "helmet") && !reservation,
+    step === "helmet" ? "user" : "environment",
+  );
 
   // Crear la sesión de desbloqueo en el backend
   useEffect(() => {
@@ -52,23 +57,33 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     setInitError(null);
     ds.createUnlockSession(vehicle.id)
       .then((s) => alive && setSession(s))
-      .catch((e) => alive && setInitError({ message: msg(e), unauthorized: e instanceof DataError && e.code === "unauthorized" }));
+      .catch(
+        (e) =>
+          alive &&
+          setInitError({
+            message: msg(e),
+            unauthorized: e instanceof DataError && e.code === "unauthorized",
+          }),
+      );
     return () => {
       alive = false;
     };
   }, [ds, vehicle.id, attempt]);
 
-  const run = useCallback(async (kind: "qr" | "helmet" | "face" | "start", fn: () => Promise<void>) => {
-    setBusy(kind);
-    setError(null);
-    try {
-      await fn();
-    } catch (e) {
-      setError(msg(e));
-    } finally {
-      setBusy(null);
-    }
-  }, []);
+  const run = useCallback(
+    async (kind: "qr" | "helmet" | "face" | "start", fn: () => Promise<void>) => {
+      setBusy(kind);
+      setError(null);
+      try {
+        await fn();
+      } catch (e) {
+        setError(msg(e));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [],
+  );
 
   const scan = (code: string) =>
     session &&
@@ -76,7 +91,9 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     busy === null &&
     void run("qr", async () => setSession(await ds.scanQr(session.id, code)));
 
-  const qrNative = useQrScanner(camera.videoRef, step === "qr" && camera.status === "on", (c) => scan(c));
+  const qrNative = useQrScanner(camera.videoRef, step === "qr" && camera.status === "on", (c) =>
+    scan(c),
+  );
 
   const verifyHelmet = () =>
     session &&
@@ -100,7 +117,8 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const enrollFace = () =>
     void run("face", async () => {
       const video = camera.videoRef.current;
-      const template = (video && captureTemplate(video)) || Array.from({ length: 256 }, (_, i) => Math.sin(i));
+      const template =
+        (video && captureTemplate(video)) || Array.from({ length: 256 }, (_, i) => Math.sin(i));
       saveLocalFace(template);
       await ds.enrollFace(template);
       await qc.invalidateQueries({ queryKey: keys.me });
@@ -113,7 +131,9 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
       const r = await ds.startTrip(session.id);
       setReservation(r);
       void qc.invalidateQueries({ queryKey: keys.reservations });
-      toast.success(`Viaje iniciado con ${vehicle.id}`, { description: "La tarifa por minuto está activa. Buen viaje." });
+      toast.success(`Viaje iniciado con ${vehicle.id}`, {
+        description: "La tarifa por minuto está activa. Buen viaje.",
+      });
     });
 
   const finish = () =>
@@ -148,12 +168,20 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     >
       <header className="flex items-center justify-between px-5 py-4">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Desbloqueo seguro</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            Desbloqueo seguro
+          </p>
           <p className="truncate text-base font-semibold">
             {vehicle.model} · {vehicle.id}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar" data-testid="unlock-btn-close">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label="Cerrar"
+          data-testid="unlock-btn-close"
+        >
           <X className="size-5" />
         </Button>
       </header>
@@ -161,7 +189,11 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
       <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-10">
         {initError ? (
           <div className="w-full max-w-sm space-y-4">
-            <ErrorState testId="unlock-error" message={initError.message} onRetry={initError.unauthorized ? undefined : () => setAttempt((a) => a + 1)} />
+            <ErrorState
+              testId="unlock-error"
+              message={initError.message}
+              onRetry={initError.unauthorized ? undefined : () => setAttempt((a) => a + 1)}
+            />
             {initError.unauthorized && (
               <div className="flex gap-2">
                 <Link to="/login" search={{ redirect: "/app" }} className="flex-1">
@@ -178,19 +210,27 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
             )}
           </div>
         ) : !session ? (
-          <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="unlock-loading">
+          <p
+            role="status"
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+            data-testid="unlock-loading"
+          >
             <Loader2 className="size-4 animate-spin" aria-hidden /> Preparando desbloqueo…
           </p>
         ) : reservation ? (
           <div className="w-full max-w-sm space-y-5 text-center" data-testid="unlock-trip">
             <CheckCircle2 className="mx-auto size-16 text-success" aria-hidden />
             <p>
-              Reserva: <strong data-testid="reservation-status">{statusLabel[(finished ?? reservation).status]}</strong>
+              Reserva:{" "}
+              <strong data-testid="reservation-status">
+                {statusLabel[(finished ?? reservation).status]}
+              </strong>
             </p>
             {finished ? (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Viaje finalizado. Total a pagar: <strong className="text-foreground">{formatCOP(finished.totalCost ?? 0)}</strong>
+                  Viaje finalizado. Total a pagar:{" "}
+                  <strong className="text-foreground">{formatCOP(finished.totalCost ?? 0)}</strong>
                 </p>
                 <Button className="w-full" onClick={onClose}>
                   Cerrar
@@ -198,8 +238,15 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">Viaje en curso con {vehicle.id}. Devuélvelo en un hub y finaliza aquí.</p>
-                <Button className="w-full" onClick={finish} disabled={busy === "start"} data-testid="trip-finish">
+                <p className="text-sm text-muted-foreground">
+                  Viaje en curso con {vehicle.id}. Devuélvelo en un hub y finaliza aquí.
+                </p>
+                <Button
+                  className="w-full"
+                  onClick={finish}
+                  disabled={busy === "start"}
+                  data-testid="trip-finish"
+                >
                   Finalizar viaje
                 </Button>
               </>
@@ -216,9 +263,15 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                 data-testid="unlock-step-qr"
                 className="w-full max-w-sm space-y-5 text-center"
               >
-                <CameraBox show={showCamera} videoRef={camera.videoRef} icon={<QrCode className="size-24 text-primary-glow/70" aria-hidden />} />
+                <CameraBox
+                  show={showCamera}
+                  videoRef={camera.videoRef}
+                  icon={<QrCode className="size-24 text-primary-glow/70" aria-hidden />}
+                />
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">Paso 1 de 3</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">
+                    Paso 1 de 3
+                  </p>
                   <h2 className="text-lg font-semibold">Escanea el código QR</h2>
                   <p className="text-sm text-muted-foreground">
                     {camera.status === "denied"
@@ -248,30 +301,60 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                 </form>
                 <div className="space-y-2">
                   {DEMO_TOOLS && (
-                    <Button className="w-full" disabled={busy !== null} onClick={() => scan(`UMH:${vehicle.id}`)} data-testid="unlock-btn-scan">
-                      {busy === "qr" && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />}
+                    <Button
+                      className="w-full"
+                      disabled={busy !== null}
+                      onClick={() => scan(`UMH:${vehicle.id}`)}
+                      data-testid="unlock-btn-scan"
+                    >
+                      {busy === "qr" && (
+                        <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                      )}
                       Simular escaneo del QR
                     </Button>
                   )}
-                  <Button variant="secondary" className="w-full" disabled={busy !== null || !me} onClick={useFace} data-testid="unlock-btn-face">
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    disabled={busy !== null || !me}
+                    onClick={useFace}
+                    data-testid="unlock-btn-face"
+                  >
                     <ScanFace className="mr-2 size-4" aria-hidden />
                     Usar reconocimiento facial
                   </Button>
                   {me && !me.faceEnrolled && (
-                    <Button variant="ghost" size="sm" className="w-full" disabled={busy !== null} onClick={enrollFace} data-testid="unlock-btn-enroll-face">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      disabled={busy !== null}
+                      onClick={enrollFace}
+                      data-testid="unlock-btn-enroll-face"
+                    >
                       Registrar mi rostro (opcional)
                     </Button>
                   )}
                 </div>
               </motion.div>
             ) : step === "denied" || step === "expired" ? (
-              <motion.div key="denied" initial={{ opacity: 0 }} animate={{ opacity: 1 }} data-testid="unlock-step-denied" className="w-full max-w-sm space-y-5 text-center">
+              <motion.div
+                key="denied"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                data-testid="unlock-step-denied"
+                className="w-full max-w-sm space-y-5 text-center"
+              >
                 <ShieldX className="mx-auto size-16 text-destructive" aria-hidden />
                 <h2 className="text-lg font-semibold">Acceso denegado</h2>
                 <p role="alert" className="text-sm text-muted-foreground">
                   {session.reason ?? "No fue posible verificar el desbloqueo."}
                 </p>
-                <Button className="w-full" onClick={() => setAttempt((a) => a + 1)} data-testid="unlock-btn-retry">
+                <Button
+                  className="w-full"
+                  onClick={() => setAttempt((a) => a + 1)}
+                  data-testid="unlock-btn-retry"
+                >
                   Intentar de nuevo
                 </Button>
               </motion.div>
@@ -288,11 +371,22 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                   show={showCamera}
                   videoRef={camera.videoRef}
                   round
-                  icon={<ScanFace className={`size-28 ${step === "ready" ? "text-success" : "text-primary-glow/70"}`} aria-hidden />}
-                  overlay={step === "ready" ? <CheckCircle2 className="size-12 text-success" aria-hidden /> : null}
+                  icon={
+                    <ScanFace
+                      className={`size-28 ${step === "ready" ? "text-success" : "text-primary-glow/70"}`}
+                      aria-hidden
+                    />
+                  }
+                  overlay={
+                    step === "ready" ? (
+                      <CheckCircle2 className="size-12 text-success" aria-hidden />
+                    ) : null
+                  }
                 />
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">Paso {step === "ready" ? 3 : 2} de 3</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">
+                    Paso {step === "ready" ? 3 : 2} de 3
+                  </p>
                   <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">
                     <ShieldCheck className="size-5 text-primary-glow" aria-hidden />
                     Verificación de casco
@@ -307,17 +401,36 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                 </div>
                 {step === "helmet" && DEMO_TOOLS && (
                   <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <input type="checkbox" checked={wearing} onChange={(e) => setWearing(e.target.checked)} data-testid="unlock-sim-helmet" className="accent-[var(--primary)]" />
+                    <input
+                      type="checkbox"
+                      checked={wearing}
+                      onChange={(e) => setWearing(e.target.checked)}
+                      data-testid="unlock-sim-helmet"
+                      className="accent-[var(--primary)]"
+                    />
                     Modo simulación: llevo el casco puesto
                   </label>
                 )}
                 {step === "helmet" && (
-                  <Button variant="secondary" className="w-full" disabled={busy !== null} onClick={verifyHelmet} data-testid="unlock-btn-helmet">
-                    {busy === "helmet" && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />}
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    disabled={busy !== null}
+                    onClick={verifyHelmet}
+                    data-testid="unlock-btn-helmet"
+                  >
+                    {busy === "helmet" && (
+                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                    )}
                     Verificar casco
                   </Button>
                 )}
-                <Button className="w-full" disabled={step !== "ready" || busy !== null} onClick={start} data-testid="unlock-btn-start">
+                <Button
+                  className="w-full"
+                  disabled={step !== "ready" || busy !== null}
+                  onClick={start}
+                  data-testid="unlock-btn-start"
+                >
                   {busy === "start" && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />}
                   Iniciar viaje
                 </Button>
@@ -326,7 +439,11 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
           </AnimatePresence>
         )}
         {error && (
-          <p role="alert" data-testid="unlock-error-msg" className="max-w-sm text-center text-sm text-destructive">
+          <p
+            role="alert"
+            data-testid="unlock-error-msg"
+            className="max-w-sm text-center text-sm text-destructive"
+          >
             {error}
           </p>
         )}
@@ -349,11 +466,22 @@ function CameraBox({
   round?: boolean;
 }) {
   return (
-    <div className={`relative mx-auto aspect-square w-full overflow-hidden border border-border bg-secondary/60 ${round ? "rounded-full" : "rounded-3xl"}`}>
+    <div
+      className={`relative mx-auto aspect-square w-full overflow-hidden border border-border bg-secondary/60 ${round ? "rounded-full" : "rounded-3xl"}`}
+    >
       <div className="absolute inset-0 map-grid opacity-30" aria-hidden />
-      <video ref={videoRef} muted playsInline aria-label="Vista de la cámara" className={`absolute inset-0 size-full object-cover ${show ? "" : "hidden"}`} />
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        aria-label="Vista de la cámara"
+        className={`absolute inset-0 size-full object-cover ${show ? "" : "hidden"}`}
+      />
       {!show && <div className="absolute inset-0 flex items-center justify-center">{icon}</div>}
-      <div className="pointer-events-none absolute inset-6 rounded-2xl border-2 border-primary/70" aria-hidden />
+      <div
+        className="pointer-events-none absolute inset-6 rounded-2xl border-2 border-primary/70"
+        aria-hidden
+      />
       {overlay && <div className="absolute inset-x-0 bottom-8 flex justify-center">{overlay}</div>}
     </div>
   );

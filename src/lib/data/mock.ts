@@ -16,36 +16,201 @@ import {
 // Las cuentas/reservas/compras se guardan en localStorage del navegador (solo en este adaptador).
 
 const SEED_HUBS: Hub[] = [
-  { id: "HUB-01", name: "Hub Cabecera", zone: "Cabecera del Llano", lat: 7.1193, lng: -73.109, capacity: 40, occupied: 27, charging: 9, active: true },
-  { id: "HUB-02", name: "Hub UNAB El Jardín", zone: "Campus Universitario", lat: 7.1098, lng: -73.1066, capacity: 25, occupied: 18, charging: 6, active: true },
-  { id: "HUB-03", name: "Hub San Pío", zone: "Centro", lat: 7.1163, lng: -73.1213, capacity: 30, occupied: 11, charging: 4, active: true },
-  { id: "HUB-04", name: "Hub Floridablanca", zone: "Floridablanca", lat: 7.0621, lng: -73.0869, capacity: 20, occupied: 14, charging: 3, active: false },
+  {
+    id: "HUB-01",
+    name: "Hub Cabecera",
+    zone: "Cabecera del Llano",
+    lat: 7.1193,
+    lng: -73.109,
+    capacity: 40,
+    occupied: 27,
+    charging: 9,
+    active: true,
+  },
+  {
+    id: "HUB-02",
+    name: "Hub UNAB El Jardín",
+    zone: "Campus Universitario",
+    lat: 7.1098,
+    lng: -73.1066,
+    capacity: 25,
+    occupied: 18,
+    charging: 6,
+    active: true,
+  },
+  {
+    id: "HUB-03",
+    name: "Hub San Pío",
+    zone: "Centro",
+    lat: 7.1163,
+    lng: -73.1213,
+    capacity: 30,
+    occupied: 11,
+    charging: 4,
+    active: true,
+  },
+  {
+    id: "HUB-04",
+    name: "Hub Floridablanca",
+    zone: "Floridablanca",
+    lat: 7.0621,
+    lng: -73.0869,
+    capacity: 20,
+    occupied: 14,
+    charging: 3,
+    active: false,
+  },
 ];
 
 const rent = (v: Omit<Vehicle, "mode">): Vehicle => ({ ...v, mode: "rent" });
 const sale = (v: Omit<Vehicle, "mode" | "alert">): Vehicle => ({ ...v, mode: "sale", alert: "ok" });
 
 const SEED_VEHICLES: Vehicle[] = [
-  rent({ id: "SC-1042", kind: "scooter", model: "Volt S2", battery: 87, pricePerMinute: 450, spec: "Autonomía 32 km · 25 km/h", lat: 7.1171, lng: -73.1142, alert: "ok" }),
-  rent({ id: "SC-1088", kind: "scooter", model: "Volt S2", battery: 64, pricePerMinute: 450, spec: "Autonomía 32 km · 25 km/h", lat: 7.1128, lng: -73.1098, alert: "ok" }),
-  rent({ id: "SC-1120", kind: "scooter", model: "Volt Pro", battery: 19, pricePerMinute: 520, spec: "Autonomía 45 km · 30 km/h", lat: 7.1186, lng: -73.1178, alert: "low-battery", hubId: "HUB-03" }),
-  rent({ id: "BK-2201", kind: "bike", model: "Urban e-Bike", battery: 92, pricePerMinute: 380, spec: "Pedaleo asistido · 60 km", lat: 7.1149, lng: -73.1031, alert: "ok", delivery: true }),
-  rent({ id: "BK-2244", kind: "bike", model: "Urban e-Bike", battery: 71, pricePerMinute: 380, spec: "Pedaleo asistido · 60 km", lat: 7.1102, lng: -73.1059, alert: "ok", hubId: "HUB-02" }),
-  rent({ id: "DR-3301", kind: "drone", model: "AeroLift 4", battery: 58, pricePerMinute: 1200, spec: "Carga 5 kg · 22 min de vuelo", lat: 7.1205, lng: -73.1102, alert: "ok", delivery: true, hubId: "HUB-01" }),
-  rent({ id: "DR-3315", kind: "drone", model: "AeroLift 4", battery: 34, pricePerMinute: 1200, spec: "Carga 5 kg · 22 min de vuelo", lat: 7.1226, lng: -73.1255, alert: "gps-lost" }),
-  sale({ id: "SV-5001", kind: "scooter", model: "Volt S2 Edition", battery: 100, price: 2890000, condition: "nuevo", spec: "500 W · 32 km · IPX5", hubId: "HUB-01", lat: 7.1193, lng: -73.109 }),
-  sale({ id: "SV-5002", kind: "scooter", model: "Volt Pro", battery: 96, price: 3750000, condition: "seminuevo", spec: "750 W · 45 km · suspensión dual", hubId: "HUB-02", lat: 7.1098, lng: -73.1066 }),
-  sale({ id: "SV-5003", kind: "bike", model: "Urban e-Bike Lite", battery: 100, price: 4200000, condition: "nuevo", spec: "250 W · 60 km · aluminio", hubId: "HUB-03", lat: 7.1163, lng: -73.1213 }),
-  sale({ id: "SV-5004", kind: "drone", model: "AeroLift 4 Cargo", battery: 100, price: 9800000, condition: "nuevo", spec: "Carga 5 kg · GPS RTK", hubId: "HUB-01", lat: 7.1193, lng: -73.109 }),
+  rent({
+    id: "SC-1042",
+    kind: "scooter",
+    model: "Volt S2",
+    battery: 87,
+    pricePerMinute: 450,
+    spec: "Autonomía 32 km · 25 km/h",
+    lat: 7.1171,
+    lng: -73.1142,
+    alert: "ok",
+  }),
+  rent({
+    id: "SC-1088",
+    kind: "scooter",
+    model: "Volt S2",
+    battery: 64,
+    pricePerMinute: 450,
+    spec: "Autonomía 32 km · 25 km/h",
+    lat: 7.1128,
+    lng: -73.1098,
+    alert: "ok",
+  }),
+  rent({
+    id: "SC-1120",
+    kind: "scooter",
+    model: "Volt Pro",
+    battery: 19,
+    pricePerMinute: 520,
+    spec: "Autonomía 45 km · 30 km/h",
+    lat: 7.1186,
+    lng: -73.1178,
+    alert: "low-battery",
+    hubId: "HUB-03",
+  }),
+  rent({
+    id: "BK-2201",
+    kind: "bike",
+    model: "Urban e-Bike",
+    battery: 92,
+    pricePerMinute: 380,
+    spec: "Pedaleo asistido · 60 km",
+    lat: 7.1149,
+    lng: -73.1031,
+    alert: "ok",
+    delivery: true,
+  }),
+  rent({
+    id: "BK-2244",
+    kind: "bike",
+    model: "Urban e-Bike",
+    battery: 71,
+    pricePerMinute: 380,
+    spec: "Pedaleo asistido · 60 km",
+    lat: 7.1102,
+    lng: -73.1059,
+    alert: "ok",
+    hubId: "HUB-02",
+  }),
+  rent({
+    id: "DR-3301",
+    kind: "drone",
+    model: "AeroLift 4",
+    battery: 58,
+    pricePerMinute: 1200,
+    spec: "Carga 5 kg · 22 min de vuelo",
+    lat: 7.1205,
+    lng: -73.1102,
+    alert: "ok",
+    delivery: true,
+    hubId: "HUB-01",
+  }),
+  rent({
+    id: "DR-3315",
+    kind: "drone",
+    model: "AeroLift 4",
+    battery: 34,
+    pricePerMinute: 1200,
+    spec: "Carga 5 kg · 22 min de vuelo",
+    lat: 7.1226,
+    lng: -73.1255,
+    alert: "gps-lost",
+  }),
+  sale({
+    id: "SV-5001",
+    kind: "scooter",
+    model: "Volt S2 Edition",
+    battery: 100,
+    price: 2890000,
+    condition: "nuevo",
+    spec: "500 W · 32 km · IPX5",
+    hubId: "HUB-01",
+    lat: 7.1193,
+    lng: -73.109,
+  }),
+  sale({
+    id: "SV-5002",
+    kind: "scooter",
+    model: "Volt Pro",
+    battery: 96,
+    price: 3750000,
+    condition: "seminuevo",
+    spec: "750 W · 45 km · suspensión dual",
+    hubId: "HUB-02",
+    lat: 7.1098,
+    lng: -73.1066,
+  }),
+  sale({
+    id: "SV-5003",
+    kind: "bike",
+    model: "Urban e-Bike Lite",
+    battery: 100,
+    price: 4200000,
+    condition: "nuevo",
+    spec: "250 W · 60 km · aluminio",
+    hubId: "HUB-03",
+    lat: 7.1163,
+    lng: -73.1213,
+  }),
+  sale({
+    id: "SV-5004",
+    kind: "drone",
+    model: "AeroLift 4 Cargo",
+    battery: 100,
+    price: 9800000,
+    condition: "nuevo",
+    spec: "Carga 5 kg · GPS RTK",
+    hubId: "HUB-01",
+    lat: 7.1193,
+    lng: -73.109,
+  }),
 ];
 
-const LS = { users: "umh.mock.users", session: "umh.mock.session", reservations: "umh.mock.reservations", purchases: "umh.mock.purchases", alerts: "umh.mock.alerts" };
+const LS = {
+  users: "umh.mock.users",
+  session: "umh.mock.session",
+  reservations: "umh.mock.reservations",
+  purchases: "umh.mock.purchases",
+  alerts: "umh.mock.alerts",
+};
 const UNLOCK_TTL_MS = 120_000;
 
 type StoredUser = User & { passwordHash: string; faceTemplate?: number[] };
 
 const hasStorage = () => typeof window !== "undefined" && !!window.localStorage;
-const load = <T,>(key: string, fallback: T): T => {
+const load = <T>(key: string, fallback: T): T => {
   if (!hasStorage()) return fallback;
   try {
     const raw = window.localStorage.getItem(key);
@@ -57,7 +222,8 @@ const load = <T,>(key: string, fallback: T): T => {
 const save = (key: string, value: unknown) => {
   if (hasStorage()) window.localStorage.setItem(key, JSON.stringify(value));
 };
-const uid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
+const uid = (p: string) =>
+  `${p}-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
 const delay = (ms = 120) => new Promise<void>((r) => setTimeout(r, ms));
 
 async function hashPassword(password: string): Promise<string> {
@@ -67,7 +233,9 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 const cosine = (a: number[], b: number[]) => {
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     dot += a[i]! * b[i]!;
     na += a[i]! * a[i]!;
@@ -81,8 +249,22 @@ async function ensureSeedUsers() {
   if (!hasStorage() || load<StoredUser[]>(LS.users, []).length > 0) return;
   const base = { consentAt: Date.now(), faceEnrolled: false };
   save(LS.users, [
-    { ...base, id: "U-operador", name: "Operador NODO", email: "operador@nodo.co", role: "operator", passwordHash: await hashPassword("Operador123!") },
-    { ...base, id: "U-usuario", name: "Usuario Demo", email: "usuario@nodo.co", role: "user", passwordHash: await hashPassword("Usuario123!") },
+    {
+      ...base,
+      id: "U-operador",
+      name: "Operador NODO",
+      email: "operador@nodo.co",
+      role: "operator",
+      passwordHash: await hashPassword("Operador123!"),
+    },
+    {
+      ...base,
+      id: "U-usuario",
+      name: "Usuario Demo",
+      email: "usuario@nodo.co",
+      role: "user",
+      passwordHash: await hashPassword("Usuario123!"),
+    },
   ] satisfies StoredUser[]);
 }
 
@@ -159,9 +341,17 @@ export function createMockDataSource(): DataSource {
     },
     async triggerAlert({ vehicleId, type }: { vehicleId: string; type: ActiveAlertType }) {
       const v = requireVehicle(vehicleId);
-      if (v.mode !== "rent") throw new DataError("Solo se simulan alertas en vehículos de alquiler", "validation");
+      if (v.mode !== "rent")
+        throw new DataError("Solo se simulan alertas en vehículos de alquiler", "validation");
       v.alert = type;
-      const event: AlertEvent = { id: uid("AL"), vehicleId, type, lat: v.lat, lng: v.lng, ts: Date.now() };
+      const event: AlertEvent = {
+        id: uid("AL"),
+        vehicleId,
+        type,
+        lat: v.lat,
+        lng: v.lng,
+        ts: Date.now(),
+      };
       alerts = [event, ...alerts].slice(0, 200);
       save(LS.alerts, alerts);
       emit({ type: "vehicle", vehicle: structuredClone(v) });
@@ -182,10 +372,15 @@ export function createMockDataSource(): DataSource {
     async register({ name, email, password, consent }) {
       await ensureSeedUsers();
       await delay();
-      if (!consent) throw new DataError("Debes aceptar el tratamiento de datos (Ley 1581 de 2012)", "validation");
+      if (!consent)
+        throw new DataError(
+          "Debes aceptar el tratamiento de datos (Ley 1581 de 2012)",
+          "validation",
+        );
       const users = load<StoredUser[]>(LS.users, []);
       const mail = email.trim().toLowerCase();
-      if (users.some((u) => u.email === mail)) throw new DataError("Ese correo ya está registrado", "conflict");
+      if (users.some((u) => u.email === mail))
+        throw new DataError("Ese correo ya está registrado", "conflict");
       const user: StoredUser = {
         id: uid("U"),
         name: name.trim(),
@@ -204,7 +399,9 @@ export function createMockDataSource(): DataSource {
       await delay();
       const mail = email.trim().toLowerCase();
       const hash = await hashPassword(password);
-      const user = load<StoredUser[]>(LS.users, []).find((u) => u.email === mail && u.passwordHash === hash);
+      const user = load<StoredUser[]>(LS.users, []).find(
+        (u) => u.email === mail && u.passwordHash === hash,
+      );
       if (!user) throw new DataError("Correo o contraseña incorrectos", "unauthorized");
       save(LS.session, user.id);
       return publicUser(user);
@@ -225,10 +422,16 @@ export function createMockDataSource(): DataSource {
       const me = requireUser();
       const v = requireVehicle(vehicleId);
       if (v.mode !== "rent") throw new DataError("Este vehículo no está en alquiler", "validation");
-      if (modality === "delivery" && !v.delivery) throw new DataError("Este vehículo no admite entrega a domicilio", "validation");
-      if (modality === "delivery" && !address?.trim()) throw new DataError("Indica la dirección de entrega", "validation");
+      if (modality === "delivery" && !v.delivery)
+        throw new DataError("Este vehículo no admite entrega a domicilio", "validation");
+      if (modality === "delivery" && !address?.trim())
+        throw new DataError("Indica la dirección de entrega", "validation");
       const all = load<Reservation[]>(LS.reservations, []);
-      if (all.some((r) => r.vehicleId === vehicleId && (r.status === "requested" || r.status === "active")))
+      if (
+        all.some(
+          (r) => r.vehicleId === vehicleId && (r.status === "requested" || r.status === "active"),
+        )
+      )
         throw new DataError("El vehículo ya está reservado", "conflict");
       const reservation: Reservation = {
         id: uid("R"),
@@ -252,9 +455,11 @@ export function createMockDataSource(): DataSource {
       const all = load<Reservation[]>(LS.reservations, []);
       const r = all.find((x) => x.id === id && x.userId === me.id);
       if (!r) throw new DataError("Reserva no encontrada", "not_found");
-      const next = { start: { requested: "active" }, finish: { active: "completed" }, cancel: { requested: "cancelled", active: "cancelled" } }[event][
-        r.status as "requested" | "active"
-      ];
+      const next = {
+        start: { requested: "active" },
+        finish: { active: "completed" },
+        cancel: { requested: "cancelled", active: "cancelled" },
+      }[event][r.status as "requested" | "active"];
       if (!next) throw new DataError(`No se puede ${event} una reserva ${r.status}`, "conflict");
       r.status = next as Reservation["status"];
       if (event === "start") r.startedAt = Date.now();
@@ -273,8 +478,15 @@ export function createMockDataSource(): DataSource {
       const v = requireVehicle(vehicleId);
       if (v.mode !== "sale") throw new DataError("Este vehículo no está en venta", "validation");
       const all = load<Purchase[]>(LS.purchases, []);
-      if (all.some((p) => p.vehicleId === vehicleId)) throw new DataError("Este vehículo ya fue vendido", "conflict");
-      const purchase: Purchase = { id: uid("P"), vehicleId, userId: me.id, price: v.price ?? 0, createdAt: Date.now() };
+      if (all.some((p) => p.vehicleId === vehicleId))
+        throw new DataError("Este vehículo ya fue vendido", "conflict");
+      const purchase: Purchase = {
+        id: uid("P"),
+        vehicleId,
+        userId: me.id,
+        price: v.price ?? 0,
+        createdAt: Date.now(),
+      };
       save(LS.purchases, [purchase, ...all]);
       return purchase;
     },
@@ -288,7 +500,12 @@ export function createMockDataSource(): DataSource {
       requireUser();
       const v = requireVehicle(vehicleId);
       if (v.mode !== "rent") throw new DataError("Este vehículo no está en alquiler", "validation");
-      const s: UnlockSession = { id: uid("UL"), vehicleId, step: "qr", expiresAt: Date.now() + UNLOCK_TTL_MS };
+      const s: UnlockSession = {
+        id: uid("UL"),
+        vehicleId,
+        step: "qr",
+        expiresAt: Date.now() + UNLOCK_TTL_MS,
+      };
       sessions.set(s.id, s);
       return { ...s };
     },
@@ -332,7 +549,9 @@ export function createMockDataSource(): DataSource {
       const s = this_session(sessions, sessionId);
       if (s.step !== "ready") throw new DataError("Completa la verificación del casco", "conflict");
       const all = load<Reservation[]>(LS.reservations, []);
-      const existing = all.find((r) => r.vehicleId === s.vehicleId && r.userId === me.id && r.status === "requested");
+      const existing = all.find(
+        (r) => r.vehicleId === s.vehicleId && r.userId === me.id && r.status === "requested",
+      );
       const reservation: Reservation = existing ?? {
         id: uid("R"),
         vehicleId: s.vehicleId,

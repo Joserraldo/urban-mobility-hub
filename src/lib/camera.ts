@@ -51,7 +51,8 @@ export function captureTemplate(video: HTMLVideoElement): number[] | null {
   ctx.drawImage(video, 0, 0, 16, 16);
   const { data } = ctx.getImageData(0, 0, 16, 16);
   const gray: number[] = [];
-  for (let i = 0; i < data.length; i += 4) gray.push(0.299 * data[i]! + 0.587 * data[i + 1]! + 0.114 * data[i + 2]!);
+  for (let i = 0; i < data.length; i += 4)
+    gray.push(0.299 * data[i]! + 0.587 * data[i + 1]! + 0.114 * data[i + 2]!);
   const mean = gray.reduce((a, b) => a + b, 0) / gray.length;
   return gray.map((g) => g - mean);
 }
@@ -69,7 +70,8 @@ export const cosineSimilarity = (a: number[], b: number[]) => {
 };
 
 const FACE_KEY = "umh.face.template";
-export const saveLocalFace = (t: number[]) => window.localStorage.setItem(FACE_KEY, JSON.stringify(t));
+export const saveLocalFace = (t: number[]) =>
+  window.localStorage.setItem(FACE_KEY, JSON.stringify(t));
 export const loadLocalFace = (): number[] | null => {
   try {
     const raw = window.localStorage.getItem(FACE_KEY);
@@ -87,7 +89,11 @@ declare global {
 }
 
 /** Lee códigos QR de la cámara con la API nativa BarcodeDetector (si el navegador la ofrece). */
-export function useQrScanner(video: React.RefObject<HTMLVideoElement | null>, active: boolean, onCode: (code: string) => void) {
+export function useQrScanner(
+  video: React.RefObject<HTMLVideoElement | null>,
+  active: boolean,
+  onCode: (code: string) => void,
+) {
   const cb = useRef(onCode);
   cb.current = onCode;
   const supported = typeof window !== "undefined" && "BarcodeDetector" in window;
@@ -114,7 +120,11 @@ export function useQrScanner(video: React.RefObject<HTMLVideoElement | null>, ac
  * simulado que elige el usuario en modo demostración; para producción se reemplaza el cuerpo por el
  * modelo real (p. ej. MediaPipe/TF.js) sin tocar la interfaz.
  */
-export async function detectHelmet(opts: { simulatedWearing: boolean }): Promise<{ helmetDetected: boolean; confidence: number }> {
+export async function detectHelmet(opts: {
+  simulatedWearing: boolean;
+}): Promise<{ helmetDetected: boolean; confidence: number }> {
   await new Promise((r) => setTimeout(r, 1200));
-  return opts.simulatedWearing ? { helmetDetected: true, confidence: 0.93 } : { helmetDetected: false, confidence: 0.91 };
+  return opts.simulatedWearing
+    ? { helmetDetected: true, confidence: 0.93 }
+    : { helmetDetected: false, confidence: 0.91 };
 }
