@@ -1,0 +1,40 @@
+flowchart TB
+  U["Usuario final"]
+  O["Operador"]
+  PAY["Pasarela de pagos"]
+  FAC["Servicio facial"]
+  IOT["Vehículos IoT / Raspberry Pi"]
+  P1(("1\nPortal de negocio\n(catálogo, compra,\nalquiler)"))
+  P2(("2\nAutenticación y\ndesbloqueo"))
+  P3(("3\nTracking en\ntiempo real"))
+  P4(("4\nSeguridad IoT\n(triggers y alertas)"))
+  P5(("5\nAdministración y\ntelemetría"))
+  D1[("D1 Usuarios,\nconsentimientos y\nplantillas cifradas")]
+  D2[("D2 Flota y hubs\n(gemelos digitales)")]
+  D3[("D3 Reservas\ny compras")]
+  D4[("D4 Log de alertas")]
+  U -- "solicitud compra/alquiler" --> P1
+  P1 -- "catálogo, confirmación" --> U
+  P1 -- "orden de cobro" --> PAY
+  PAY -- "resultado pago" --> P1
+  P1 <-- "consulta vehículos/hubs" --> D2
+  P1 -- "crea reserva/compra" --> D3
+  U -- "credenciales, consentimiento, QR, foto casco/rostro" --> P2
+  P2 -- "estado de desbloqueo" --> U
+  P2 <-- "usuario, plantilla" --> D1
+  P2 -- "valida rostro" --> FAC
+  FAC -- "coincidencia" --> P2
+  P2 -- "lee reserva" --> D3
+  P2 -- "comando desbloqueo" --> IOT
+  IOT -- "posición, batería" --> P3
+  P3 -- "actualiza estado" --> D2
+  P3 -- "posición ≤5 s" --> U
+  IOT -- "eventos: sin casco, caída, GPS, batería" --> P4
+  P4 -- "lee estado vehículo" --> D2
+  P4 -- "registra evento con marca de tiempo" --> D4
+  P4 -- "notificación <1 s" --> O
+  O -- "simula evento, gestiona catálogo/hubs" --> P5
+  P5 -- "inyecta evento" --> P4
+  P5 <-- "CRUD catálogo, hubs" --> D2
+  P5 -- "lee" --> D4
+  P5 -- "KPIs, detalle gemelo, log" --> O

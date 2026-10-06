@@ -1,0 +1,21 @@
+flowchart TB
+  subgraph CLI["Dispositivo del usuario"]
+    BR["Navegador (PWA)"]
+  end
+  subgraph EDGE["Cloudflare (plan 5.3, a confirmar por Despliegue)"]
+    CDN["CDN / páginas prerenderizadas"]
+    WK["Worker: SSR + /api/*"]
+    D1[("D1 (SQLite)")]
+    DO["Durable Object / WebSocket (por confirmar)"]
+  end
+  subgraph LAB["Entorno de desarrollo local"]
+    NODE["Node 22 + npm<br/>servidor de desarrollo"]
+    SQLF[("archivo SQLite")]
+    AED["aedes + publicadores"]
+  end
+  BR -- HTTPS --> CDN
+  BR -- HTTPS --> WK
+  BR -- WSS --> DO
+  WK --> D1
+  NODE --> SQLF
+  NODE --> AED

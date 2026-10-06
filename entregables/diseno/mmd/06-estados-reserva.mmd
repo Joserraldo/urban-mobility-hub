@@ -1,0 +1,8 @@
+stateDiagram-v2
+  [*] --> Solicitada: usuario reserva (RF-05)
+  Solicitada --> Activa: desbloqueo exitoso o entrega a domicilio confirmada
+  Solicitada --> Cancelada: usuario cancela o vence
+  Activa --> Completada: vehículo devuelto en hub y cobro
+  Activa --> Cancelada: cierre por operador tras incidente grave
+  Completada --> [*]
+  Cancelada --> [*]

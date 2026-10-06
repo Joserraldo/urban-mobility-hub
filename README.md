@@ -1,5 +1,7 @@
 # Urban Mobility Hub
 
+[![CI](https://github.com/Joserraldo/urban-mobility-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Joserraldo/urban-mobility-hub/actions/workflows/ci.yml)
+
 Plataforma multimodal de micromovilidad, logística y venta de vehículos urbanos. El proyecto integra en una sola solución la **venta** y el **alquiler** de patinetas eléctricas, bicicletas y drones urbanos, con seguimiento de flota en tiempo real sobre un mapa interactivo y un sistema de seguridad IoT basado en gemelos digitales (*digital twins*).
 
 > Proyecto académico — Ingeniería de Software II, Universidad Autónoma de Bucaramanga (UNAB).

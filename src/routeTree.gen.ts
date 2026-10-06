@@ -12,6 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
+import { Route as CatalogoSlugRouteImport } from './routes/catalogo.$slug'
+import { Route as GuiasIndexRouteImport } from './routes/guias.index'
+import { Route as GuiasSlugRouteImport } from './routes/guias.$slug'
+import { Route as HubsIndexRouteImport } from './routes/hubs.index'
+import { Route as HubsHubIdRouteImport } from './routes/hubs.$hubId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +37,153 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistroRoute = RegistroRouteImport.update({
+  id: '/registro',
+  path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
+  id: '/catalogo/',
+  path: '/catalogo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoSlugRoute = CatalogoSlugRouteImport.update({
+  id: '/catalogo/$slug',
+  path: '/catalogo/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuiasIndexRoute = GuiasIndexRouteImport.update({
+  id: '/guias/',
+  path: '/guias/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuiasSlugRoute = GuiasSlugRouteImport.update({
+  id: '/guias/$slug',
+  path: '/guias/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HubsIndexRoute = HubsIndexRouteImport.update({
+  id: '/hubs/',
+  path: '/hubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HubsHubIdRoute = HubsHubIdRouteImport.update({
+  id: '/hubs/$hubId',
+  path: '/hubs/$hubId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
+  '/registro': typeof RegistroRoute
+  '/catalogo/$slug': typeof CatalogoSlugRoute
+  '/guias/$slug': typeof GuiasSlugRoute
+  '/hubs/$hubId': typeof HubsHubIdRoute
+  '/catalogo/': typeof CatalogoIndexRoute
+  '/guias/': typeof GuiasIndexRoute
+  '/hubs/': typeof HubsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
+  '/registro': typeof RegistroRoute
+  '/catalogo/$slug': typeof CatalogoSlugRoute
+  '/guias/$slug': typeof GuiasSlugRoute
+  '/hubs/$hubId': typeof HubsHubIdRoute
+  '/catalogo': typeof CatalogoIndexRoute
+  '/guias': typeof GuiasIndexRoute
+  '/hubs': typeof HubsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
+  '/registro': typeof RegistroRoute
+  '/catalogo/$slug': typeof CatalogoSlugRoute
+  '/guias/$slug': typeof GuiasSlugRoute
+  '/hubs/$hubId': typeof HubsHubIdRoute
+  '/catalogo/': typeof CatalogoIndexRoute
+  '/guias/': typeof GuiasIndexRoute
+  '/hubs/': typeof HubsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/app'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/faq'
+    | '/login'
+    | '/registro'
+    | '/catalogo/$slug'
+    | '/guias/$slug'
+    | '/hubs/$hubId'
+    | '/catalogo/'
+    | '/guias/'
+    | '/hubs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/app'
-  id: '__root__' | '/' | '/admin' | '/app'
+  to:
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/faq'
+    | '/login'
+    | '/registro'
+    | '/catalogo/$slug'
+    | '/guias/$slug'
+    | '/hubs/$hubId'
+    | '/catalogo'
+    | '/guias'
+    | '/hubs'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/faq'
+    | '/login'
+    | '/registro'
+    | '/catalogo/$slug'
+    | '/guias/$slug'
+    | '/hubs/$hubId'
+    | '/catalogo/'
+    | '/guias/'
+    | '/hubs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AppRoute: typeof AppRoute
+  FaqRoute: typeof FaqRoute
+  LoginRoute: typeof LoginRoute
+  RegistroRoute: typeof RegistroRoute
+  CatalogoSlugRoute: typeof CatalogoSlugRoute
+  GuiasSlugRoute: typeof GuiasSlugRoute
+  HubsHubIdRoute: typeof HubsHubIdRoute
+  CatalogoIndexRoute: typeof CatalogoIndexRoute
+  GuiasIndexRoute: typeof GuiasIndexRoute
+  HubsIndexRoute: typeof HubsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +209,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registro': {
+      id: '/registro'
+      path: '/registro'
+      fullPath: '/registro'
+      preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo/': {
+      id: '/catalogo/'
+      path: '/catalogo'
+      fullPath: '/catalogo/'
+      preLoaderRoute: typeof CatalogoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo/$slug': {
+      id: '/catalogo/$slug'
+      path: '/catalogo/$slug'
+      fullPath: '/catalogo/$slug'
+      preLoaderRoute: typeof CatalogoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guias/': {
+      id: '/guias/'
+      path: '/guias'
+      fullPath: '/guias/'
+      preLoaderRoute: typeof GuiasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guias/$slug': {
+      id: '/guias/$slug'
+      path: '/guias/$slug'
+      fullPath: '/guias/$slug'
+      preLoaderRoute: typeof GuiasSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hubs/': {
+      id: '/hubs/'
+      path: '/hubs'
+      fullPath: '/hubs/'
+      preLoaderRoute: typeof HubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hubs/$hubId': {
+      id: '/hubs/$hubId'
+      path: '/hubs/$hubId'
+      fullPath: '/hubs/$hubId'
+      preLoaderRoute: typeof HubsHubIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +279,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AppRoute: AppRoute,
+  FaqRoute: FaqRoute,
+  LoginRoute: LoginRoute,
+  RegistroRoute: RegistroRoute,
+  CatalogoSlugRoute: CatalogoSlugRoute,
+  GuiasSlugRoute: GuiasSlugRoute,
+  HubsHubIdRoute: HubsHubIdRoute,
+  CatalogoIndexRoute: CatalogoIndexRoute,
+  GuiasIndexRoute: GuiasIndexRoute,
+  HubsIndexRoute: HubsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

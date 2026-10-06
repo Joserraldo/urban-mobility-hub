@@ -1,0 +1,40 @@
+name: Solicitud de cambio (CR)
+description: Control de cambios GCS - cambia un requisito, el contrato de API o un módulo crítico
+title: "CR: "
+labels: [cambio]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Ítem afectado
+      placeholder: SRS / API / código / riesgo
+    validations:
+      required: true
+  - type: textarea
+    id: cambio
+    attributes:
+      label: Descripción del cambio
+    validations:
+      required: true
+  - type: textarea
+    id: motivo
+    attributes:
+      label: Motivo
+    validations:
+      required: true
+  - type: textarea
+    id: impacto
+    attributes:
+      label: Impacto (alcance / tiempo / riesgo / pruebas)
+    validations:
+      required: true
+  - type: input
+    id: req
+    attributes:
+      label: Requisitos afectados
+      placeholder: RF-xx, RNF-xx
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Decisión (la completa el responsable)
+      options: [Pendiente, Aprobado, Rechazado, Pospuesto]

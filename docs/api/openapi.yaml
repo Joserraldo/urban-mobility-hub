@@ -1,0 +1,563 @@
+openapi: 3.0.3
+info:
+  title: Urban Mobility Hub API
+  version: 0.1.0
+  description: |
+    Contrato REST del backend (T1). Los tipos TypeScript equivalentes viven en `src/shared/types`.
+
+    **Cómo leerlo**: cada ruta dice qué requisito (RF/RNF) cubre, quién puede llamarla y qué errores devuelve.
+    - Fechas/horas: milisegundos desde epoch (`ts`, `createdAt`...). Coordenadas planas `lat`/`lng`.
+    - Dinero: COP entero.
+    - Todos los errores tienen la misma forma: `{ "error": { "code", "message", "details?" } }`.
+    - Autenticación: cookie HttpOnly `umh_session` **o** cabecera `Authorization: Bearer <token>`.
+    - Dispositivos IoT (`/api/ingest`): cabecera `x-ingest-key`.
+servers:
+  - url: http://localhost:8080
+tags:
+  - { name: system }
+  - { name: auth, description: "Registro, login, consentimiento y biometría (RF-10, RNF-03/05, RD11)" }
+  - { name: catalog, description: "Vehículos y hubs (RF-02, RF-04, RF-06, RF-07, RF-14, RF-16, RF-17)" }
+  - { name: commerce, description: "Compra y reservas (RF-03, RF-05)" }
+  - { name: unlock, description: "Desbloqueo en pasos (RF-09, RF-10)" }
+  - { name: iot, description: "Telemetría, alertas y simulador (RF-08, RF-11, RF-12, RF-15)" }
+  - { name: realtime, description: "WebSocket / SSE (D3)" }
+  - { name: admin, description: "Operador: KPIs y catálogo (RF-13, RF-20..24)" }
+paths:
+  /api/health:
+    get:
+      tags: [system]
+      summary: Estado del servicio (RNF-06)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /api/map/config:
+    get:
+      tags: [catalog]
+      summary: Cuadro geográfico para proyectar lat/lng en el mapa (RF-06)
+      responses:
+        "200":
+          content: { application/json: { schema: { $ref: "#/components/schemas/MapConfig" } } }
+          description: OK
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Crear cuenta con consentimiento explícito (Ley 1581)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RegisterRequest" } } }
+      responses:
+        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "409": { description: "EMAIL_TAKEN", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "422": { description: "CONSENT_REQUIRED", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/LoginRequest" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
+        "401": { description: "INVALID_CREDENTIALS (mensaje genérico, no revela si el correo existe)", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "429": { description: "RATE_LIMITED tras 5 intentos fallidos por correo en 15 min", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Cerrar sesión (revoca el token)
+      security: [{ bearer: [] }]
+      responses:
+        "204": { description: Sin contenido }
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: Usuario de la sesión actual
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /api/auth/face:
+    put:
+      tags: [auth]
+      summary: Registrar plantilla facial (se guarda CIFRADA, RNF-03)
+      description: Requiere `biometricConsent: true` (consentimiento separado).
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/FaceEnrollRequest" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "422": { description: CONSENT_REQUIRED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    delete:
+      tags: [auth]
+      summary: Eliminar la plantilla facial (derecho de supresión)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+  /api/vehicles:
+    get:
+      tags: [catalog]
+      summary: Listar vehículos (catálogo de venta mode=sale, flota mode=rent)
+      parameters:
+        - { name: mode, in: query, schema: { type: string, enum: [rent, sale] } }
+        - { name: kind, in: query, schema: { type: string, enum: [scooter, bike, drone] } }
+        - { name: hubId, in: query, schema: { type: string } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Vehicle" } } } } }
+  /api/vehicles/{id}:
+    get:
+      tags: [catalog]
+      summary: Detalle del gemelo digital (RF-14)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/hubs:
+    get:
+      tags: [catalog]
+      summary: Listar hubs (RF-06)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Hub" } } } } }
+  /api/hubs/{id}:
+    get:
+      tags: [catalog]
+      summary: Detalle de hub con vehículos de alquiler y venta (RF-07)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/HubDetail" } } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/purchases:
+    post:
+      tags: [commerce]
+      summary: Comprar un vehículo del catálogo (RF-03). Pasarela de pago SIMULADA.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/PurchaseRequest" } } }
+      responses:
+        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/Purchase" } } } }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: VEHICLE_UNAVAILABLE (ya vendido o no es de venta), content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    get:
+      tags: [commerce]
+      summary: Mis compras (operador: todas)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Purchase" } } } } }
+  /api/reservations:
+    post:
+      tags: [commerce]
+      summary: Crear reserva de alquiler (RF-05). Estado inicial `requested`.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReservationRequest" } } }
+      responses:
+        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "409": { description: VEHICLE_UNAVAILABLE / entrega a domicilio no soportada por el vehículo, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    get:
+      tags: [commerce]
+      summary: Mis reservas (operador: todas)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Reservation" } } } } }
+  /api/reservations/{id}/cancel:
+    post:
+      tags: [commerce]
+      summary: Cancelar (requested|active -> cancelled)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
+        "409": { description: INVALID_TRANSITION, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/reservations/{id}/finish:
+    post:
+      tags: [commerce]
+      summary: Terminar viaje (active -> completed) y calcular costo = ceil(minutos) × tarifa
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
+        "409": { description: INVALID_TRANSITION, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/unlock/sessions:
+    post:
+      tags: [unlock]
+      summary: Paso 0 - abrir sesión de desbloqueo para una reserva `requested` (RF-09). TTL 120 s.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reservationId], properties: { reservationId: { type: string } } } } }
+      responses:
+        "201": { description: Creada (step = qr), content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+  /api/unlock/sessions/{id}/qr:
+    post:
+      tags: [unlock]
+      summary: Paso 1 - escanear QR (código válido = `UMH:<vehicleId>`)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string } } } } }
+      responses:
+        "200": { description: "step = helmet si es correcto; step = denied (reason) si no. HTTP 200 en ambos: el resultado está en `step`.", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+  /api/unlock/sessions/{id}/face:
+    post:
+      tags: [unlock]
+      summary: Paso 1 alterno - reconocimiento facial en lugar del QR (RF-10). Umbral de similitud 0.85.
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [descriptor], properties: { descriptor: { type: array, items: { type: number } } } } } }
+      responses:
+        "200": { description: "step = helmet o denied", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+        "422": { description: BIOMETRIC_NOT_ENROLLED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/unlock/sessions/{id}/helmet:
+    post:
+      tags: [unlock]
+      summary: Paso 2 - verificación de casco por cámara (confianza >= 0.8)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [helmetDetected, confidence]
+              properties: { helmetDetected: { type: boolean }, confidence: { type: number, minimum: 0, maximum: 1 } }
+      responses:
+        "200": { description: "step = ready o denied", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+        "422": { description: "UNLOCK_STEP_ORDER si aún no se pasó el QR/rostro", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/unlock/sessions/{id}/start:
+    post:
+      tags: [unlock]
+      summary: Paso 3 - "Iniciar viaje" (solo si step = ready y no expiró). La reserva pasa a `active`.
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
+        "422": { description: "HELMET_NOT_VERIFIED / UNLOCK_STEP_ORDER / UNLOCK_EXPIRED", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/ingest:
+    post:
+      tags: [iot]
+      summary: Entrada de telemetría/alerta de un dispositivo (mismo payload que MQTT) (RF-08, RF-11, RD6)
+      description: |
+        Evalúa los triggers de seguridad (RF-11), actualiza el gemelo, guarda la alerta en el log (RF-12, RNF-04)
+        y publica el evento en tiempo real. Responde 202 de inmediato.
+      security: [{ ingestKey: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/IngestPayload" } } }
+      responses:
+        "202": { description: Aceptado, content: { application/json: { schema: { type: object, properties: { accepted: { type: boolean }, alert: { $ref: "#/components/schemas/AlertType" } } } } } }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { description: "Falta o es inválida la clave x-ingest-key", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/alerts:
+    get:
+      tags: [iot]
+      summary: Log auditable de alertas, más recientes primero (RF-12, RNF-04). Solo operador.
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+        - { name: vehicleId, in: query, schema: { type: string } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/AlertEvent" } } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /api/admin/simulate-alert:
+    post:
+      tags: [admin]
+      summary: Simulador de eventos IoT (RF-15). Solo operador. Sigue el MISMO camino que /api/ingest.
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SimulateAlertRequest" } } }
+      responses:
+        "202": { description: Aceptado, content: { application/json: { schema: { $ref: "#/components/schemas/AlertEvent" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { description: "VEHICLE_UNAVAILABLE: el simulador solo aplica a vehículos en alquiler", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  /api/admin/alerts/{vehicleId}/clear:
+    post:
+      tags: [admin]
+      summary: El operador resuelve la alerta (el vehículo vuelve a `ok`)
+      security: [{ bearer: [] }]
+      parameters: [{ name: vehicleId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+  /api/admin/kpis:
+    get:
+      tags: [admin]
+      summary: Indicadores agregados (RF-13). Solo operador.
+      security: [{ bearer: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/FleetKpis" } } } }
+  /api/admin/hubs:
+    post:
+      tags: [admin]
+      summary: Crear hub (RF-21, RNF-08). Solo operador.
+      security: [{ bearer: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+      responses:
+        "201": { description: Creado, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/admin/hubs/{id}:
+    patch:
+      tags: [admin]
+      summary: Editar / activar-desactivar hub
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+  /api/admin/vehicles:
+    post:
+      tags: [admin]
+      summary: Crear vehículo (alquiler o venta) (RF-21, RNF-08). Solo operador.
+      security: [{ bearer: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses:
+        "201": { description: Creado, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/admin/vehicles/{id}:
+    patch:
+      tags: [admin]
+      summary: Editar vehículo (precio, estado, hub...)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+  /api/realtime/config:
+    get:
+      tags: [realtime]
+      summary: Cómo conectarse a tiempo real en ESTE despliegue (wsUrl puede ser null)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/RealtimeConfig" } } } }
+  /api/stream:
+    get:
+      tags: [realtime]
+      summary: SSE (text/event-stream). Cada `data:` es un RealtimeEvent JSON. Primer evento = snapshot.
+      responses:
+        "200": { description: Stream, content: { text/event-stream: { schema: { type: string } } } }
+  /api/ws:
+    get:
+      tags: [realtime]
+      summary: Upgrade a WebSocket. Mismos eventos que SSE. Local puede usar otro puerto (ver realtime/config).
+      responses:
+        "101": { description: Switching Protocols }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, description: "Token de /auth/login. También acepta la cookie umh_session." }
+    ingestKey: { type: apiKey, in: header, name: x-ingest-key }
+  responses:
+    ValidationError: { description: VALIDATION_ERROR, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    Unauthenticated: { description: UNAUTHENTICATED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    Forbidden: { description: FORBIDDEN, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    NotFound: { description: NOT_FOUND, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    Conflict: { description: CONFLICT, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+  schemas:
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [VALIDATION_ERROR, UNAUTHENTICATED, INVALID_CREDENTIALS, FORBIDDEN, NOT_FOUND, CONFLICT, EMAIL_TAKEN, VEHICLE_UNAVAILABLE, INVALID_TRANSITION, CONSENT_REQUIRED, HELMET_NOT_VERIFIED, QR_MISMATCH, FACE_NOT_MATCHED, BIOMETRIC_NOT_ENROLLED, UNLOCK_STEP_ORDER, UNLOCK_EXPIRED, RATE_LIMITED, INTERNAL_ERROR]
+            message: { type: string }
+            details: {}
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        db: { type: string, enum: [up, down] }
+        realtime: { type: string }
+        uptimeMs: { type: integer }
+        version: { type: string }
+    AlertType: { type: string, enum: [ok, no-helmet, crash, gps-lost, low-battery] }
+    ActiveAlertType: { type: string, enum: [no-helmet, crash, gps-lost, low-battery] }
+    Hub:
+      type: object
+      required: [id, name, zone, lat, lng, capacity, occupied, charging, active]
+      properties:
+        id: { type: string, example: HUB-01 }
+        name: { type: string }
+        zone: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        capacity: { type: integer }
+        occupied: { type: integer }
+        charging: { type: integer }
+        active: { type: boolean }
+    Vehicle:
+      type: object
+      required: [id, kind, model, mode, battery, spec, lat, lng, alert, qrCode, status]
+      properties:
+        id: { type: string, example: SC-1042 }
+        kind: { type: string, enum: [scooter, bike, drone] }
+        model: { type: string }
+        mode: { type: string, enum: [rent, sale] }
+        battery: { type: integer, minimum: 0, maximum: 100 }
+        pricePerMinute: { type: integer }
+        price: { type: integer }
+        condition: { type: string, enum: [nuevo, seminuevo] }
+        spec: { type: string }
+        hubId: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        alert: { $ref: "#/components/schemas/AlertType" }
+        delivery: { type: boolean }
+        qrCode: { type: string, example: "UMH:SC-1042" }
+        status: { type: string, enum: [available, reserved, in-use, sold, offline] }
+    HubDetail:
+      allOf:
+        - { $ref: "#/components/schemas/Hub" }
+        - type: object
+          properties:
+            rentVehicles: { type: array, items: { $ref: "#/components/schemas/Vehicle" } }
+            saleVehicles: { type: array, items: { $ref: "#/components/schemas/Vehicle" } }
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [user, operator] }
+        consentAt: { type: integer }
+        faceEnrolled: { type: boolean }
+    AuthResponse:
+      type: object
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        token: { type: string }
+    RegisterRequest:
+      type: object
+      required: [name, email, password, consent]
+      properties:
+        name: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        consent: { type: boolean, enum: [true] }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties: { email: { type: string }, password: { type: string } }
+    FaceEnrollRequest:
+      type: object
+      required: [descriptor, biometricConsent]
+      properties:
+        descriptor: { type: array, items: { type: number }, minItems: 16, maxItems: 512 }
+        biometricConsent: { type: boolean, enum: [true] }
+    PurchaseRequest:
+      type: object
+      required: [vehicleId]
+      properties:
+        vehicleId: { type: string }
+        paymentMethod: { type: string, enum: [card, pse, cash], default: card }
+    Purchase:
+      type: object
+      properties:
+        id: { type: string }
+        vehicleId: { type: string }
+        userId: { type: string }
+        price: { type: integer }
+        paymentMethod: { type: string }
+        createdAt: { type: integer }
+    ReservationRequest:
+      type: object
+      required: [vehicleId, modality]
+      properties:
+        vehicleId: { type: string }
+        modality: { type: string, enum: [hub, delivery] }
+        address: { type: string, description: "Obligatoria si modality = delivery" }
+    Reservation:
+      type: object
+      properties:
+        id: { type: string }
+        vehicleId: { type: string }
+        userId: { type: string }
+        modality: { type: string, enum: [hub, delivery] }
+        address: { type: string }
+        status: { type: string, enum: [requested, active, completed, cancelled] }
+        createdAt: { type: integer }
+        startedAt: { type: integer }
+        endedAt: { type: integer }
+        totalCost: { type: integer }
+    UnlockSession:
+      type: object
+      properties:
+        id: { type: string }
+        vehicleId: { type: string }
+        reservationId: { type: string }
+        step: { type: string, enum: [qr, helmet, ready, denied, expired] }
+        reason: { type: string }
+        expiresAt: { type: integer }
+    AlertEvent:
+      type: object
+      properties:
+        id: { type: string }
+        vehicleId: { type: string }
+        type: { $ref: "#/components/schemas/ActiveAlertType" }
+        lat: { type: number }
+        lng: { type: number }
+        ts: { type: integer }
+        source: { type: string, enum: [telemetry, simulator] }
+    SimulateAlertRequest:
+      type: object
+      required: [vehicleId, type]
+      properties:
+        vehicleId: { type: string }
+        type: { $ref: "#/components/schemas/ActiveAlertType" }
+    FleetKpis:
+      type: object
+      properties:
+        connectedVehicles: { type: integer }
+        activeHubs: { type: integer }
+        averageBattery: { type: integer }
+        activeAlerts: { type: integer }
+    MapConfig:
+      type: object
+      properties:
+        center: { type: object, properties: { lat: { type: number }, lng: { type: number } } }
+        bounds: { type: object, properties: { north: { type: number }, south: { type: number }, east: { type: number }, west: { type: number } } }
+        defaultZoom: { type: integer }
+    RealtimeConfig:
+      type: object
+      properties:
+        wsUrl: { type: string, nullable: true }
+        sseUrl: { type: string }
+        pollIntervalMs: { type: integer }
+    IngestPayload:
+      oneOf:
+        - type: object
+          required: [kind, vehicleId, ts, lat, lng, battery, speedKmh, helmetOn, impactG, gpsFixAgeMs, tripActive]
+          properties:
+            kind: { type: string, enum: [telemetry] }
+            vehicleId: { type: string }
+            ts: { type: integer }
+            lat: { type: number }
+            lng: { type: number }
+            battery: { type: number }
+            speedKmh: { type: number }
+            helmetOn: { type: boolean }
+            impactG: { type: number }
+            gpsFixAgeMs: { type: integer }
+            tripActive: { type: boolean }
+        - type: object
+          required: [kind, vehicleId, ts, type]
+          properties:
+            kind: { type: string, enum: [alert] }
+            vehicleId: { type: string }
+            ts: { type: integer }
+            type: { $ref: "#/components/schemas/ActiveAlertType" }
+            lat: { type: number }
+            lng: { type: number }
