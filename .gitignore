@@ -34,3 +34,14 @@ dist-ssr
 # Local agent context & working docs
 .opencode/
 Documents/
+
+# QA
+coverage/
+tests/results/e2e-artifacts/
+playwright-report/
+test-results/
+
+# Secretos locales (claves de API del mapa, etc.)
+.env
+.env.*
+!.env.example

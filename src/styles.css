@@ -176,3 +176,99 @@
     transform: scale(1.9);
   }
 }
+
+/* ---- Mapa (Leaflet): marcadores y apilamiento ---- */
+.leaflet-container {
+  background: oklch(0.18 0.006 285);
+  font-family: var(--font-sans);
+  z-index: 0;
+}
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6);
+}
+.leaflet-control-attribution {
+  background: oklch(0.145 0.005 285 / 80%) !important;
+  color: oklch(0.7 0.012 285) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--primary-glow) !important;
+}
+.umh-marker {
+  background: none;
+  border: 0;
+}
+.umh-marker button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.umh-marker button:hover,
+.umh-marker button:focus-visible {
+  transform: scale(1.12);
+  outline: 2px solid var(--primary-glow);
+  outline-offset: 2px;
+}
+.umh-hub {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--gradient-primary);
+  border: 2px solid oklch(1 0 0 / 35%);
+  box-shadow: var(--shadow-glow);
+}
+.umh-hub svg {
+  width: 22px;
+  height: 22px;
+}
+.umh-hub.is-selected {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary-glow) 45%, transparent), var(--shadow-glow);
+}
+.umh-hub.is-inactive {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.umh-vehicle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--surface-elevated);
+  border: 2px solid var(--primary-glow);
+  color: var(--primary-glow) !important;
+  box-shadow: 0 4px 14px oklch(0 0 0 / 50%);
+}
+.umh-vehicle.is-alert {
+  border-color: var(--destructive);
+  color: var(--destructive) !important;
+  animation: umh-pulse 1.4s ease-out infinite;
+}
+.umh-vehicle.is-selected {
+  background: var(--primary);
+  color: white !important;
+}
+.umh-sale {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--warning);
+  color: oklch(0.2 0.02 80);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@keyframes umh-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--destructive) 60%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .umh-vehicle.is-alert { animation: none; }
+}

@@ -1,0 +1,124 @@
+classDiagram
+  direction LR
+  class User {
+    +string id
+    +string email
+    +string passwordHash
+    +Role role
+    +register()
+    +login()
+  }
+  class Consent {
+    +string userId
+    +string purpose
+    +Date acceptedAt
+    +bool revoked
+  }
+  class BiometricTemplate {
+    +string userId
+    +bytes cipherText
+    +bytes iv
+    +encrypt()
+    +matches(probe) bool
+  }
+  class Vehicle {
+    +string id
+    +VehicleKind kind
+    +VehicleMode mode
+    +int battery
+    +number lat
+    +number lng
+    +AlertType alert
+    +bool delivery
+    +updateTelemetry()
+  }
+  class Hub {
+    +string id
+    +string name
+    +string zone
+    +number lat
+    +number lng
+    +int capacity
+    +int occupied
+    +int charging
+    +bool active
+  }
+  class Reservation {
+    +string id
+    +RentalModality modality
+    +ReservationStatus status
+    +string address
+    +start()
+    +finish()
+    +cancel()
+  }
+  class Purchase {
+    +string id
+    +int amountCOP
+    +Date paidAt
+  }
+  class AlertEvent {
+    +string id
+    +string vehicleId
+    +ActiveAlertType type
+    +number lat
+    +number lng
+    +number ts
+  }
+  class UnlockSession {
+    +string id
+    +string vehicleId
+    +UnlockStep step
+    +number expiresAt
+  }
+  class DataSource {
+    <<interface>>
+    +listVehicles(filter) Vehicle[]
+    +listHubs() Hub[]
+    +subscribeFleet(onEvent) Unsubscribe
+    +createReservation(input) Reservation
+    +createUnlockSession(vehicleId) UnlockSession
+    +triggerAlert(input) AlertEvent
+  }
+  class MockDataSource
+  class ApiDataSource
+  class FleetRepository {
+    <<interface>>
+    +listVehicles() Vehicle[]
+    +appendAlert(a) AlertEvent
+  }
+  class SqliteFleetRepository
+  class SecurityTrigger {
+    <<interface>>
+    +evaluate(v) AlertType
+  }
+  class NoHelmetTrigger
+  class FallTrigger
+  class GpsLossTrigger
+  class LowBatteryTrigger
+  class UnlockService {
+    +scanQr(sessionId, code) UnlockSession
+    +verifyHelmet(sessionId, result) UnlockSession
+    +verifyFace(sessionId, result) UnlockSession
+    +startTrip(sessionId) Reservation
+  }
+  User "1" --> "*" Reservation : realiza
+  User "1" --> "*" Purchase : realiza
+  User "1" --> "*" Consent : otorga
+  User "1" --> "0..1" BiometricTemplate : tiene
+  Vehicle "1" --> "*" Reservation : es reservado en
+  Vehicle "1" --> "0..1" Purchase : se vende en
+  Vehicle "*" --> "0..1" Hub : asignado a
+  DataSource <|.. MockDataSource
+  DataSource <|.. ApiDataSource
+  FleetRepository <|.. SqliteFleetRepository
+  ApiDataSource ..> FleetRepository : "vía REST, en el servidor"
+  SecurityTrigger <|.. NoHelmetTrigger
+  SecurityTrigger <|.. FallTrigger
+  SecurityTrigger <|.. GpsLossTrigger
+  SecurityTrigger <|.. LowBatteryTrigger
+  UnlockService ..> UnlockSession : avanza
+  UnlockService ..> FleetRepository : usa
+  UnlockService ..> BiometricTemplate : usa
+  SecurityTrigger ..> AlertEvent : produce
+  Vehicle "1" --> "*" AlertEvent : genera

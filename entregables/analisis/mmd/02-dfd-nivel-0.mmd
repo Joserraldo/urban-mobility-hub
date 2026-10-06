@@ -1,0 +1,20 @@
+flowchart LR
+  U["Usuario final"]
+  O["Operador"]
+  PAY["Pasarela de pagos"]
+  FAC["Servicio de reconocimiento facial"]
+  MAP["Proveedor de mapas"]
+  IOT["Vehículos / Raspberry Pi (gemelos digitales)"]
+  SYS(("0\nPlataforma\nMultimodal de\nMicromovilidad"))
+  U -- "registro, consentimiento, credenciales, compra, solicitud de alquiler, QR, foto de casco/rostro" --> SYS
+  SYS -- "catálogo, flota, mapa, confirmaciones, estado de desbloqueo" --> U
+  O -- "altas/bajas de catálogo y hubs, simulación de eventos" --> SYS
+  SYS -- "KPIs, estado de gemelos, notificaciones y log de alertas" --> O
+  SYS -- "orden de cobro" --> PAY
+  PAY -- "resultado del pago" --> SYS
+  SYS -- "imagen/plantilla a validar" --> FAC
+  FAC -- "coincidencia / confianza" --> SYS
+  SYS -- "solicitud de teselas y coordenadas" --> MAP
+  MAP -- "mapa base" --> SYS
+  IOT -- "telemetría (GPS, batería) y eventos de alerta" --> SYS
+  SYS -- "comando de bloqueo/desbloqueo" --> IOT

@@ -1,0 +1,33 @@
+flowchart LR
+  U(["👤 Usuario final"])
+  O(["🛠 Operador"])
+  F(["☁ Servicio facial"])
+  P(["💳 Pasarela de pagos"])
+  D(["📟 Vehículo IoT / Raspberry Pi"])
+  subgraph SIS["Sistema: Plataforma de Micromovilidad"]
+    UC1(["Registrarse y dar consentimiento"])
+    UC2(["Iniciar sesión"])
+    UC3(["Ver catálogo de venta"])
+    UC4(["Comprar vehículo"])
+    UC5(["Ver flota y mapa multicapa"])
+    UC6(["Alquilar vehículo (hub o domicilio)"])
+    UC7(["Desbloquear vehículo (QR + casco)"])
+    UC8(["Desbloquear con rostro"])
+    UC9(["Ver detalle de hub"])
+    UC10(["Ver KPIs y gemelos digitales"])
+    UC11(["Simular evento IoT"])
+    UC12(["Revisar log de alertas"])
+    UC13(["Gestionar catálogo y hubs"])
+    UC14(["Reportar telemetría y alertas"])
+  end
+  U --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9
+  O --- UC10 & UC11 & UC12 & UC13
+  UC4 -.-> P
+  UC6 -.-> P
+  UC8 -.-> F
+  D --- UC14
+  UC6 -. "«include»" .-> UC2
+  UC4 -. "«include»" .-> UC2
+  UC7 -. "«include»" .-> UC6
+  UC8 -. "«extend»" .-> UC7
+  UC14 -. "«include»" .-> UC12

@@ -1,0 +1,36 @@
+flowchart LR
+  subgraph FE["Frontend (rutas y componentes)"]
+    LAND["Landing /"]
+    APP["App mapa /app"]
+    ADM["Admin /admin"]
+    DS["DataSource (interfaz)"]
+  end
+  subgraph BE["Backend (servidor)"]
+    REST["Rutas /api/*"]
+    AUTH["Auth + consentimiento"]
+    VENTA["Módulo Venta"]
+    ALQ["Módulo Alquiler"]
+    TRK["Módulo Tracking"]
+    SEG["Módulo Seguridad IoT"]
+    REPO["FleetRepository"]
+  end
+  subgraph INFRA["Infraestructura"]
+    WS["WebSocket / SSE"]
+    MQ["Broker MQTT (aedes)"]
+    PUB["Publicadores simulados"]
+    SQL[("SQLite")]
+  end
+  LAND --> DS
+  APP --> DS
+  ADM --> DS
+  DS -- "REST" --> REST
+  APP <-- "tiempo real" --> WS
+  ADM <-- "tiempo real" --> WS
+  REST --> AUTH & VENTA & ALQ & TRK & SEG
+  VENTA & ALQ & TRK & SEG & AUTH --> REPO
+  REPO --> SQL
+  PUB --> MQ
+  MQ --> TRK
+  MQ --> SEG
+  TRK --> WS
+  SEG --> WS

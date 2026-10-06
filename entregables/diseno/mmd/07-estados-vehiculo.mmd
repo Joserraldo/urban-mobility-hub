@@ -1,0 +1,21 @@
+stateDiagram-v2
+  [*] --> Disponible
+  Disponible --> Reservado: reserva solicitada
+  Reservado --> Disponible: reserva cancelada
+  Reservado --> EnViaje: desbloqueo exitoso
+  EnViaje --> Disponible: viaje completado en hub
+  Disponible --> Vendido: compra confirmada (modo venta)
+  Disponible --> Cargando: bateria baja en hub
+  Cargando --> Disponible: bateria recuperada
+  state EnViaje {
+    [*] --> SinNovedad
+    SinNovedad --> SinCasco
+    SinNovedad --> Caida
+    SinNovedad --> PerdidaGPS
+    SinNovedad --> BateriaCritica
+    SinCasco --> SinNovedad: se resuelve
+    Caida --> SinNovedad: operador atiende
+    PerdidaGPS --> SinNovedad: señal recuperada
+    BateriaCritica --> SinNovedad: recarga
+  }
+  Vendido --> [*]

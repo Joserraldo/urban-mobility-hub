@@ -1,0 +1,21 @@
+flowchart TB
+  U["Usuario / Operador<br/>(navegador)"]
+  subgraph PLAT["Plataforma de Micromovilidad"]
+    WEB["<b>Portal web</b><br/>TanStack Start + React 19 + Tailwind 4<br/>SSR en páginas públicas, SPA en /app y /admin"]
+    API["<b>API REST /api/*</b><br/>rutas del servidor<br/>valida y orquesta"]
+    RT["<b>Canal tiempo real</b><br/>WebSocket (SSE de respaldo)"]
+    DOM["<b>Dominio / servicios</b><br/>reservas, desbloqueo,<br/>triggers de seguridad"]
+    DB[("<b>SQLite vía Drizzle</b><br/>usuarios, reservas, compras,<br/>log de alertas")]
+    BRK["<b>Broker MQTT en proceso (aedes)</b><br/>umh/vehicle/{id}/telemetry<br/>umh/vehicle/{id}/alert"]
+    SIM["<b>Publicadores simulados</b><br/>hacen de Raspberry Pi"]
+  end
+  EXT["Servicios externos<br/>pagos · mapas · facial"]
+  U --> WEB
+  WEB -- "REST (DataSource)" --> API
+  WEB <-- "posición y alertas" --> RT
+  API --> DOM
+  RT --> DOM
+  DOM --> DB
+  SIM -- "MQTT" --> BRK
+  BRK --> DOM
+  DOM --> EXT

@@ -1,0 +1,20 @@
+flowchart TB
+  U["Usuario final<br/>compra y alquila"]
+  O["Operador<br/>monitorea la flota"]
+  S["<b>Plataforma de Micromovilidad</b><br/>portal web + API + tiempo real + simulador IoT"]
+  PAY["Pasarela de pagos<br/>(externo)"]
+  FAC["Reconocimiento facial<br/>(librería o servicio externo)"]
+  MAP["Proveedor de mapas<br/>(externo)"]
+  RPI["Raspberry Pi / vehículos<br/>(simulados por ahora)"]
+  U -- "HTTPS" --> S
+  O -- "HTTPS" --> S
+  S --> PAY
+  S --> FAC
+  S --> MAP
+  RPI -- "MQTT" --> S
+  classDef sys fill:#1d4ed8,color:#fff,stroke:#1e3a8a
+  classDef ext fill:#e5e7eb,color:#111,stroke:#6b7280
+  classDef per fill:#fef3c7,color:#111,stroke:#b45309
+  class S sys
+  class PAY,FAC,MAP,RPI ext
+  class U,O per

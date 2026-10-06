@@ -1,0 +1,24 @@
+name: Funcionalidad / tarea
+description: Nueva funcionalidad o tarea ligada a un requisito
+labels: [enhancement]
+body:
+  - type: textarea
+    id: desc
+    attributes:
+      label: Descripción
+    validations:
+      required: true
+  - type: input
+    id: req
+    attributes:
+      label: Requisito del SRS
+      placeholder: RF-xx
+    validations:
+      required: true
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterios de aceptación
+      placeholder: "- [ ] ..."
+    validations:
+      required: true

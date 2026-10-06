@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  participant V as Vehículo / simulador
+  participant B as Broker MQTT
+  participant T as SecurityTrigger
+  participant R as FleetRepository
+  participant L as Log de alertas (BD)
+  participant RT as Canal tiempo real
+  actor O as Operador (/admin)
+  V->>B: publica umh/vehicle/{id}/telemetry
+  B->>T: telemetría recibida
+  T->>T: evalúa 4 reglas (casco, caída, GPS, batería)
+  alt estado distinto de sin novedad
+    T->>R: actualiza alertState del vehículo
+    T->>L: INSERT evento (vehículo, tipo, coordenadas, marca de tiempo)
+    T->>RT: emite alerta
+    RT-->>O: notificación inmediata (menos de 1 s, RNF-02)
+  else sin novedad
+    T->>R: actualiza posición y batería
+    R-->>RT: posición nueva (máx. 5 s, RNF-01)
+  end
+  Note over O,V: El operador también puede inyectar la alerta desde el simulador (RF-15) y sigue el mismo camino desde el paso 3
