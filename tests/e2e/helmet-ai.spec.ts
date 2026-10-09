@@ -48,6 +48,7 @@ async function runInference(
 test("IA de casco: el modelo ONNX carga en el navegador y detecta un casco en la foto de muestra", async ({
   page,
 }) => {
+  test.setTimeout(90_000); // descarga WASM+modelo e inferencia pueden tardar bajo carga
   await page.goto("/");
   const r = await runInference(page, helmetJpg);
   expect(r.error).toBeUndefined();

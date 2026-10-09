@@ -18,7 +18,10 @@ const chromiumPath =
 export default defineConfig({
   testDir: "tests/e2e",
   outputDir: "tests/results/e2e-artifacts",
-  timeout: 30_000,
+  // La app es pesada (imágenes reales + runtime WASM de la IA): con workers en
+  // paralelo el dev server local se satura y los tests estallan por timeout.
+  timeout: 45_000,
+  workers: process.env.CI ? undefined : 2,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["json", { outputFile: "tests/results/playwright-results.json" }]],
   use: {
