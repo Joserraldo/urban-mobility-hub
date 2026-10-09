@@ -37,7 +37,7 @@ jobs:
         run: npm run test:coverage
       - name: Subir reporte de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: coverage
@@ -73,7 +73,7 @@ jobs:
           cache: npm
       - run: npm ci || npm install
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: build-output
           path: |
@@ -109,7 +109,7 @@ jobs:
       - run: npm ci || npm install
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: playwright-report
@@ -136,7 +136,7 @@ jobs:
         run: NITRO_PRESET=node_server npm run build
       - name: Lighthouse CI
         run: npx lhci autorun --config=lighthouserc.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: lighthouse-report
