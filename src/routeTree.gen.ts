@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as EntregasRouteImport } from './routes/entregas'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MisReservasRouteImport } from './routes/mis-reservas'
@@ -36,6 +37,11 @@ const AdminRoute = AdminRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregasRoute = EntregasRouteImport.update({
+  id: '/entregas',
+  path: '/entregas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AppRoute: typeof AppRoute
+  EntregasRoute: typeof EntregasRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   MisReservasRoute: typeof MisReservasRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entregas': {
+      id: '/entregas'
+      path: '/entregas'
+      fullPath: '/entregas'
+      preLoaderRoute: typeof EntregasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AppRoute: AppRoute,
+  EntregasRoute: EntregasRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   MisReservasRoute: MisReservasRoute,

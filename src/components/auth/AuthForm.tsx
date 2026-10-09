@@ -11,6 +11,16 @@ import { useAuthActions } from "@/lib/data/queries";
 const safeRedirect = (r: string | undefined) =>
   r && r.startsWith("/") && !r.startsWith("//") ? r : "/app";
 
+/** El destino depende del rol (UC02): el domiciliario va a su bandeja, el operador al panel. */
+const homeForRole = (role: string, redirect?: string) =>
+  redirect
+    ? safeRedirect(redirect)
+    : role === "courier"
+      ? "/entregas"
+      : role === "operator"
+        ? "/admin"
+        : "/app";
+
 /** Login y registro (RNF-05, RD11). El registro exige consentimiento expreso Ley 1581 de 2012. */
 export function AuthForm({
   mode,
@@ -37,9 +47,10 @@ export function AuthForm({
     if (isRegister && !consent)
       return setError("Debes aceptar el tratamiento de datos personales para registrarte.");
     try {
-      if (isRegister) await register.mutateAsync({ name, email, password, consent });
-      else await login.mutateAsync({ email, password });
-      await navigate({ to: safeRedirect(redirect) });
+      const user = isRegister
+        ? await register.mutateAsync({ name, email, password, consent })
+        : await login.mutateAsync({ email, password });
+      await navigate({ to: homeForRole(user.role, redirect) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos completar la solicitud.");
     }
@@ -122,6 +133,20 @@ export function AuthForm({
         >
           {error}
         </p>
+      )}
+
+      {!isRegister && (
+        <div
+          className="rounded-xl border border-border bg-surface-elevated p-3 text-xs text-muted-foreground"
+          data-testid="demo-credentials"
+        >
+          <p className="mb-1 font-semibold text-foreground/80">
+            Cuentas de demostración (backend: npm run dev:api)
+          </p>
+          <p>
+            cliente@demo.co · operador@demo.co · domi1@demo.co — contraseña <code>Demo1234!</code>
+          </p>
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={pending} data-testid="auth-submit">

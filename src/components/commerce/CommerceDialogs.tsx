@@ -112,6 +112,11 @@ export function BuyDialog({
               Referencia {done.id}. Recoge tu vehículo en {hubName ?? "el hub"}. Puedes verla en
               «Mis reservas y compras».
             </p>
+            {done.paymentRef && (
+              <p className="text-xs text-muted-foreground" data-testid="payment-ref">
+                Pago aprobado · comprobante {done.paymentRef} (tabla payments)
+              </p>
+            )}
             <Link to="/mis-reservas">
               <Button variant="secondary">Ver mis compras</Button>
             </Link>
@@ -225,6 +230,11 @@ export function ReserveDialog({
                 : "Recógelo en su hub y desbloquéalo con el QR."}{" "}
               Referencia {done.id}.
             </p>
+            {done.paymentRef && (
+              <p className="text-xs text-muted-foreground" data-testid="payment-ref">
+                Prepago aprobado · comprobante {done.paymentRef} (tabla payments)
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
