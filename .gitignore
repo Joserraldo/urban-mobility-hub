@@ -45,3 +45,10 @@ test-results/
 .env
 .env.*
 !.env.example
+
+data/
+!.env.api
+
+# binarios de herramientas y salidas locales de auditoría
+entregables/_tools/plantuml.jar
+.lighthouseci/
