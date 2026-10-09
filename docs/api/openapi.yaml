@@ -1,9 +1,10 @@
 openapi: 3.0.3
 info:
   title: Urban Mobility Hub API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Contrato REST del backend (T1). Los tipos TypeScript equivalentes viven en `src/shared/types`.
+    v0.2.0 (8-oct-2026): pagos (UC18), entregas a domicilio (UC14–UC17), notificaciones Brevo (UC19) y cierre de viaje.
 
     **Cómo leerlo**: cada ruta dice qué requisito (RF/RNF) cubre, quién puede llamarla y qué errores devuelve.
     - Fechas/horas: milisegundos desde epoch (`ts`, `createdAt`...). Coordenadas planas `lat`/`lng`.
@@ -15,8 +16,14 @@ servers:
   - url: http://localhost:8080
 tags:
   - { name: system }
-  - { name: auth, description: "Registro, login, consentimiento y biometría (RF-10, RNF-03/05, RD11)" }
-  - { name: catalog, description: "Vehículos y hubs (RF-02, RF-04, RF-06, RF-07, RF-14, RF-16, RF-17)" }
+  - {
+      name: auth,
+      description: "Registro, login, consentimiento y biometría (RF-10, RNF-03/05, RD11)",
+    }
+  - {
+      name: catalog,
+      description: "Vehículos y hubs (RF-02, RF-04, RF-06, RF-07, RF-14, RF-16, RF-17)",
+    }
   - { name: commerce, description: "Compra y reservas (RF-03, RF-05)" }
   - { name: unlock, description: "Desbloqueo en pasos (RF-09, RF-10)" }
   - { name: iot, description: "Telemetría, alertas y simulador (RF-08, RF-11, RF-12, RF-15)" }
@@ -49,10 +56,23 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/RegisterRequest" } } }
       responses:
-        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
+        "201":
+          {
+            description: Creada,
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } },
+          }
         "400": { $ref: "#/components/responses/ValidationError" }
-        "409": { description: "EMAIL_TAKEN", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "422": { description: "CONSENT_REQUIRED", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409":
+          {
+            description: "EMAIL_TAKEN",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
+        "422":
+          {
+            description: "CONSENT_REQUIRED",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/auth/login:
     post:
       tags: [auth]
@@ -61,9 +81,22 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/LoginRequest" } } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } } }
-        "401": { description: "INVALID_CREDENTIALS (mensaje genérico, no revela si el correo existe)", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-        "429": { description: "RATE_LIMITED tras 5 intentos fallidos por correo en 15 min", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/AuthResponse" } } },
+          }
+        "401":
+          {
+            description: "INVALID_CREDENTIALS (mensaje genérico, no revela si el correo existe)",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
+        "429":
+          {
+            description: "RATE_LIMITED tras 5 intentos fallidos por correo en 15 min",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/auth/logout:
     post:
       tags: [auth]
@@ -77,26 +110,43 @@ paths:
       summary: Usuario de la sesión actual
       security: [{ bearer: [] }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/User" } } },
+          }
         "401": { $ref: "#/components/responses/Unauthenticated" }
   /api/auth/face:
     put:
       tags: [auth]
       summary: Registrar plantilla facial (se guarda CIFRADA, RNF-03)
-      description: Requiere `biometricConsent: true` (consentimiento separado).
+      description: "Requiere `biometricConsent: true` (consentimiento separado)."
       security: [{ bearer: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: "#/components/schemas/FaceEnrollRequest" } } }
+        content:
+          { application/json: { schema: { $ref: "#/components/schemas/FaceEnrollRequest" } } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
-        "422": { description: CONSENT_REQUIRED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/User" } } },
+          }
+        "422":
+          {
+            description: CONSENT_REQUIRED,
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
     delete:
       tags: [auth]
       summary: Eliminar la plantilla facial (derecho de supresión)
       security: [{ bearer: [] }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/User" } } },
+          }
   /api/vehicles:
     get:
       tags: [catalog]
@@ -106,28 +156,52 @@ paths:
         - { name: kind, in: query, schema: { type: string, enum: [scooter, bike, drone] } }
         - { name: hubId, in: query, schema: { type: string } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Vehicle" } } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { type: array, items: { $ref: "#/components/schemas/Vehicle" } } },
+              },
+          }
   /api/vehicles/{id}:
     get:
       tags: [catalog]
       summary: Detalle del gemelo digital (RF-14)
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } },
+          }
         "404": { $ref: "#/components/responses/NotFound" }
   /api/hubs:
     get:
       tags: [catalog]
       summary: Listar hubs (RF-06)
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Hub" } } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { type: array, items: { $ref: "#/components/schemas/Hub" } } },
+              },
+          }
   /api/hubs/{id}:
     get:
       tags: [catalog]
       summary: Detalle de hub con vehículos de alquiler y venta (RF-07)
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/HubDetail" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/HubDetail" } } },
+          }
         "404": { $ref: "#/components/responses/NotFound" }
   /api/purchases:
     post:
@@ -138,16 +212,32 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/PurchaseRequest" } } }
       responses:
-        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/Purchase" } } } }
+        "201":
+          {
+            description: Creada,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Purchase" } } },
+          }
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: VEHICLE_UNAVAILABLE (ya vendido o no es de venta), content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409":
+          {
+            description: VEHICLE_UNAVAILABLE (ya vendido o no es de venta),
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
     get:
       tags: [commerce]
-      summary: Mis compras (operador: todas)
+      summary: "Mis compras (operador: todas)"
       security: [{ bearer: [] }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Purchase" } } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { type: array, items: { $ref: "#/components/schemas/Purchase" } } },
+              },
+          }
   /api/reservations:
     post:
       tags: [commerce]
@@ -155,17 +245,34 @@ paths:
       security: [{ bearer: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: "#/components/schemas/ReservationRequest" } } }
+        content:
+          { application/json: { schema: { $ref: "#/components/schemas/ReservationRequest" } } }
       responses:
-        "201": { description: Creada, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
+        "201":
+          {
+            description: Creada,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } },
+          }
         "400": { $ref: "#/components/responses/ValidationError" }
-        "409": { description: VEHICLE_UNAVAILABLE / entrega a domicilio no soportada por el vehículo, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409":
+          {
+            description: VEHICLE_UNAVAILABLE / entrega a domicilio no soportada por el vehículo,
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
     get:
       tags: [commerce]
-      summary: Mis reservas (operador: todas)
+      summary: "Mis reservas (operador: todas)"
       security: [{ bearer: [] }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Reservation" } } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { type: array, items: { $ref: "#/components/schemas/Reservation" } } },
+              },
+          }
   /api/reservations/{id}/cancel:
     post:
       tags: [commerce]
@@ -173,8 +280,16 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
-        "409": { description: INVALID_TRANSITION, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } },
+          }
+        "409":
+          {
+            description: INVALID_TRANSITION,
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/reservations/{id}/finish:
     post:
       tags: [commerce]
@@ -182,8 +297,16 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
-        "409": { description: INVALID_TRANSITION, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } },
+          }
+        "409":
+          {
+            description: INVALID_TRANSITION,
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/unlock/sessions:
     post:
       tags: [unlock]
@@ -191,9 +314,25 @@ paths:
       security: [{ bearer: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [reservationId], properties: { reservationId: { type: string } } } } }
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    required: [reservationId],
+                    properties: { reservationId: { type: string } },
+                  },
+              },
+          }
       responses:
-        "201": { description: Creada (step = qr), content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+        "201":
+          {
+            description: Creada (step = qr),
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } },
+          }
   /api/unlock/sessions/{id}/qr:
     post:
       tags: [unlock]
@@ -202,9 +341,20 @@ paths:
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string } } } } }
+        content:
+          {
+            application/json:
+              {
+                schema: { type: object, required: [code], properties: { code: { type: string } } },
+              },
+          }
       responses:
-        "200": { description: "step = helmet si es correcto; step = denied (reason) si no. HTTP 200 en ambos: el resultado está en `step`.", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
+        "200":
+          {
+            description: "step = helmet si es correcto; step = denied (reason) si no. HTTP 200 en ambos: el resultado está en `step`.",
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } },
+          }
   /api/unlock/sessions/{id}/face:
     post:
       tags: [unlock]
@@ -213,10 +363,30 @@ paths:
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [descriptor], properties: { descriptor: { type: array, items: { type: number } } } } } }
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    required: [descriptor],
+                    properties: { descriptor: { type: array, items: { type: number } } },
+                  },
+              },
+          }
       responses:
-        "200": { description: "step = helmet o denied", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
-        "422": { description: BIOMETRIC_NOT_ENROLLED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: "step = helmet o denied",
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } },
+          }
+        "422":
+          {
+            description: BIOMETRIC_NOT_ENROLLED,
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/unlock/sessions/{id}/helmet:
     post:
       tags: [unlock]
@@ -230,10 +400,23 @@ paths:
             schema:
               type: object
               required: [helmetDetected, confidence]
-              properties: { helmetDetected: { type: boolean }, confidence: { type: number, minimum: 0, maximum: 1 } }
+              properties:
+                {
+                  helmetDetected: { type: boolean },
+                  confidence: { type: number, minimum: 0, maximum: 1 },
+                }
       responses:
-        "200": { description: "step = ready o denied", content: { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } } }
-        "422": { description: "UNLOCK_STEP_ORDER si aún no se pasó el QR/rostro", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: "step = ready o denied",
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/UnlockSession" } } },
+          }
+        "422":
+          {
+            description: "UNLOCK_STEP_ORDER si aún no se pasó el QR/rostro",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/unlock/sessions/{id}/start:
     post:
       tags: [unlock]
@@ -241,8 +424,16 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } } }
-        "422": { description: "HELMET_NOT_VERIFIED / UNLOCK_STEP_ORDER / UNLOCK_EXPIRED", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Reservation" } } },
+          }
+        "422":
+          {
+            description: "HELMET_NOT_VERIFIED / UNLOCK_STEP_ORDER / UNLOCK_EXPIRED",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/ingest:
     post:
       tags: [iot]
@@ -255,9 +446,31 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/IngestPayload" } } }
       responses:
-        "202": { description: Aceptado, content: { application/json: { schema: { type: object, properties: { accepted: { type: boolean }, alert: { $ref: "#/components/schemas/AlertType" } } } } } }
+        "202":
+          {
+            description: Aceptado,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: object,
+                        properties:
+                          {
+                            accepted: { type: boolean },
+                            alert: { $ref: "#/components/schemas/AlertType" },
+                          },
+                      },
+                  },
+              },
+          }
         "400": { $ref: "#/components/responses/ValidationError" }
-        "401": { description: "Falta o es inválida la clave x-ingest-key", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "401":
+          {
+            description: "Falta o es inválida la clave x-ingest-key",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
         "404": { $ref: "#/components/responses/NotFound" }
   /api/alerts:
     get:
@@ -265,10 +478,22 @@ paths:
       summary: Log auditable de alertas, más recientes primero (RF-12, RNF-04). Solo operador.
       security: [{ bearer: [] }]
       parameters:
-        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+        - {
+            name: limit,
+            in: query,
+            schema: { type: integer, minimum: 1, maximum: 500, default: 100 },
+          }
         - { name: vehicleId, in: query, schema: { type: string } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/AlertEvent" } } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  { schema: { type: array, items: { $ref: "#/components/schemas/AlertEvent" } } },
+              },
+          }
         "403": { $ref: "#/components/responses/Forbidden" }
   /api/admin/simulate-alert:
     post:
@@ -277,11 +502,20 @@ paths:
       security: [{ bearer: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: "#/components/schemas/SimulateAlertRequest" } } }
+        content:
+          { application/json: { schema: { $ref: "#/components/schemas/SimulateAlertRequest" } } }
       responses:
-        "202": { description: Aceptado, content: { application/json: { schema: { $ref: "#/components/schemas/AlertEvent" } } } }
+        "202":
+          {
+            description: Aceptado,
+            content: { application/json: { schema: { $ref: "#/components/schemas/AlertEvent" } } },
+          }
         "403": { $ref: "#/components/responses/Forbidden" }
-        "409": { description: "VEHICLE_UNAVAILABLE: el simulador solo aplica a vehículos en alquiler", content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "409":
+          {
+            description: "VEHICLE_UNAVAILABLE: el simulador solo aplica a vehículos en alquiler",
+            content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+          }
   /api/admin/alerts/{vehicleId}/clear:
     post:
       tags: [admin]
@@ -289,22 +523,38 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ name: vehicleId, in: path, required: true, schema: { type: string } }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } },
+          }
   /api/admin/kpis:
     get:
       tags: [admin]
       summary: Indicadores agregados (RF-13). Solo operador.
       security: [{ bearer: [] }]
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/FleetKpis" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/FleetKpis" } } },
+          }
   /api/admin/hubs:
     post:
       tags: [admin]
       summary: Crear hub (RF-21, RNF-08). Solo operador.
       security: [{ bearer: [] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } },
+        }
       responses:
-        "201": { description: Creado, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+        "201":
+          {
+            description: Creado,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
   /api/admin/hubs/{id}:
     patch:
@@ -314,7 +564,11 @@ paths:
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Hub" } } },
+          }
   /api/admin/vehicles:
     post:
       tags: [admin]
@@ -322,7 +576,11 @@ paths:
       security: [{ bearer: [] }]
       requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
       responses:
-        "201": { description: Creado, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "201":
+          {
+            description: Creado,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
   /api/admin/vehicles/{id}:
     patch:
@@ -332,35 +590,187 @@ paths:
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } } }
+        "200":
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } },
+          }
   /api/realtime/config:
     get:
       tags: [realtime]
       summary: Cómo conectarse a tiempo real en ESTE despliegue (wsUrl puede ser null)
       responses:
-        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/RealtimeConfig" } } } }
+        "200":
+          {
+            description: OK,
+            content:
+              { application/json: { schema: { $ref: "#/components/schemas/RealtimeConfig" } } },
+          }
   /api/stream:
     get:
       tags: [realtime]
-      summary: SSE (text/event-stream). Cada `data:` es un RealtimeEvent JSON. Primer evento = snapshot.
+      summary: SSE (text/event-stream). Eventos `position|vehicle|alert|notification`; el estado inicial se obtiene con los GETs de catálogo.
       responses:
         "200": { description: Stream, content: { text/event-stream: { schema: { type: string } } } }
   /api/ws:
     get:
       tags: [realtime]
-      summary: Upgrade a WebSocket. Mismos eventos que SSE. Local puede usar otro puerto (ver realtime/config).
+      summary: "Upgrade a WebSocket. Mismos eventos que SSE. Local puede usar otro puerto (ver realtime/config). [PENDIENTE: implementado solo SSE en dev; WebSocket llega con Durable Objects]"
       responses:
         "101": { description: Switching Protocols }
+
+  # ---------------- v2 (8-oct-2026): UC18 pagos, UC14-17 entregas, UC19 correo ----------------
+  /api/payments:
+    post:
+      tags: [commerce]
+      summary: UC18 Realizar pago (RF-26). Llama la pasarela y registra el comprobante en `payments`.
+      security: [{ bearer: [] }, { cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ownerType, ownerId]
+              properties:
+                ownerType: { type: string, enum: [purchase, reservation] }
+                ownerId: { type: string }
+                method: { type: string, enum: [card, pse, cash], default: card }
+      responses:
+        "200":
+          description: Pago aprobado con referencia
+          content: { application/json: { schema: { $ref: "#/components/schemas/PaymentOk" } } }
+        "402": { description: Pago rechazado (queda registrado; el negocio NO cambia) }
+        "409": { description: El owner ya fue procesado }
+  /api/trips/{id}/end:
+    post:
+      tags: [commerce]
+      summary: "Cierre de viaje: rentalCost (ceil min × tarifa) → pasarela → `payments(kind=cargo_viaje)` → reserva `completed` (RF-05, RNF-01)"
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: viaje cerrado con total y referencia }
+        "402": { description: cobro rechazado; el viaje sigue active }
+        "404": { description: no hay viaje active del usuario }
+  /api/couriers:
+    get:
+      tags: [admin]
+      summary: Domiciliarios con su carga activa (UC14)
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: "solo rol operator; lista de users role=courier con load" }
+  /api/pending-deliveries:
+    get:
+      tags: [admin]
+      summary: Reservas modality=delivery en requested, esperando asignación (UC14)
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: lista }
+  /api/deliveries:
+    post:
+      tags: [admin]
+      summary: "UC14 Asignar entrega (RF-25): create en `deliveries` con deadline_at"
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reservationId, courierId]
+              properties:
+                reservationId: { type: string }
+                courierId: { type: string }
+                deadlineMinutes: { type: integer, default: 45 }
+      responses:
+        "201": { description: asignada }
+        "409": { description: esta reserva ya tiene una entrega en curso (E1) }
+        "422": { description: courier inválido (E2) }
+    get:
+      tags: [admin]
+      summary: Bandeja del domiciliario (scope implícito por rol) o todas (operator, scope=all)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: scope, in: query, schema: { type: string, enum: [mine, all] } }]
+      responses:
+        "200": { description: entregas con datos de cliente, vehículo y deadline }
+  /api/deliveries/{id}:
+    patch:
+      tags: [admin]
+      summary: UC16/UC17 acciones del ciclo (también aceptado como POST con el mismo body para clientes sin PATCH)
+      security: [{ cookieAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [start, deliver, late] }
+                reason:
+                  {
+                    type: string,
+                    description: obligatorio en late manual y al confirmar una tardía,
+                  }
+      responses:
+        "200": { description: entrega actualizada (deliver cierra reserva en la misma transacción) }
+        "403": { description: el domiciliario solo toca sus entregas (E2) }
+        "409":
+          {
+            description: transición inválida en la máquina assigned→in_progress→delivered / late (E1,
+            E4),
+          }
+        "422": { description: tardía confirmada sin justificación (E3) }
+  /api/notifications:
+    get:
+      tags: [admin]
+      summary: "Bitácora de correos Brevo (UC19, RF-27): queued/sent/failed/simulated"
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: últimas 100 notificaciones }
 components:
   securitySchemes:
-    bearer: { type: http, scheme: bearer, description: "Token de /auth/login. También acepta la cookie umh_session." }
+    bearer:
+      {
+        type: http,
+        scheme: bearer,
+        description: "Token de /auth/login. TambiAcn acepta la cookie umh_session.",
+      }
+    cookieAuth:
+      {
+        type: apiKey,
+        in: cookie,
+        name: umh_session,
+        description: "Sesión firmada httpOnly creada por /auth/login (RNF-05).",
+      }
     ingestKey: { type: apiKey, in: header, name: x-ingest-key }
   responses:
-    ValidationError: { description: VALIDATION_ERROR, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-    Unauthenticated: { description: UNAUTHENTICATED, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-    Forbidden: { description: FORBIDDEN, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-    NotFound: { description: NOT_FOUND, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
-    Conflict: { description: CONFLICT, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+    ValidationError:
+      {
+        description: VALIDATION_ERROR,
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+      }
+    Unauthenticated:
+      {
+        description: UNAUTHENTICATED,
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+      }
+    Forbidden:
+      {
+        description: FORBIDDEN,
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+      }
+    NotFound:
+      {
+        description: NOT_FOUND,
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+      }
+    Conflict:
+      {
+        description: CONFLICT,
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } },
+      }
   schemas:
     ApiError:
       type: object
@@ -372,7 +782,27 @@ components:
           properties:
             code:
               type: string
-              enum: [VALIDATION_ERROR, UNAUTHENTICATED, INVALID_CREDENTIALS, FORBIDDEN, NOT_FOUND, CONFLICT, EMAIL_TAKEN, VEHICLE_UNAVAILABLE, INVALID_TRANSITION, CONSENT_REQUIRED, HELMET_NOT_VERIFIED, QR_MISMATCH, FACE_NOT_MATCHED, BIOMETRIC_NOT_ENROLLED, UNLOCK_STEP_ORDER, UNLOCK_EXPIRED, RATE_LIMITED, INTERNAL_ERROR]
+              enum:
+                [
+                  VALIDATION_ERROR,
+                  UNAUTHENTICATED,
+                  INVALID_CREDENTIALS,
+                  FORBIDDEN,
+                  NOT_FOUND,
+                  CONFLICT,
+                  EMAIL_TAKEN,
+                  VEHICLE_UNAVAILABLE,
+                  INVALID_TRANSITION,
+                  CONSENT_REQUIRED,
+                  HELMET_NOT_VERIFIED,
+                  QR_MISMATCH,
+                  FACE_NOT_MATCHED,
+                  BIOMETRIC_NOT_ENROLLED,
+                  UNLOCK_STEP_ORDER,
+                  UNLOCK_EXPIRED,
+                  RATE_LIMITED,
+                  INTERNAL_ERROR,
+                ]
             message: { type: string }
             details: {}
     Health:
@@ -528,7 +958,17 @@ components:
       type: object
       properties:
         center: { type: object, properties: { lat: { type: number }, lng: { type: number } } }
-        bounds: { type: object, properties: { north: { type: number }, south: { type: number }, east: { type: number }, west: { type: number } } }
+        bounds:
+          {
+            type: object,
+            properties:
+              {
+                north: { type: number },
+                south: { type: number },
+                east: { type: number },
+                west: { type: number },
+              },
+          }
         defaultZoom: { type: integer }
     RealtimeConfig:
       type: object
@@ -536,10 +976,30 @@ components:
         wsUrl: { type: string, nullable: true }
         sseUrl: { type: string }
         pollIntervalMs: { type: integer }
+    PaymentOk:
+      type: object
+      properties:
+        reference: { type: string, description: "PAY-XXXXXXXX emitido por la pasarela" }
+        reservation: { $ref: "#/components/schemas/Reservation" }
+        prepayCop: { type: integer, nullable: true }
+        purchase: { $ref: "#/components/schemas/Purchase", nullable: true }
     IngestPayload:
       oneOf:
         - type: object
-          required: [kind, vehicleId, ts, lat, lng, battery, speedKmh, helmetOn, impactG, gpsFixAgeMs, tripActive]
+          required:
+            [
+              kind,
+              vehicleId,
+              ts,
+              lat,
+              lng,
+              battery,
+              speedKmh,
+              helmetOn,
+              impactG,
+              gpsFixAgeMs,
+              tripActive,
+            ]
           properties:
             kind: { type: string, enum: [telemetry] }
             vehicleId: { type: string }
