@@ -22,11 +22,11 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "¿Puedo pedir que me entreguen el vehículo en mi casa?",
-    a: "Sí, para los vehículos marcados como aptos para entrega. En la aplicación eliges la modalidad «A domicilio», escribes tu dirección y confirmas la reserva. También puedes recogerlo y devolverlo en un hub (modalidad estación a estación).",
+    a: "Sí, para los vehículos marcados como aptos para entrega. En la aplicación eliges la modalidad «A domicilio», escribes tu dirección y confirmas la reserva. Nuestro operador la asigna a un domiciliario con una hora límite; el domiciliario lleva el vehículo hasta tu dirección y confirma la entrega en el sistema. Si la entrega se pasa del plazo, recibes un aviso por correo. También puedes recogerlo y devolverlo en un hub (modalidad estación a estación).",
   },
   {
     q: "¿Cómo compro un vehículo?",
-    a: "Entra al catálogo, elige el vehículo y pulsa «Comprar». Debes iniciar sesión; la compra queda registrada en tu cuenta y el vehículo se recoge en el hub donde está disponible. Cada ficha indica precio en pesos colombianos, condición (nuevo o seminuevo) y especificaciones.",
+    a: "Entra al catálogo, elige el vehículo y pulsa «Comprar». Debes iniciar sesión; el pago pasa por una pasarela y queda registrado con su número de comprobante. La compra se asocia a tu cuenta y el vehículo se recoge en el hub donde está disponible. Cada ficha indica precio en pesos colombianos, condición (nuevo o seminuevo) y especificaciones.",
   },
   {
     q: "¿Qué alertas de seguridad monitorea la plataforma?",

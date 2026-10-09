@@ -1,6 +1,6 @@
 # NODO Mobility
 
-> Plataforma de micromovilidad en Bucaramanga (Colombia): alquiler por minuto y venta de patinetas eléctricas, bicicletas eléctricas y drones de carga, con hubs, desbloqueo por QR + verificación de casco y alertas IoT. Proyecto académico (UNAB, Ingeniería de Software II) en fase de simulación.
+> Plataforma de micromovilidad en Bucaramanga (Colombia): alquiler por minuto y venta de patinetas eléctricas, bicicletas eléctricas y drones de carga, con hubs, desbloqueo por QR + verificación de casco, entrega a domicilio por domiciliarios y alertas IoT. Proyecto académico (UNAB, Ingeniería de Software II) en fase de simulación.
 
 ## Páginas principales
 - [Inicio](https://urban-mobility-hub.pages.dev/): qué es y cómo funciona
@@ -10,6 +10,10 @@
 - [Guías](https://urban-mobility-hub.pages.dev/guias): contenido explicativo
 
 ## Datos clave
-- Tarifas de alquiler: patineta 450-520 COP/min, bicicleta eléctrica 380 COP/min, dron 1.200 COP/min.
-- Desbloqueo en 3 pasos: QR, verificación de casco, iniciar viaje.
-- Datos biométricos cifrados y con consentimiento (Ley 1581 de 2012).
+- Tarifas de alquiler: patineta 450-520 COP/min, bicicleta eléctrica 380 COP/min, dron 1.200 COP/min; prepago de 10.000 COP al reservar y cobro final por minuto (redondeo hacia arriba).
+- Venta de vehículos: desde 4.200.000 COP (bicicleta) hasta 9.800.000 COP (dron de carga); cada pago deja un comprobante con referencia de pasarela.
+- Entrega a domicilio: el operador asigna la reserva a un domiciliario con hora límite; si la entrega se retrasa, cliente y operador reciben aviso por correo.
+- Desbloqueo en 3 pasos: QR, verificación de casco por cámara, iniciar viaje. Alterno: reconocimiento facial con consentimiento expreso.
+- Seguridad IoT: 4 alertas supervisadas por gemelos digitales (sin casco, caída ≥ 3 G, pérdida de GPS > 10 s, batería < 15 %); alerta visible en el panel en menos de 1 s y bitácora auditable.
+- Posición del mapa actualizada en menos de 5 s; panel del operador y mapa leen del mismo gemelo digital.
+- Datos biométricos cifrados y con consentimiento (Ley 1581 de 2012); se puede revocar y eliminar la plantilla.

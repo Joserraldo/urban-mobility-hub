@@ -116,3 +116,63 @@ export const faqLd = (items: { q: string; a: string }[]): JsonLd => ({
     acceptedAnswer: { "@type": "Answer", text: it.a },
   })),
 });
+
+/** JSON-LD de los servicios con sus tarifas reales (GEO/AEO: los asistentes citan ofertas estructuradas). */
+export const servicesLd = (
+  tarifas: { kind: string; from: number; to: number }[],
+  deliveryReady: number,
+): JsonLd => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  itemListElement: [
+    ...tarifas.map((t, i) => ({
+      "@type": "Offer",
+      position: i + 1,
+      name: `Alquiler de ${t.kind === "scooter" ? "patineta eléctrica" : t.kind === "bike" ? "bicicleta eléctrica" : "dron de carga"} por minuto`,
+      priceCurrency: "COP",
+      price: t.from,
+      availability: "https://schema.org/InStock",
+      areaServed: { "@type": "City", name: SITE.city },
+      seller: { "@id": `${SITE.url}/#organization` },
+    })),
+    {
+      "@type": "Service",
+      position: tarifas.length + 1,
+      name: "Entrega a domicilio por domiciliarios",
+      serviceType: "delivery",
+      availableChannel: { "@type": "AvailableChannel", serviceType: "internet" },
+      description: `${deliveryReady} vehículos pueden entregarse en tu dirección con hora límite y aviso por correo si hay retraso.`,
+      provider: { "@id": `${SITE.url}/#organization` },
+    },
+  ],
+});
+
+/** JSON-LD de los vehículos en venta (producto con oferta indexable). */
+export const productsLd = (
+  vehicles: { id: string; model: string; spec: string; price?: number | undefined }[],
+): JsonLd => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  itemListElement: vehicles.map((v, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "Product",
+      "@id": `${SITE.url}/catalogo/${v.id}`,
+      name: `${v.model} (${v.id})`,
+      description: v.spec,
+      category: "Micromovilidad eléctrica",
+      ...(v.price
+        ? {
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "COP",
+              price: v.price,
+              availability: "https://schema.org/InStock",
+              seller: { "@id": `${SITE.url}/#organization` },
+            },
+          }
+        : {}),
+    },
+  })),
+});
