@@ -204,7 +204,9 @@
   justify-content: center;
   cursor: pointer;
   color: white;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .umh-marker button:hover,
 .umh-marker button:focus-visible {
@@ -225,7 +227,9 @@
   height: 22px;
 }
 .umh-hub.is-selected {
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary-glow) 45%, transparent), var(--shadow-glow);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--primary-glow) 45%, transparent),
+    var(--shadow-glow);
 }
 .umh-hub.is-inactive {
   filter: grayscale(1);
@@ -266,9 +270,15 @@
   justify-content: center;
 }
 @keyframes umh-pulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--destructive) 60%, transparent); }
-  100% { box-shadow: 0 0 0 14px transparent; }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--destructive) 60%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .umh-vehicle.is-alert { animation: none; }
+  .umh-vehicle.is-alert {
+    animation: none;
+  }
 }

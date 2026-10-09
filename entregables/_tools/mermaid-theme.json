@@ -42,6 +42,12 @@
     "stateBkg": "#E8F0FE",
     "altBackground": "#F7F9FC"
   },
-  "flowchart": { "curve": "basis", "htmlLabels": true, "padding": 14, "nodeSpacing": 45, "rankSpacing": 55 },
+  "flowchart": {
+    "curve": "basis",
+    "htmlLabels": true,
+    "padding": 14,
+    "nodeSpacing": 45,
+    "rankSpacing": 55
+  },
   "sequence": { "mirrorActors": false, "actorMargin": 60, "messageMargin": 38, "boxMargin": 10 }
 }
