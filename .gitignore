@@ -46,7 +46,7 @@ test-results/
 .env.*
 !.env.example
 
-data/
+/data/
 !.env.api
 
 # binarios de herramientas y salidas locales de auditoría

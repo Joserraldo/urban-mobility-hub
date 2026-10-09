@@ -7,7 +7,8 @@ export type AlertType = "ok" | "no-helmet" | "crash" | "gps-lost" | "low-battery
 export type ActiveAlertType = Exclude<AlertType, "ok">;
 export type ReservationStatus = "requested" | "active" | "completed" | "cancelled";
 export type RentalModality = "hub" | "delivery";
-export type UserRole = "user" | "operator";
+export type UserRole = "user" | "operator" | "courier";
+export type VehicleStatus = "available" | "reserved" | "in_use" | "sold" | "offline";
 
 export type Hub = {
   id: string;
@@ -27,15 +28,18 @@ export type Vehicle = {
   model: string;
   mode: VehicleMode;
   battery: number;
-  pricePerMinute?: number;
-  price?: number;
-  condition?: "nuevo" | "seminuevo";
+  pricePerMinute?: number | undefined;
+  price?: number | undefined;
+  condition?: "nuevo" | "seminuevo" | undefined;
   spec: string;
-  hubId?: string;
+  hubId?: string | undefined;
   lat: number;
   lng: number;
   alert: AlertType;
-  delivery?: boolean;
+  delivery?: boolean | undefined;
+  /** estado comercial/operativo (contrato `domain.ts`); el mock lo asume 'available' */
+  status?: VehicleStatus | undefined;
+  qrCode?: string | undefined;
 };
 
 export type AlertEvent = {
@@ -52,12 +56,15 @@ export type Reservation = {
   vehicleId: string;
   userId: string;
   modality: RentalModality;
-  address?: string;
+  /** dirección de entrega, solo modality = "delivery" */
+  address?: string | undefined;
   status: ReservationStatus;
   createdAt: number;
-  startedAt?: number;
-  endedAt?: number;
-  totalCost?: number;
+  startedAt?: number | undefined;
+  endedAt?: number | undefined;
+  totalCost?: number | undefined;
+  /** referencia de la pasarela al pagar (UC18); ausente en el mock */
+  paymentRef?: string | undefined;
 };
 
 export type Purchase = {
@@ -66,6 +73,7 @@ export type Purchase = {
   userId: string;
   price: number;
   createdAt: number;
+  paymentRef?: string | undefined;
 };
 
 export type User = {
@@ -83,7 +91,7 @@ export type UnlockSession = {
   id: string;
   vehicleId: string;
   step: UnlockStep;
-  reason?: string;
+  reason?: string | undefined;
   expiresAt: number;
 };
 

@@ -15,7 +15,7 @@ import {
 // Adaptador en memoria. Sirve para desarrollar y mostrar la interfaz sin backend.
 // Las cuentas/reservas/compras se guardan en localStorage del navegador (solo en este adaptador).
 
-const SEED_HUBS: Hub[] = [
+export const SEED_HUBS: Hub[] = [
   {
     id: "HUB-01",
     name: "Hub Cabecera",
@@ -65,7 +65,7 @@ const SEED_HUBS: Hub[] = [
 const rent = (v: Omit<Vehicle, "mode">): Vehicle => ({ ...v, mode: "rent" });
 const sale = (v: Omit<Vehicle, "mode" | "alert">): Vehicle => ({ ...v, mode: "sale", alert: "ok" });
 
-const SEED_VEHICLES: Vehicle[] = [
+export const SEED_VEHICLES: Vehicle[] = [
   rent({
     id: "SC-1042",
     kind: "scooter",
