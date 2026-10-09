@@ -1,14 +1,147 @@
 [
- {"id":"01-landing-escritorio","titulo":"Landing (escritorio)","url":"/","vp":[1366,900],"full":true,"rf":["RF-01"],"muestra":"Propuesta de valor, servicios, quiénes somos y botón hacia la demo.","sirve":"Presenta el negocio y lleva al usuario a la app."},
- {"id":"02-landing-movil","titulo":"Entrada en móvil","url":"/","vp":[390,844],"wait":1500,"rf":["RF-01"],"muestra":"En pantalla pequeña la landing lleva directo al mapa.","sirve":"Evita pasos al usuario móvil; la redirección es del lado del cliente para no dañar el SEO."},
- {"id":"03-app-alquilar","titulo":"App: mapa en modo alquiler","url":"/app","vp":[1366,900],"wait":2000,"rf":["RF-04","RF-05","RF-06","RF-08"],"muestra":"Mapa con vehículos disponibles y hubs; la posición se actualiza en vivo.","sirve":"Encontrar y elegir un vehículo para alquilar."},
- {"id":"04-app-comprar","titulo":"App: modo compra","url":"/app","vp":[1366,900],"wait":2000,"steps":[{"click":"text=Comprar"}],"rf":["RF-02","RF-03","RF-06"],"muestra":"Stock en venta por hub con precio y condición.","sirve":"Comprar un vehículo."},
- {"id":"05-catalogo","titulo":"Catálogo público","url":"/catalogo","vp":[1366,900],"full":true,"rf":["RF-02"],"muestra":"Lista de vehículos en venta.","sirve":"Página indexable para buscadores (SEO)."},
- {"id":"06-hubs","titulo":"Listado de hubs","url":"/hubs","vp":[1366,900],"full":true,"rf":["RF-06","RF-07"],"muestra":"Hubs con capacidad y ocupación.","sirve":"Consultar puntos de recogida."},
- {"id":"07-hub-detalle","titulo":"Detalle de un hub","url":"/hubs/HUB-01","vp":[1366,900],"full":true,"rf":["RF-07"],"muestra":"Capacidad, ocupados, en carga y vehículos del hub.","sirve":"Decidir a qué hub ir."},
- {"id":"08-registro","titulo":"Registro con consentimiento","url":"/registro","vp":[1366,900],"rf":["RF-20","RNF-03","RNF-05"],"muestra":"Formulario de cuenta y consentimiento explícito (Ley 1581).","sirve":"Crear cuenta de forma legal."},
- {"id":"09-login","titulo":"Inicio de sesión","url":"/login","vp":[1366,900],"rf":["RF-21"],"muestra":"Correo y contraseña.","sirve":"Acceder a compra, alquiler y desbloqueo."},
- {"id":"10-admin","titulo":"Panel de telemetría","url":"/admin","vp":[1440,900],"wait":2000,"full":true,"rf":["RF-13","RF-14","RF-16","RF-17"],"muestra":"KPIs de flota y tabla de gemelos digitales.","sirve":"Que el operador vigile la flota."},
- {"id":"11-faq","titulo":"Preguntas frecuentes","url":"/faq","vp":[1366,900],"full":true,"rf":["RNF-11"],"muestra":"Preguntas y respuestas.","sirve":"Responder dudas y ser citable por buscadores y asistentes de IA."},
- {"id":"12-guias","titulo":"Guías","url":"/guias","vp":[1366,900],"full":true,"rf":["RNF-11"],"muestra":"Artículos de ayuda.","sirve":"Contenido para SEO."}
+  {
+    "id": "01-landing-escritorio",
+    "titulo": "Landing (escritorio)",
+    "url": "/",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RF-01"],
+    "muestra": "Propuesta de valor, servicios, entrega a domicilio con domiciliario, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración.",
+    "sirve": "Presenta el negocio completo (lo que los documentos prometen) y lleva al usuario a la app."
+  },
+  {
+    "id": "02-landing-movil",
+    "titulo": "Entrada en móvil",
+    "url": "/",
+    "vp": [390, 844],
+    "wait": 1500,
+    "rf": ["RF-01"],
+    "muestra": "En pantalla pequeña la landing lleva directo al mapa.",
+    "sirve": "Evita pasos al usuario móvil; la redirección es del lado del cliente para no dañar el SEO."
+  },
+  {
+    "id": "03-app-alquilar",
+    "titulo": "App: mapa en modo alquiler",
+    "url": "/app",
+    "vp": [1366, 900],
+    "wait": 2000,
+    "rf": ["RF-04", "RF-05", "RF-06", "RF-08"],
+    "muestra": "Mapa con vehículos disponibles y hubs; la posición se actualiza en vivo desde SQLite por SSE.",
+    "sirve": "Encontrar y elegir un vehículo para alquilar."
+  },
+  {
+    "id": "04-app-comprar",
+    "titulo": "App: modo compra",
+    "url": "/app",
+    "vp": [1366, 900],
+    "wait": 2000,
+    "steps": [{ "click": "text=Comprar" }],
+    "rf": ["RF-02", "RF-03", "RF-06"],
+    "muestra": "Stock en venta por hub con precio y condición.",
+    "sirve": "Comprar un vehículo."
+  },
+  {
+    "id": "05-catalogo",
+    "titulo": "Catálogo público",
+    "url": "/catalogo",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RF-02"],
+    "muestra": "Lista de vehículos en venta.",
+    "sirve": "Página indexable para buscadores (SEO)."
+  },
+  {
+    "id": "06-hubs",
+    "titulo": "Listado de hubs",
+    "url": "/hubs",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RF-06", "RF-07"],
+    "muestra": "Hubs con capacidad y ocupación.",
+    "sirve": "Consultar puntos de recogida."
+  },
+  {
+    "id": "07-hub-detalle",
+    "titulo": "Detalle de un hub",
+    "url": "/hubs/HUB-01",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RF-07"],
+    "muestra": "Capacidad, ocupados, en carga y vehículos del hub.",
+    "sirve": "Decidir a qué hub ir."
+  },
+  {
+    "id": "08-registro",
+    "titulo": "Registro con consentimiento",
+    "url": "/registro",
+    "vp": [1366, 900],
+    "rf": ["RF-20", "RNF-03", "RNF-05"],
+    "muestra": "Formulario de cuenta y consentimiento explícito (Ley 1581).",
+    "sirve": "Crear cuenta de forma legal."
+  },
+  {
+    "id": "09-login",
+    "titulo": "Inicio de sesión",
+    "url": "/login",
+    "vp": [1366, 900],
+    "rf": ["RF-21"],
+    "muestra": "Correo y contraseña, más el bloque de cuentas de demostración.",
+    "sirve": "Acceder a compra, alquiler, desbloqueo y bandejas por rol."
+  },
+  {
+    "id": "10-admin",
+    "titulo": "Panel de telemetría",
+    "url": "/admin",
+    "vp": [1440, 900],
+    "wait": 2000,
+    "full": true,
+    "login": { "email": "operador@demo.co", "password": "Demo1234!" },
+    "rf": ["RF-13", "RF-14", "RF-16", "RF-17"],
+    "muestra": "KPIs de flota, tabla de gemelos digitales, simulador de alertas y bitácora; con sesión de operador.",
+    "sirve": "Que el operador vigile la flota con datos reales de SQLite."
+  },
+  {
+    "id": "11-faq",
+    "titulo": "Preguntas frecuentes",
+    "url": "/faq",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RNF-11"],
+    "muestra": "Preguntas y respuestas.",
+    "sirve": "Responder dudas y ser citable por buscadores y asistentes de IA."
+  },
+  {
+    "id": "12-guias",
+    "titulo": "Guías",
+    "url": "/guias",
+    "vp": [1366, 900],
+    "full": true,
+    "rf": ["RNF-11"],
+    "muestra": "Artículos de ayuda.",
+    "sirve": "Contenido para SEO."
+  },
+  {
+    "id": "13-entregas-bandeja",
+    "titulo": "Bandeja del domiciliario",
+    "url": "/entregas",
+    "vp": [1366, 900],
+    "wait": 2500,
+    "full": true,
+    "login": { "email": "domi1@demo.co", "password": "Demo1234!" },
+    "rf": ["RF-25"],
+    "muestra": "Entrega asignada a domi1 con dirección, cliente, cuenta atrás al deadline y acciones Iniciar / Confirmar / Marcar tardía.",
+    "sirve": "UC15-UC17: el domiciliario ejecuta la entrega a domicilio desde su propia vista."
+  },
+  {
+    "id": "14-admin-entregas-notificaciones",
+    "titulo": "Entregas y correos en el panel del operador",
+    "url": "/admin",
+    "vp": [1440, 900],
+    "wait": 2500,
+    "full": true,
+    "login": { "email": "operador@demo.co", "password": "Demo1234!" },
+    "rf": ["RF-25", "RF-27"],
+    "muestra": "Bloque inferior del /admin: reservas de domicilio pendientes de asignación, entregas en curso y bitácora de correos Brevo con estado sent/simulated/failed.",
+    "sirve": "UC14: asignar entregas al domiciliario; UC19: verificar que el aviso de retraso se registró."
+  }
 ]

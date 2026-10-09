@@ -23,6 +23,15 @@ for (const p of pantallas) {
   let ok = true,
     nota = "";
   try {
+    if (p.login) {
+      await page.goto(`${base}/login`, { waitUntil: "networkidle", timeout: 30000 });
+      await page.fill("#auth-email", p.login.email);
+      await page.fill("#auth-password", p.login.password);
+      await Promise.all([
+        page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15000 }),
+        page.click("[data-testid=auth-submit]"),
+      ]);
+    }
     const r = await page.goto(base + p.url, { waitUntil: "networkidle", timeout: 30000 });
     if (r && r.status() >= 400) {
       ok = false;
@@ -49,7 +58,7 @@ for (const p of pantallas) {
   await ctx.close();
 }
 await browser.close();
-let md = `# Compilación de interfaces\n\nPantallas del sistema en el orden en que un usuario las encuentra, con captura real (Playwright sobre la app en ${base}), qué muestra, para qué sirve y el requisito que cubre. **No es un manual de usuario.**\n\nGenerado automáticamente por \`_tools/capturar.mjs\` desde \`_tools/pantallas.json\`. Para actualizar: levantar la app (\`npm run dev\`) y ejecutar \`node _tools/capturar.mjs\`.\n\n`;
+let md = `# Compilación de interfaces\n\nPantallas del sistema en el orden en que un usuario las encuentra, con captura real (Playwright sobre la app en ${base}), qué muestra, para qué sirve y el requisito que cubre. **No es un manual de usuario.**\n\nGenerado automáticamente por \`_tools/capturar.mjs\` desde \`_tools/pantallas.json\`. Para actualizar: levantar el backend (\`npm run dev:api\`), preparar la historia de datos (\`powershell -File _tools/seed-capture.ps1\`) y ejecutar \`node _tools/capturar.mjs\`.\n\n`;
 res.forEach((p, i) => {
   md += `## ${i + 1}. ${p.titulo}\n\n![${p.titulo}](img/${p.id}.png)\n\n- **Ruta:** \`${p.url}\` · **Vista:** ${p.vp[0]}×${p.vp[1]}\n- **Qué muestra:** ${p.muestra}\n- **Para qué sirve:** ${p.sirve}\n- **Requisitos:** ${p.rf.join(", ")}\n${p.ok ? "" : `- **⚠ Captura no válida:** ${p.nota}\n`}\n`;
 });

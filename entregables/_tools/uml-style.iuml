@@ -1,0 +1,42 @@
+' ===== Paleta institucional UMH para PlantUML =====
+' Uso: !include ../_tools/uml-style.iuml (ajusta la ruta relativa)
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam dpi 150
+
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #1B2A41
+  FontColor #1B2A41
+  FontSize 14
+  FontStyle bold
+}
+skinparam usecase {
+  BackgroundColor #F7F9FC
+  BorderColor #1B2A41
+  FontColor #1B2A41
+  FontSize 13
+  ArrowColor #1B2A41
+}
+skinparam rectangle {
+  BorderColor #1B2A41
+  FontColor #1B2A41
+  BackgroundColor #FFFFFF
+}
+skinparam package {
+  BorderColor #6B7A90
+  FontColor #1B2A41
+  FontStyle bold
+  BackgroundColor transparent
+}
+skinparam ArrowColor #1B2A41
+skinparam ArrowFontColor #6B7A90
+skinparam ArrowFontSize 11
+skinparam TitleFontColor #1B2A41
+skinparam TitleFontSize 18
+skinparam note {
+  BackgroundColor #FFF7CC
+  BorderColor #6B7A90
+  FontColor #1B2A41
+  FontSize 12
+}
