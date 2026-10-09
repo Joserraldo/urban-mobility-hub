@@ -22,6 +22,7 @@ import { getDataSource } from "@/lib/data";
 import { keys, useMe } from "@/lib/data/queries";
 import { DataError, type Reservation, type UnlockSession, type Vehicle } from "@/lib/data/types";
 import { formatCOP, statusLabel } from "@/lib/format";
+import { helmetModelState, preloadHelmetModel } from "@/lib/helmet-model";
 
 // Flujo de desbloqueo en 3 pasos (RF-09): 1) QR  2) verificación de casco  3) "Iniciar viaje".
 // Alterno RF-10: reconocimiento facial en lugar del QR. Todo el estado vive en el DataSource.
@@ -40,6 +41,7 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
   const [wearing, setWearing] = useState(true);
+  const [helmetSource, setHelmetSource] = useState<"ia" | "simulacion" | null>(null);
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [finished, setFinished] = useState<Reservation | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -49,6 +51,14 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     !!session && (step === "qr" || step === "helmet") && !reservation,
     step === "helmet" ? "user" : "environment",
   );
+
+  // Al entrar al paso de casco se descarga el modelo ONNX una sola vez (RD7).
+  const [helmetModel, setHelmetModel] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  useEffect(() => {
+    if (step !== "helmet") return;
+    setHelmetModel(helmetModelState());
+    void preloadHelmetModel().then(() => setHelmetModel(helmetModelState()));
+  }, [step]);
 
   // Crear la sesión de desbloqueo en el backend
   useEffect(() => {
@@ -98,8 +108,17 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const verifyHelmet = () =>
     session &&
     void run("helmet", async () => {
-      const result = await detectHelmet({ simulatedWearing: wearing });
-      setSession(await ds.verifyHelmet(session.id, result));
+      const result = await detectHelmet({
+        video: camera.videoRef.current,
+        simulatedWearing: wearing,
+      });
+      setHelmetSource(result.source);
+      setSession(
+        await ds.verifyHelmet(session.id, {
+          helmetDetected: result.helmetDetected,
+          confidence: result.confidence,
+        }),
+      );
     });
 
   const useFace = () =>
@@ -393,13 +412,22 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                   </h2>
                   <p className="text-sm text-muted-foreground" role="status">
                     {step === "ready"
-                      ? "Casco detectado correctamente. Puedes iniciar tu viaje."
+                      ? helmetSource === "ia"
+                        ? "Casco verificado por IA. Puedes iniciar tu viaje."
+                        : "Casco detectado correctamente. Puedes iniciar tu viaje."
                       : busy === "helmet"
                         ? "Verificando uso de casco…"
-                        : "Colócate el casco y mira a la cámara."}
+                        : helmetModel === "loading"
+                          ? "Descargando el modelo de IA…"
+                          : "Colócate el casco y mira a la cámara."}
                   </p>
                 </div>
-                {step === "helmet" && DEMO_TOOLS && (
+                {step === "helmet" && helmetModel === "ready" && (
+                  <p className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-glow">
+                    Detección IA activa (YOLOv8n)
+                  </p>
+                )}
+                {step === "helmet" && DEMO_TOOLS && helmetModel !== "ready" && (
                   <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <input
                       type="checkbox"

@@ -2,6 +2,26 @@ import type { IncomingMessage } from "node:http";
 import type { Plugin } from "vite";
 
 /**
+ * Sirve los assets del runtime ONNX (public/ort) en dev. Vite dev responde 500 a
+ * `import("/ort/*.mjs?import")` (trata los assets de public/ como módulos a transformar);
+ * en producción el servidor estático no falla. Este middleware limpia el sufijo `?import`
+ * para que el cargador WASM de onnxruntime-web funcione también en dev (RD7).
+ */
+export function umhOrtPlugin(): Plugin {
+  return {
+    name: "umh-ort-static",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? "";
+        if (url.startsWith("/ort/") && url.endsWith("?import"))
+          req.url = url.replace("?import", "");
+        next();
+      });
+    },
+  };
+}
+
+/**
  * Backend de DESARROLLO: middleware que monta el REST real (`/api/*` + SSE) sobre
  * Vite, con SQLite (node:sqlite). Los diagramas de secuencia describen estas rutas
  * y tablas literalmente. En producción el mismo schema.sql corre en D1 y las rutas

@@ -69,6 +69,7 @@ src/
 │  ├─ data/           ★ Frontera con los datos: types.ts, datasource.ts, mock.ts, api.ts, queries.ts, index.ts
 │  ├─ api-client.ts   Hooks de los endpoints v2 (entregas, couriers, notificaciones)
 │  ├─ site.ts         SEO: meta, canonical/hreflang, JSON-LD (Organization, Product, Offer, FAQ, llms)
+│  ├─ helmet-model.ts Detección de casco: YOLOv8n-ONNX + onnxruntime-web (carga, pre/postproceso NMS)
 │  └─ camera.ts / format.ts / …  utilidades
 ├─ content/           Textos de FAQ y guías (SEO/AEO)
 ├─ server/
@@ -94,9 +95,10 @@ tests/  .github/  .husky/  lighthouserc.json  (calidad e integración continua)
 2. **Una sola fuente de verdad (RF-17).** Mapa y panel leen de la misma caché de TanStack Query (`keys.vehicles`, `keys.alerts`); `useFleetLive` aplica los eventos en vivo (`position`, `vehicle`, `alert`) a esa caché.
 3. **SSR + SEO.** Las páginas públicas se renderizan en servidor; la redirección móvil de RF-01 es **en el cliente** (`routes/index.tsx`, `useMobileRedirect`), ignorando bots, para no dañar el rastreo.
 4. **Desbloqueo como sesión.** `UnlockSession` avanza `qr → helmet → ready` (o `denied`/`expired`); `startTrip` solo vale en `ready`.
-5. **Tiempo real, IoT y persistencia: EXISTEN en el backend de desarrollo.** SQLite con las 12 tablas del DER v2 (`server/db/schema.sql`; en producción → D1 con el mismo esquema, `gcs/despliegue.md`), REST `/api/*` (`server/api/handlers.ts`), tiempo real por SSE (`/api/stream`; WebSocket con Durable Objects queda **[PENDIENTE de despliegue]**), gemelos digitales simulados por intervalo con los topics lógicos `umh/vehicle/{id}/telemetry|alert|unlock` (broker externo: **[PENDIENTE]**). Las secuencias de `diseno/img/` describen exactamente estas rutas y tablas.
-6. **Reglas puras en `domain/`.** `verifyHelmet`, `evaluateTelemetry`, `transition` y `rentalCost` no conocen la BD ni HTTP: por eso las unitarias las cubren sin servidor. El API solo las orquesta.
-7. **Notificación como efecto lateral (RF-27).** Brevo se llama con `fetch` desde `services/brevo.ts`; el resultado se registra en `notifications` (`sent/failed/simulated`) y jamás cambia el estado del negocio.
+5. **Detección de casco real (RD7).** `detectHelmet` (camera.ts) intenta el modelo **YOLOv8n-ONNX** (`src/lib/helmet-model.ts`) sobre la cámara con `onnxruntime-web`; si no hay cámara/modelo o falla, cae en el modo simulado (la demo nunca se rompe). El modelo y el runtime están en `public/models` y `public/ort` (estáticos, sin CDN); en dev Vite los sirve `umhOrtPlugin` (resuelve `?import`).
+6. **Tiempo real, IoT y persistencia: EXISTEN en el backend de desarrollo.** SQLite con las 12 tablas del DER v2 (`server/db/schema.sql`; en producción → D1 con el mismo esquema, `gcs/despliegue.md`), REST `/api/*` (`server/api/handlers.ts`), tiempo real por SSE (`/api/stream`; WebSocket con Durable Objects queda **[PENDIENTE de despliegue]**), gemelos digitales simulados por intervalo con los topics lógicos `umh/vehicle/{id}/telemetry|alert|unlock` (broker externo: **[PENDIENTE]**). Las secuencias de `diseno/img/` describen exactamente estas rutas y tablas.
+7. **Reglas puras en `domain/`.** `verifyHelmet`, `evaluateTelemetry`, `transition` y `rentalCost` no conocen la BD ni HTTP: por eso las unitarias las cubren sin servidor. El API solo las orquesta.
+8. **Notificación como efecto lateral (RF-27).** Brevo se llama con `fetch` desde `services/brevo.ts`; el resultado se registra en `notifications` (`sent/failed/simulated`) y jamás cambia el estado del negocio.
 
 ## 6. Glosario mínimo
 
@@ -121,6 +123,7 @@ tests/  .github/  .husky/  lighthouserc.json  (calidad e integración continua)
 ## 8. Trampas conocidas
 
 - `src/routeTree.gen.ts` se regenera solo; no lo edites.
+- `helmet-model.ts` importa `onnxruntime-web` (solo cliente): el runtime WASM está en `public/ort/`; en dev Vite devuelve 500 a `/ort/*.mjs?import` si falta `umhOrtPlugin` (ya montado en `vite.config.ts`).
 - `UnlockFlow.tsx` ya pasa por `DataSource` (no por `fleet-data`, que fue eliminado como código muerto el 8-oct).
 - El backend de desarrollo solo se monta con `npm run dev:api` (en `npm run dev` los `/api/*` dan 404 SSR: es el modo mock, no un fallo).
 - En SSR no existe `window`: el adaptador `api` arma la URL con `VITE_SSR_API_BASE`; si ves `Failed to parse URL`, es que falta esa base.

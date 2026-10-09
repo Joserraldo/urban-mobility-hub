@@ -116,15 +116,32 @@ export function useQrScanner(
 }
 
 /**
- * Verificación de casco. Punto único de integración del modelo de visión (RD7): hoy usa el resultado
- * simulado que elige el usuario en modo demostración; para producción se reemplaza el cuerpo por el
- * modelo real (p. ej. MediaPipe/TF.js) sin tocar la interfaz.
+ * Verificación de casco (RD7). Punto único de integración: intenta el modelo real
+ * YOLOv8n-ONNX (helmet-model.ts) sobre la cámara; si no hay modelo, cámara o falla,
+ * cae en la simulación clásica para que la demo nunca se rompa.
  */
-export async function detectHelmet(opts: {
-  simulatedWearing: boolean;
-}): Promise<{ helmetDetected: boolean; confidence: number }> {
+export type HelmetCheckInput = { video?: HTMLVideoElement | null; simulatedWearing?: boolean };
+export type HelmetCheckResult = {
+  helmetDetected: boolean;
+  confidence: number;
+  source: "ia" | "simulacion";
+};
+
+export async function detectHelmet({
+  video,
+  simulatedWearing = true,
+}: HelmetCheckInput = {}): Promise<HelmetCheckResult> {
+  if (video && video.videoWidth > 0) {
+    try {
+      const { runHelmetModel } = await import("./helmet-model");
+      const result = await runHelmetModel(video);
+      return { ...result, source: "ia" };
+    } catch {
+      /* fallback a simulación */
+    }
+  }
   await new Promise((r) => setTimeout(r, 1200));
-  return opts.simulatedWearing
-    ? { helmetDetected: true, confidence: 0.93 }
-    : { helmetDetected: false, confidence: 0.91 };
+  return simulatedWearing
+    ? { helmetDetected: true, confidence: 0.93, source: "simulacion" }
+    : { helmetDetected: false, confidence: 0.91, source: "simulacion" };
 }

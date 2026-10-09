@@ -4,7 +4,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
-import { umhApiPlugin } from "./src/server/dev-api-plugin";
+import { umhApiPlugin, umhOrtPlugin } from "./src/server/dev-api-plugin";
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -48,6 +48,7 @@ export default defineConfig(({ command, mode }) => {
         },
       }),
       viteReact(),
+      ...(command === "serve" ? [umhOrtPlugin()] : []),
       ...(command === "serve" && env["VITE_DATA_SOURCE"] === "api" ? [umhApiPlugin()] : []),
       ...(command === "build" ? [nitro({ defaultPreset: "cloudflare-module" })] : []),
     ],

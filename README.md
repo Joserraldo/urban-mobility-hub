@@ -22,7 +22,7 @@ Portal de negocio responsivo con SEO/GEO/AEO (SSR, JSON-LD, sitemap, llms.txt): 
 - **Mapa interactivo multicapa** con la flota simulada: patinetas disponibles, hubs/puntos de recolección y stock de venta.
 - Alquiler en estación o a domicilio; catálogo e-commerce en modo compra.
 - Panel de detalle por hub: capacidad, vehículos disponibles para alquiler y venta.
-- **Flujo de desbloqueo** (simulado): escáner QR → verificación de casco por cámara → inicio de viaje.
+- **Flujo de desbloqueo**: escáner QR → **verificación de casco por IA real** (YOLOv8n-ONNX en el navegador) o por cámara/casco → inicio de viaje. Si el modelo no carga, cae en el modo simulado sin romper la demo.
 
 ### Panel de telemetría / digital twin (`/admin`)
 
@@ -41,6 +41,16 @@ REST real `/api/*` sobre SQLite (`node:sqlite`) con los nombres de tabla citados
 
 La flota, los hubs y los vehículos se modelan como **gemelos digitales en SQLite**; mapa, panel y bandeja leen de la misma fuente.
 
+### Detección de casco por IA (`src/lib/helmet-model.ts`)
+
+Detección de casco **con modelo real en el navegador** (RD7): YOLOv8n entrenado en
+`iam-tsr/yolov8n-helmet-detection` (MIT), exportado a ONNX fp16 (`public/models/helmet.onnx`,
+6.4 MB) y ejecutado con `onnxruntime-web` (WASM/WebGPU, runtime en `public/ort/`, sin CDN).
+La cámara y el modelo corren 100 % local; `detectHelmet` (camera.ts) intenta el modelo y,
+si no hay cámara/modelo o falla, cae en el modo simulado para que la demo nunca se rompa.
+El runtime y los assets están en `public/` (servidos como estáticos); en dev Vite se sirven
+con un middleware (`umhOrtPlugin`) que resuelve el sufijo `?import`.
+
 ## Stack técnico
 
 | Capa            | Tecnología                                                                       |
@@ -49,6 +59,7 @@ La flota, los hubs y los vehículos se modelan como **gemelos digitales en SQLit
 | Build           | Vite + Nitro (target Cloudflare)                                                 |
 | UI              | Tailwind CSS 4 + [shadcn/ui](https://ui.shadcn.com)                              |
 | Estado/servidor | TanStack Router + TanStack Query                                                 |
+| IA de casco     | **YOLOv8n** (ONNX fp16) + **onnxruntime-web** (WASM/WebGPU) en el navegador      |
 | Gráficas        | Recharts                                                                         |
 | Animaciones     | Framer Motion                                                                    |
 | Lenguaje        | TypeScript                                                                       |
