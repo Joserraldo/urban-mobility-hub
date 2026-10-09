@@ -6,18 +6,21 @@
     "vp": [1366, 900],
     "full": true,
     "rf": ["RF-01"],
-    "muestra": "Propuesta de valor, servicios, entrega a domicilio con domiciliario, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración.",
-    "sirve": "Presenta el negocio completo (lo que los documentos prometen) y lleva al usuario a la app."
+    "muestra": "Propuesta de valor, flota en fotos reales (marquee), servicios, entrega a domicilio, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración. Animaciones de scroll y micro-interacciones.",
+    "sirve": "Presenta el negocio completo (lo que los documentos prometen), con fotos reales de la flota, y lleva al usuario a la app.",
+    "waitUntil": "load",
+    "wait": 1800
   },
   {
     "id": "02-landing-movil",
     "titulo": "Entrada en móvil",
     "url": "/",
     "vp": [390, 844],
-    "wait": 1500,
+    "wait": 1800,
     "rf": ["RF-01"],
-    "muestra": "En pantalla pequeña la landing lleva directo al mapa.",
-    "sirve": "Evita pasos al usuario móvil; la redirección es del lado del cliente para no dañar el SEO."
+    "muestra": "Propuesta de valor, flota en fotos reales (marquee), servicios, entrega a domicilio, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración. Animaciones de scroll y micro-interacciones.",
+    "sirve": "Evita pasos al usuario móvil; la redirección es del lado del cliente para no dañar el SEO.",
+    "waitUntil": "load"
   },
   {
     "id": "03-app-alquilar",
@@ -35,7 +38,11 @@
     "url": "/app",
     "vp": [1366, 900],
     "wait": 2000,
-    "steps": [{ "click": "text=Comprar" }],
+    "steps": [
+      {
+        "click": "text=Comprar"
+      }
+    ],
     "rf": ["RF-02", "RF-03", "RF-06"],
     "muestra": "Stock en venta por hub con precio y condición.",
     "sirve": "Comprar un vehículo."
@@ -95,7 +102,10 @@
     "vp": [1440, 900],
     "wait": 2000,
     "full": true,
-    "login": { "email": "operador@demo.co", "password": "Demo1234!" },
+    "login": {
+      "email": "operador@demo.co",
+      "password": "Demo1234!"
+    },
     "rf": ["RF-13", "RF-14", "RF-16", "RF-17"],
     "muestra": "KPIs de flota, tabla de gemelos digitales, simulador de alertas y bitácora; con sesión de operador.",
     "sirve": "Que el operador vigile la flota con datos reales de SQLite."
@@ -127,7 +137,10 @@
     "vp": [1366, 900],
     "wait": 2500,
     "full": true,
-    "login": { "email": "domi1@demo.co", "password": "Demo1234!" },
+    "login": {
+      "email": "domi1@demo.co",
+      "password": "Demo1234!"
+    },
     "rf": ["RF-25"],
     "muestra": "Entrega asignada a domi1 con dirección, cliente, cuenta atrás al deadline y acciones Iniciar / Confirmar / Marcar tardía.",
     "sirve": "UC15-UC17: el domiciliario ejecuta la entrega a domicilio desde su propia vista."
@@ -139,7 +152,10 @@
     "vp": [1440, 900],
     "wait": 2500,
     "full": true,
-    "login": { "email": "operador@demo.co", "password": "Demo1234!" },
+    "login": {
+      "email": "operador@demo.co",
+      "password": "Demo1234!"
+    },
     "rf": ["RF-25", "RF-27"],
     "muestra": "Bloque inferior del /admin: reservas de domicilio pendientes de asignación, entregas en curso y bitácora de correos Brevo con estado sent/simulated/failed.",
     "sirve": "UC14: asignar entregas al domiciliario; UC19: verificar que el aviso de retraso se registró."

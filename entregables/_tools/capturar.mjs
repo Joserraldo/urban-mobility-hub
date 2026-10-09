@@ -32,7 +32,10 @@ for (const p of pantallas) {
         page.click("[data-testid=auth-submit]"),
       ]);
     }
-    const r = await page.goto(base + p.url, { waitUntil: "networkidle", timeout: 30000 });
+    const r = await page.goto(base + p.url, {
+      waitUntil: p.waitUntil ?? "networkidle",
+      timeout: 30000,
+    });
     if (r && r.status() >= 400) {
       ok = false;
       nota = `HTTP ${r.status()}`;

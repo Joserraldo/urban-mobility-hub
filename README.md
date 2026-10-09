@@ -14,7 +14,7 @@ Este repositorio corresponde al **segundo avance**: portal web funcional con **b
 
 ### Landing page (`/`)
 
-Portal de negocio responsivo con SEO/GEO/AEO (SSR, JSON-LD, sitemap, llms.txt): servicios, tarifas reales leídas de la BD, sección de entrega a domicilio, seguridad IoT y CTA con cuentas de demostración. En móvil entra directo a la app de mapa (decisión en cliente, no daña el rastreo).
+Portal de negocio responsivo con SEO/GEO/AEO (SSR, JSON-LD, sitemap, llms.txt): **flota en fotos reales** (marquee), servicios, tarifas reales leídas de la BD, sección de entrega a domicilio, seguridad IoT y CTA con cuentas de demostración. Animaciones de scroll (parallax en el hero, reveals), contadores animados y micro-interacciones que respetan `prefers-reduced-motion`. En móvil entra directo a la app de mapa (decisión en cliente, no daña el rastreo). Las fotos de vehículos son de Wikimedia Commons con uso libre (créditos en `src/components/Landing.tsx`).
 
 ### App de usuario (`/app`)
 

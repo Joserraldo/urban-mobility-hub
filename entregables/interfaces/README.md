@@ -9,8 +9,8 @@ Generado automáticamente por `_tools/capturar.mjs` desde `_tools/pantallas.json
 ![Landing (escritorio)](img/01-landing-escritorio.png)
 
 - **Ruta:** `/` · **Vista:** 1366×900
-- **Qué muestra:** Propuesta de valor, servicios, entrega a domicilio con domiciliario, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración.
-- **Para qué sirve:** Presenta el negocio completo (lo que los documentos prometen) y lleva al usuario a la app.
+- **Qué muestra:** Propuesta de valor, flota en fotos reales (marquee), servicios, entrega a domicilio, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración. Animaciones de scroll y micro-interacciones.
+- **Para qué sirve:** Presenta el negocio completo (lo que los documentos prometen), con fotos reales de la flota, y lleva al usuario a la app.
 - **Requisitos:** RF-01
 
 ## 2. Entrada en móvil
@@ -18,7 +18,7 @@ Generado automáticamente por `_tools/capturar.mjs` desde `_tools/pantallas.json
 ![Entrada en móvil](img/02-landing-movil.png)
 
 - **Ruta:** `/` · **Vista:** 390×844
-- **Qué muestra:** En pantalla pequeña la landing lleva directo al mapa.
+- **Qué muestra:** Propuesta de valor, flota en fotos reales (marquee), servicios, entrega a domicilio, tarifas reales en COP, seguridad IoT, catálogo, hubs, FAQ y cuentas de demostración. Animaciones de scroll y micro-interacciones.
 - **Para qué sirve:** Evita pasos al usuario móvil; la redirección es del lado del cliente para no dañar el SEO.
 - **Requisitos:** RF-01
 
