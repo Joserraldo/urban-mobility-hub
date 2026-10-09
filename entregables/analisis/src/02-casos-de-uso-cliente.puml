@@ -1,0 +1,59 @@
+﻿@startuml 02-casos-de-uso-cliente
+!include ../../_tools/uml-style.iuml
+left to right direction
+title Casos de uso del CLIENTE (compra, alquila y conduce)
+
+actor Cliente as C
+
+rectangle "Sistema UMH" {
+  usecase "UC01 Registrarse y\ndar consentimiento" as UC01 #FFF4CC
+  usecase "UC02 Iniciar o\ncerrar sesión" as UC02 #FFF4CC
+  usecase "UC03 Ver catálogo de venta" as UC03 #E8F0FE
+  usecase "UC04 Comprar vehículo" as UC04 #E8F0FE
+  usecase "UC05 Alquilar vehículo\n(hub o domicilio)" as UC05 #E8F0FE
+  usecase "UC06 Ver flota y mapa multicapa" as UC06 #E8F0FE
+  usecase "UC07 Ver detalle de hub" as UC07 #E8F0FE
+  usecase "UC08 Desbloquear vehículo\n(QR + casco)" as UC08 #E8F0FE
+  usecase "UC09 Desbloquear con rostro" as UC09 #E8F0FE
+  usecase "UC18 Realizar pago" as UC18 #FFF4CC
+}
+
+actor "Pasarela de pagos" as P
+actor "API de Mapas\n(OpenStreetMap)" as M
+actor "Servicio facial" as F
+
+C --- UC01
+C --- UC02
+C --- UC03
+C --- UC04
+C --- UC05
+C --- UC06
+C --- UC07
+C --- UC08
+C --- UC09
+
+UC04 ..> UC18 : <<include>>
+UC05 ..> UC18 : <<include>>
+UC18 ..> UC02 : <<include>>
+UC08 ..> UC05 : <<include>>
+UC09 ..> UC08 : <<extend>>
+UC18 --> P
+UC06 --> M
+UC05 --> M
+UC09 --> F
+
+note bottom of UC18
+  El Operador y el Domiciliario HEREDAN
+  estos casos (generalización): también
+  pueden comprar, alquilar y desbloquear.
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | óvalo azul | caso del cliente |
+  | óvalo dorado | compartido (todos los roles) |
+  | «include» | obligatorio |
+  | «extend» | opcional / alterno |
+endlegend
+
+@enduml

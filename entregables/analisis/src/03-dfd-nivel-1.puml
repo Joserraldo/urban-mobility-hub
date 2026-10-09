@@ -1,0 +1,71 @@
+@startuml 03-dfd-nivel-1
+!include ../../_tools/uml-style.iuml
+title DFD nivel 1 — RF-19 · v2: pago como proceso propio (1.1), entregas (6) y almacenes reales
+' Óvalo = proceso (número + nombre); rectángulo = entidad externa; cilindro = almacén de datos.
+
+actor "Cliente" as U
+actor "Operador" as O
+actor "Domiciliario" as D
+rectangle "Pasarela de pagos" as PAY
+rectangle "Servicio facial" as FAC
+rectangle "API de correo\n(Brevo)" as BRV
+rectangle "Vehículos IoT /\ngemelos digitales" as IOT
+
+usecase "1\nPortal de negocio\n(catálogo, compra,\nalquiler)" as P1
+usecase "1.1\nRealizar pago\n(UC18)" as P11
+usecase "2\nAutenticación y\ndesbloqueo" as P2
+usecase "3\nTracking en\ntiempo real" as P3
+usecase "4\nSeguridad IoT\n(triggers y alertas)" as P4
+usecase "5\nAdministración y\ntelemetría" as P5
+usecase "6\nEntregas a domicilio\n(UC14-UC19)" as P6
+
+database "D1 users, consents,\nbiometric_templates" as D1
+database "D2 vehicles, hubs\n(gemelos digitales)" as D2
+database "D3 reservations,\npurchases" as D3
+database "D4 alert_log\n(solo-append)" as D4
+database "D5 payments,\ndeliveries,\nnotifications" as D5
+
+U --> P1 : "solicitud compra/alquiler\n(con dirección si es domicilio)"
+P1 --> U : "catálogo, reserva confirmada"
+P1 --> P11 : "cobro pendiente\n(prepago 10.000 o total)"
+P11 --> PAY : "orden de cobro COP"
+PAY --> P11 : "referencia + aprobado/rechazado"
+P11 --> D5 : "INSERT payments\n(comprobante)"
+P11 --> D3 : "UPDATE purchases='paid'\n/ reservations sigue requested"
+P1 <--> D2 : "consulta vehículos y hubs"
+P1 --> D3 : "INSERT reservas/compras (pending)"
+P1 --> P6 : "reserva modality=delivery\npasa a la cola de entregas"
+
+U --> P2 : "credenciales, consentimiento,\nQR, foto casco/rostro"
+P2 --> U : "estado de desbloqueo"
+P2 <--> D1 : "lee usuario, plantilla,\nconsentimientos"
+P2 --> FAC : "valida rostro"
+FAC --> P2 : "coincidencia ≥ 0.85"
+P2 --> D3 : "lee reserva 'requested'"
+P2 --> D2 : "vehicle → in_use (start)"
+P2 --> IOT : "comando UNLOCK"
+
+IOT --> P3 : "posición, batería (≤ 5 s RNF-01)"
+P3 --> D2 : "UPDATE posición/batería/alert_state"
+P3 --> U : "mapa en vivo (SSE)"
+IOT --> P4 : "eventos casco, caída, GPS, batería"
+P4 --> D2 : "lee estado del vehículo"
+P4 --> D4 : "INSERT alerta (RNF-04)"
+P4 --> O : "notificación < 1 s (RNF-02)"
+
+O --> P5 : "simula evento, gestiona catálogo/hubs"
+P5 --> P4 : "inyecta evento (origin=simulator)"
+P5 <--> D2 : "CRUD catálogo y hubs"
+P5 --> D4 : "lee bitácora"
+P5 --> O : "KPIs, gemelo, log"
+
+O --> P6 : "asigna entrega: courier + deadline (UC14)"
+P6 --> D5 : "INSERT/UPDATE deliveries"
+P6 --> D3 : "reserva → completed al entregar"
+P6 --> D2 : "vehicle → in_use tras entrega"
+D --> P6 : "ve sus entregas; inicia, confirma,\nmarca tardía (UC15-UC17)"
+P6 --> D : "bandeja ordenada por deadline"
+P6 --> BRV : "correo de retraso (UC19,\ncron o manual)"
+BRV --> P6 : "messageId / error"
+P6 --> D5 : "INSERT notifications\n(sent/failed/simulated)"
+@enduml

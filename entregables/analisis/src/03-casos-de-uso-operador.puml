@@ -1,0 +1,45 @@
+﻿@startuml 03-casos-de-uso-operador
+!include ../../_tools/uml-style.iuml
+left to right direction
+title Casos de uso del OPERADOR (administra la operación y vigila la flota)
+
+actor Cliente as C
+actor Operador as O
+O --|> C
+
+rectangle "Sistema UMH" {
+  usecase "UC02 Iniciar o\ncerrar sesión" as UC02 #FFF4CC
+  usecase "UC10 Ver KPIs y\ngemelos digitales" as UC10 #E6F4EF
+  usecase "UC11 Simular evento IoT" as UC11 #E6F4EF
+  usecase "UC12 Revisar bitácora\nde alertas" as UC12 #E6F4EF
+  usecase "UC13 Gestionar catálogo y hubs" as UC13 #E6F4EF
+  usecase "UC14 Asignar entrega\na domiciliario" as UC14 #E6F4EF
+  usecase "UC20 Reportar telemetría\ny alertas" as UC20 #F0EBFA
+  usecase "UC15-UC17 Ver asignación\ny entregar (del Domiciliario)" as UCENT #FDF0E4
+}
+
+actor "Vehículo IoT\n(gemelo digital)" as V
+
+O --- UC10
+O --- UC11
+O --- UC12
+O --- UC13
+O --- UC14
+C --- UC02
+V --- UC20
+UC20 ..> UC12 : <<include>>
+UC14 ..> UCENT : "prepara la entrega\nque ejecuta el domiciliario"
+
+note bottom of O
+  Herencia: el Operador es un tipo de Cliente;
+  además de estos casos puede comprar, alquilar
+  y desbloquear (ver plano del Cliente).
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | óvalo verde | caso del operador |
+  | triángulo hueco | herencia (subtipo --> padre) |
+endlegend
+
+@enduml

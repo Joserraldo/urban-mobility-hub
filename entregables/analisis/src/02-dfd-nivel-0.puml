@@ -1,0 +1,42 @@
+@startuml 02-dfd-nivel-0
+!include ../../_tools/uml-style.iuml
+left to right direction
+title DFD nivel 0 (contexto) — RF-19 · v2 con domiciliario, pago y correo
+' Convención: rectángulo = entidad externa (dato, no acción); óvalo = el sistema como una caja.
+
+actor "Cliente" as U
+actor "Operador" as O
+actor "Domiciliario" as D
+rectangle "Pasarela de pagos" as PAY
+rectangle "Servicio de\nreconocimiento facial" as FAC
+rectangle "API de Mapas\n(OpenStreetMap)" as MAP
+rectangle "API de correo\n(Brevo)" as BRV
+rectangle "Vehículos IoT /\nRaspberry Pi (gemelos digitales)" as IOT
+
+usecase "0\nPlataforma\nMultimodal de\nMicromovilidad" as SYS
+
+U -- SYS : "registro y consentimiento, credenciales,\ncompra, solicitud de alquiler (hub/domicilio),\nQR, foto de casco/rostro"
+SYS -- U : "catálogo, flota, mapa, confirmaciones,\nestado de desbloqueo y de entrega"
+O -- SYS : "altas/bajas catálogo y hubs, simulación\nde eventos, asignación de entregas"
+SYS -- O : "KPIs, estado de gemelos, log de alertas,\nbitácora de correos"
+D -- SYS : "consulta sus entregas; inicia,\nentrega o marca tardía"
+SYS -- D : "bandeja de entregas con\ndeadline y dirección"
+SYS --> PAY : "orden de cobro\n(prepago y cargo de viaje)"
+PAY --> SYS : "resultado del pago\n(referencia, aprobado/rechazado)"
+SYS --> FAC : "plantilla a validar"
+FAC --> SYS : "coincidencia / confianza"
+SYS --> MAP : "teselas y geocodificación\nde la dirección de entrega"
+MAP --> SYS : "mapa base / coordenadas"
+SYS --> BRV : "correo de retraso\nde entrega (UC19)"
+BRV --> SYS : "messageId / error"
+IOT --> SYS : "telemetría (GPS, batería)\ny eventos de alerta"
+SYS --> IOT : "comando de bloqueo/desbloqueo"
+
+note bottom of SYS
+  Las flechas cruzan la FRONTERA del sistema:
+  si un dato no aparece aquí, la plataforma
+  no lo maneja. Las únicas que llegan sin que
+  las dispare un humano: IOT y el correo de
+  retraso (cron del sistema).
+end note
+@enduml
