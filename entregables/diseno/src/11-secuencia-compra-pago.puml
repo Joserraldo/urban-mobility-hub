@@ -1,0 +1,36 @@
+@startuml 11-secuencia-compra-pago
+!include ../../_tools/uml-style.iuml
+title UC04 Compra de vehículo con UC18 Realizar pago (RF-03, RNF-07: 3 pasos) — tablas reales
+
+actor Cliente as U
+participant "Portal /catalogo\ny /app modo compra" as UI
+participant "API\n/api/purchases" as API
+participant "pasarela-pagos.ts\n(simulada; interfaz lista\npara Wompi/PayU)" as PS
+database "purchases" as TP
+database "payments" as TPA
+database "vehicles" as TV
+
+U->UI: 1) selecciona vehículo en catálogo → 2) confirma compra
+UI->API: POST /api/purchases {vehicleId} (con sesión UC02)
+API->TV: SELECT * FROM vehicles WHERE id=? AND mode='sale'\nAND status='available'
+alt vehículo no disponible o sin sesión
+  API-->>UI: 409/401 con mensaje claro
+end
+API->TP: INSERT purchases (status='pending', price_cop, payment_method)
+group UC18 Realizar pago (paso 3)
+  UI->API: POST /api/payments {purchaseId, método} (token de prueba)
+  API->PS: cobrar COP {amount}
+  alt pago aprobado
+    PS-->>API: {reference:'PAY-...', status:'approved'}
+    API->TPA: INSERT payments (owner_type='purchase', owner_id,\namount_cop, reference, status='approved')
+    API->TP: UPDATE purchases SET status='paid', paid_at=ahora
+    API->TV: UPDATE vehicles SET status='sold'
+    API-->>UI: 201 compra confirmada con referencia de pago
+  else pago rechazado
+    PS-->>API: {status:'rejected'}
+    API->TPA: INSERT payments (status='rejected')
+    API->TP: UPDATE purchases SET status='failed'
+    API-->>UI: 402 "Pago rechazado, intenta con otro método"
+  end
+end
+@enduml

@@ -1,0 +1,58 @@
+@startuml 04-secuencia-desbloqueo
+!include ../../_tools/uml-style.iuml
+title UC08 Desbloqueo QR + casco (RF-09), alterno UC09 rostro (RF-10) — participantes = tablas reales de SQLite
+
+actor Cliente as U
+participant "Portal /app\n(UnlockFlow)" as UI
+participant "API\n/api/unlock/*" as API
+database "unlock_sessions" as TS
+database "vehicles" as TV
+database "reservations" as TR
+database "biometric_templates\n(cifrada AES-GCM)" as TB
+participant "Vehículo\n(comando simulado)" as V
+
+U->UI: Selecciona su vehículo RESERVADO y pulsa "Desbloquear"
+UI->API: POST /api/unlock {reservationId, vehicleId}
+API->TR: SELECT reservations WHERE id=? AND status='requested'
+API->TS: INSERT unlock_sessions (reservation_id, step='qr', expires_at=ahora+120 s)
+API-->>UI: {sessionId, step:'qr'}
+U->UI: Escanea QR "UMH:<vehicleId>"
+UI->API: POST /api/unlock/{sessionId}/qr {code}
+alt código válido y sesión vigente
+  API->TS: UPDATE step='helmet'
+  API-->>UI: paso siguiente: casco
+else código inválido o sesión vencida
+  API->TS: UPDATE step='denied' | 'expired'
+  API-->>UI: error con motivo
+end
+U->UI: Muestra el casco a la cámara (detección local, sin subir video)
+UI->API: POST /api/unlock/{sessionId}/helmet {helmetDetected, confidence}
+alt confidence ≥ 0.80
+  API->TS: UPDATE step='ready'
+  API-->>UI: habilita botón "Iniciar viaje"
+else casco no detectado
+  API->TS: UPDATE step='denied'
+  API-->>UI: "No se detectó el casco" (viaje sigue bloqueado)
+end
+U->UI: Iniciar viaje
+UI->API: POST /api/unlock/{sessionId}/start
+API->TS: exige step='ready' y sin vencimiento
+API->TV: SELECT tarifa y estado del vehículo (status='reserved')
+API->TR: UPDATE reservations SET status='active', started_at=ahora
+API->TV: UPDATE vehicles SET status='in-use'
+API->V: comando UNLOCK (topic umh/vehicle/{id}/unlock)
+API-->>UI: reserva activa → empieza el cobro por minuto
+
+opt Alterno RF-10: rostro en lugar de QR (UC09 extiende UC08)
+  U->UI: elige "Usar mi rostro"
+  UI->UI: extrae plantilla facial en el navegador (face-api.js)
+  UI->API: POST /api/unlock/{sessionId}/face {score}
+  API->TB: SELECT plantilla del usuario y la descifra
+  alt score ≥ 0.85 y consentimiento biométrico vigente
+    API->TS: UPDATE step='helmet' (continúa el flujo normal)
+  else falla el match o no hay consentimiento
+    API->TS: UPDATE step='denied'
+    API-->>UI: "No reconocimos tu rostro"
+  end
+end
+@enduml

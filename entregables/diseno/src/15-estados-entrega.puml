@@ -1,0 +1,21 @@
+@startuml 15-estados-entrega
+!include ../../_tools/uml-style.iuml
+title Estados de una entrega a domicilio (tabla deliveries) — UC14/UC16/UC17
+
+[*] --> assigned : Operador asigna\ndomiciliario + deadline (UC14)
+assigned --> in_progress : Domiciliario toma\nla entrega (UC15/UC16)
+in_progress --> delivered : confirma entrega en\ndestino (UC16)
+assigned --> late : cron: ahora > deadline_at\nsin entrega (UC17 automático)
+in_progress --> late : domiciliario marca "tardía"\ncon causa (UC17 extend)
+late --> delivered : finalmente entrega\n(registra demora)
+late --> late : UC19 notifica por correo\n(Brevo) a cliente y operador
+delivered --> [*]
+
+note right of late
+  Al entrar en "late" se crea la fila en
+  notifications (template 'entrega_tardia')
+  y se llama a la API de Brevo (UC19).
+  Si Brevo falla: status='failed' y el
+  panel /admin lo muestra; la demo sigue.
+end note
+@enduml

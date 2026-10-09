@@ -1,0 +1,56 @@
+@startuml 13-secuencia-entrega-domicilio
+!include ../../_tools/uml-style.iuml
+title UC14-UC17 Entrega a domicilio y UC19 retraso → Brevo (nuevo RF-25/27) — tablas reales
+
+actor Cliente as U
+actor Operador as O
+actor Domiciliario as D
+participant "Portal /app" as UI
+participant "Panel /admin" as ADM
+participant "API\n/api/deliveries" as API
+participant "cron\ndeliveries.check-late" as CRON
+database "deliveries\n(nueva tabla)" as TD
+database "reservations" as TR
+database "notifications\n(nueva tabla)" as TN
+participant "brevo.ts\nAPI de correo (Brevo)" as BR
+
+== UC14 Asignar entrega (Operador) ==
+O->ADM: Ver reservas modality='delivery' status='requested'
+ADM->TR: SELECT * FROM reservations WHERE modality='delivery'
+O->ADM: "Asignar a domiciliario" (elige D y deadline)
+ADM->API: POST /api/deliveries {reservationId, courierId, deadlineAt}
+API->TD: INSERT deliveries (status='assigned',\ncourier_id, deadline_at)
+API->TR: UPDATE reservations SET status='active' (en tránsito)
+API-->>ADM: OK
+
+== UC15-UC16 Realizar entrega (Domiciliario) ==
+D->UI: Entra a "Mis entregas" (rol courier)
+UI->API: GET /api/deliveries?courier=me&status=assigned
+API->TD: SELECT * FROM deliveries WHERE courier_id=? AND status='assigned'
+API-->>UI: lista con dirección del cliente (desde reservations)
+D->UI: Llega y confirma entrega
+UI->API: POST /api/deliveries/{id}/complete
+API->TD: UPDATE deliveries SET status='delivered', delivered_at=ahora
+API->TR: UPDATE reservations SET status='completed'
+API-->>UI: OK "entregado"
+
+== UC17/UC19 Entrega tardía → correo ==
+alt el domiciliario marca "tardía" (UC17 extiende UC16)
+  D->UI: "Marcar entrega tardía" (causa)
+  UI->API: POST /api/deliveries/{id}/late {reason}
+  API->TD: UPDATE deliveries SET status='late', reason
+else el cron detecta el vencimiento (automático)
+  CRON->TD: SELECT WHERE status='assigned' AND now > deadline_at
+  CRON->API: marca tardía las vencidas
+  API->TD: UPDATE deliveries SET status='late'
+end
+API->TN: INSERT notifications (channel='email', to=cliente+operador,\ntemplate='entrega_tardia')
+API->BR: POST /v3/smtp/email (renderiza plantilla)
+alt Brevo responde 2xx
+  BR-->>API: messageId
+  API->TN: UPDATE notifications SET status='sent', provider_id
+else falla o no hay BREVO_API_KEY (modo demo)
+  API->TN: UPDATE notifications SET status='failed' | 'simulated'
+  note right of TN: la demo nunca se rompe:\nqueda registrado y se ve en /admin
+end
+@enduml

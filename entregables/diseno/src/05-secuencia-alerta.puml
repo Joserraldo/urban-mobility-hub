@@ -1,0 +1,32 @@
+@startuml 05-secuencia-alerta
+!include ../../_tools/uml-style.iuml
+title UC20 Telemetría y UC12 alertas IoT (RF-11, RF-12, RF-15; RNF-01, RNF-02) — participantes = tablas reales
+
+participant "Simulador de flota\n(gemelo digital; mañana: Raspberry Pi)" as S
+participant "API\n/api/ingest" as IN
+participant "SecurityTrigger\n(server/domain/alerts.ts)" as ST
+database "vehicles\n(gemelo: batería, GPS, estado)" as TV
+database "alert_log\n(solo INSERT, RNF-04)" as TA
+participant "SSE\n/api/stream" as SS
+actor Operador as O
+
+S->IN: POST /api/ingest {vehicleId, lat, lng, battery,\nhelmetOn, impactG, gpsFixAgeMs, tripActive}
+IN->ST: evalúa la muestra
+ST->ST: prioridad: caida > sin_casco > perdida_gps >\nbateria_critica > sin_novedad
+alt estado distinto de sin_novedad (RNF-02 < 1 s)
+  ST->TV: UPDATE vehicles SET alert_state=<tipo>
+  ST->TA: INSERT alert_log (vehicle_id, type, lat, lng, at)
+  ST->SS: emite evento alerta
+  SS-->>O: el panel /admin la pinta de rojo de inmediato
+else sin novedad (RNF-01 ≤ 5 s)
+  ST->TV: UPDATE vehicles SET lat, lng, battery (posición fresca)
+  ST->SS: emite nueva posición
+  SS-->>O: el mapa mueve el marcador
+end
+note over O, S
+  UC11: el operador también inyecta la misma muestra desde el
+  simulador del /admin y recorre este camino desde "evalúa";
+  se marca alert_log.origin='simulador' para no confundirla
+  con telemetría real.
+end note
+@enduml

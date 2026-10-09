@@ -1,0 +1,33 @@
+@startuml 12-secuencia-alquiler-pago
+!include ../../_tools/uml-style.iuml
+title UC05 Alquiler (hub o domicilio) con UC18 Realizar pago (RF-05, RF-07) — tablas reales
+
+actor Cliente as U
+participant "Portal /app\nmodo alquiler" as UI
+participant "API\n/api/reservations" as API
+participant "pasarela-pagos.ts\n(simulada)" as PS
+database "reservations" as TR
+database "payments" as TPA
+database "vehicles" as TV
+
+U->UI: 1) toca vehículo del mapa → 2) elige modalidad\n(hub o domicilio; si es domicilio, captura dirección)
+UI->API: POST /api/reservations {vehicleId, modality, address?}\n(si domicilio: geocodifica con API de Mapas)
+API->TV: SELECT * FROM vehicles WHERE mode='rent'\nAND status='available'
+alt modalidad domicilio
+  API->API: valida cobertura del hub más cercano
+end
+API->TR: INSERT reservations (status='requested',\nmodality, address, vehicle_id)
+group UC18 Realizar pago — prepago del minuto base
+  UI->API: POST /api/payments {reservationId}
+  API->PS: cobrar COP {base}
+  PS-->>API: aprobado con reference
+  API->TPA: INSERT payments (owner_type='reservation', status='approved')
+end
+API->TV: UPDATE vehicles SET status='reserved'
+API-->>UI: reserva 'solicitada' → habilita UC08 Desbloquear
+note right of TR
+  El cobro por minuto ocurre al cerrar el viaje:
+  rentalCost(minutos, pricePerMinute) redondea
+  hacia arriba y genera un payment tipo 'cargo_viaje'.
+end note
+@enduml

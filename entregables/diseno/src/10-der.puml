@@ -1,0 +1,163 @@
+@startuml 10-der
+!include ../../_tools/uml-style.iuml
+title DER v2 — SQLite (D1 local en dev, D1 en producción Cloudflare)
+
+entity users {
+  * id: TEXT <<PK>>
+  --
+  * name: TEXT
+  * email: TEXT <<UK>>
+  * password_hash: TEXT "PBKDF2/argon2, RNF-05"
+  * role: TEXT "user | operator | courier"
+  * created_at: INTEGER "epoch ms"
+}
+entity consents {
+  * id: TEXT <<PK>>
+  * user_id: TEXT <<FK>>
+  --
+  * purpose: TEXT "datos_personales | biometria"
+  * accepted_at: INTEGER
+  * revoked: BOOLEAN
+}
+entity biometric_templates {
+  * user_id: TEXT <<PK, FK>>
+  --
+  * cipher_text: BLOB "AES-GCM, RNF-03"
+  * iv: BLOB
+  * auth_tag: BLOB
+}
+entity hubs {
+  * id: TEXT <<PK>>
+  --
+  * name: TEXT
+  * zone: TEXT
+  * lat: REAL
+  * lng: REAL
+  * capacity: INTEGER
+  * charging: INTEGER
+  * active: BOOLEAN
+}
+entity vehicles {
+  * id: TEXT <<PK>>
+  --
+  * kind: TEXT "scooter | bike | drone"
+  * model: TEXT
+  * mode: TEXT "rent | sale"
+  * status: TEXT "available | reserved | in_use | sold | offline"
+  * condition: TEXT "nuevo | seminuevo"
+  * price_cop: INTEGER "solo mode=sale"
+  * rate_per_min_cop: INTEGER "solo mode=rent"
+  * spec: TEXT
+  * battery: INTEGER "0-100"
+  * lat: REAL
+  * lng: REAL
+  * hub_id: TEXT <<FK>>
+  * alert_state: TEXT
+  * deliverable: BOOLEAN
+  * qr_code: TEXT "UMH:<id>"
+}
+entity reservations {
+  * id: TEXT <<PK>>
+  * user_id: TEXT <<FK>>
+  * vehicle_id: TEXT <<FK>>
+  --
+  * modality: TEXT "hub | delivery"
+  * address: TEXT "solo delivery"
+  * status: TEXT "requested | active | completed | cancelled"
+  * requested_at: INTEGER
+  * started_at: INTEGER
+  * ended_at: INTEGER
+  * total_cost_cop: INTEGER
+}
+entity purchases {
+  * id: TEXT <<PK>>
+  * user_id: TEXT <<FK>>
+  * vehicle_id: TEXT <<FK>>
+  --
+  * price_cop: INTEGER
+  * payment_method: TEXT "card | pse | cash"
+  * status: TEXT "pending | paid | failed"
+  * created_at: INTEGER
+  * paid_at: INTEGER
+}
+entity payments {
+  * id: TEXT <<PK>>
+  --
+  * owner_type: TEXT "purchase | reservation"
+  * owner_id: TEXT "polimórfico controlado por código"
+  * kind: TEXT "base | cargo_viaje"
+  * amount_cop: INTEGER
+  * reference: TEXT "de la pasarela"
+  * status: TEXT "approved | rejected"
+  * created_at: INTEGER
+}
+entity deliveries {
+  * id: TEXT <<PK>>
+  * reservation_id: TEXT <<FK>>
+  * courier_id: TEXT <<FK "users.id (role=courier)" >>
+  --
+  * status: TEXT "assigned | in_progress | delivered | late"
+  * deadline_at: INTEGER "hora límite"
+  * assigned_at: INTEGER
+  * delivered_at: INTEGER
+  * reason: TEXT "causa de tardía"
+}
+entity alert_log {
+  * id: TEXT <<PK>>
+  * vehicle_id: TEXT <<FK>>
+  --
+  * type: TEXT "no_helmet | crash | gps_lost | low_battery"
+  * lat: REAL
+  * lng: REAL
+  * at: INTEGER
+  * origin: TEXT "telemetry | simulator"
+}
+entity unlock_sessions {
+  * id: TEXT <<PK>>
+  * vehicle_id: TEXT <<FK>>
+  * reservation_id: TEXT <<FK>>
+  --
+  * step: TEXT "qr | helmet | ready | denied | expired"
+  * reason: TEXT
+  * expires_at: INTEGER "TTL 120 s"
+}
+entity notifications {
+  * id: TEXT <<PK>>
+  * user_id: TEXT <<FK "destinatario" >>
+  --
+  * channel: TEXT "email"
+  * provider: TEXT "brevo"
+  * template: TEXT "entrega_tardia"
+  * to_email: TEXT
+  * status: TEXT "queued | sent | failed | simulated"
+  * provider_id: TEXT "messageId de Brevo"
+  * created_at: INTEGER
+}
+
+users ||--o{ consents : "otorga"
+users |o--o| biometric_templates : "tiene (cifrado)"
+users ||--o{ reservations : "realiza"
+users ||--o{ purchases : "realiza"
+users ||--o{ deliveries : "como domiciliario (role=courier)"
+users ||--o{ notifications : "recibe"
+hubs ||--o{ vehicles : "aloja"
+vehicles ||--o{ reservations : "se reserva en"
+vehicles ||--o| purchases : "se vende en"
+vehicles ||--o{ alert_log : "genera"
+vehicles ||--o{ unlock_sessions : "se desbloquea con"
+reservations ||--o{ payments : "prepaid y cargo_viaje"
+reservations ||--o| deliveries : "se entrega a domicilio en"
+purchases ||--o{ payments : "realiza pago"
+unlock_sessions }o--|| reservations : "abre"
+
+note bottom of payments
+  Tabla NUEVA v2: antes el pago estaba "inline"
+  en purchases/reservations; UC18 Realizar pago
+  exige su propio registro con referencia de pasarela.
+end note
+
+note bottom of deliveries
+  Tabla NUEVA v2: da trabajo al Domiciliario (UC15-17)
+  y sustento al disparador de entrega tardía (UC19→Brevo).
+end note
+@enduml

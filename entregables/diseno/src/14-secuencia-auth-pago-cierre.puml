@@ -1,0 +1,44 @@
+@startuml 14-secuencia-auth-pago-cierre
+!include ../../_tools/uml-style.iuml
+title UC01/UC02 Registro+login y cierre de viaje con cobro (nuevo RF-20/21/26) — tablas reales
+
+actor Cliente as U
+participant "Portal /registro\n/login" as UI
+participant "API\n/api/auth, /api/trips" as API
+database "users" as TU
+database "consents" as TC
+database "sessions\n(firmadas)" as TS
+database "reservations" as TR
+database "payments" as TPA
+participant "pasarela-pagos.ts" as PS
+
+== UC01 Registrarse y dar consentimiento (Ley 1581) ==
+U->UI: Nombre, correo, contraseña, marca consentimiento
+UI->API: POST /api/auth/register {name, email, password, consent:true}
+alt sin consentimiento
+  API-->>UI: 422 "Debes aceptar el tratamiento de datos"
+else correcto
+  API->TU: INSERT users (role='user',\npassword_hash=PBKDF2/argon2id, nunca texto plano)
+  API->TC: INSERT consents (user_id, purpose='datos_personales', accepted_at)
+  API-->>UI: cuenta creada → inicia sesión
+end
+
+== UC02 Iniciar sesión ==
+U->UI: Correo + contraseña
+UI->API: POST /api/auth/login {email, password}
+API->TU: SELECT WHERE email=?
+API->API: verifica hash (si falla → 401 genérico, sin revelar)
+API->TS: INSERT session (token firmado, expira)
+API-->>UI: cookie httpOnly → ya es sesión válida para UC18
+
+== Cierre de viaje (complemento de UC05/UC08) ==
+U->UI: Terminar viaje en /app (o "mis-reservas")
+UI->API: POST /api/trips/{reservationId}/end
+API->TR: SELECT WHERE id=? AND status='active'
+API->API: rentalCost(minutos, pricePerMinute) redondea hacia arriba
+API->PS: cobrar total del viaje
+PS-->>API: aprobado con reference
+API->TPA: INSERT payments (owner_type='reservation',\nkind='cargo_viaje', amount_cop, status='approved')
+API->TR: UPDATE reservations SET status='completed', ended_at, total_cost
+API-->>UI: "Gracias. Total: $X COP" → el vehículo vuelve a 'available'
+@enduml
