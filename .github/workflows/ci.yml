@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "24"
 
 jobs:
   # Gate 1: estilo, tipos y pruebas unitarias/integración (rápido, falla primero)
@@ -131,7 +131,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci || npm install
-      - run: npm run build
+      # preset node_server: Lighthouse necesita servir el build con node puro (sh es bash en ubuntu)
+      - name: Build (preset node para poder previsualizarlo en el gate de Lighthouse)
+        run: NITRO_PRESET=node_server npm run build
       - name: Lighthouse CI
         run: npx lhci autorun --config=lighthouserc.json
       - uses: actions/upload-artifact@v4

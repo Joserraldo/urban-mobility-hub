@@ -1,10 +1,10 @@
 {
   "ci": {
     "collect": {
-      "startServerCommand": "npm run preview -- --port 4173 --host 127.0.0.1",
-      "startServerReadyPattern": "4173",
+      "startServerCommand": "node .output/server/index.mjs",
+      "startServerReadyPattern": "Listening",
       "startServerReadyTimeout": 60000,
-      "url": ["http://127.0.0.1:4173/"],
+      "url": ["http://localhost:3000/", "http://localhost:3000/catalogo"],
       "numberOfRuns": 2,
       "settings": { "preset": "desktop", "chromeFlags": "--no-sandbox" }
     },
