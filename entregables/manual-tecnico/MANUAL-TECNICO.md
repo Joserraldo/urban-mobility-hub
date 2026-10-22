@@ -100,6 +100,10 @@ tests/  .github/  .husky/  lighthouserc.json  (calidad e integración continua)
 7. **Reglas puras en `domain/`.** `verifyHelmet`, `evaluateTelemetry`, `transition` y `rentalCost` no conocen la BD ni HTTP: por eso las unitarias las cubren sin servidor. El API solo las orquesta.
 8. **Notificación como efecto lateral (RF-27).** Brevo se llama con `fetch` desde `services/brevo.ts`; el resultado se registra en `notifications` (`sent/failed/simulated`) y jamás cambia el estado del negocio.
 
+### Vistas UML (v3)
+
+Paquetes (`diseno/img/16-paquetes.png`), componentes (`17-componentes.png`) y nodos (`18-nodos.png`); fuentes PlantUML en `entregables/diseno/src/`. Regenerar: `powershell -File entregables/_tools/render-uml.ps1` (requiere Java y `entregables/_tools/plantuml.jar`, ignorado por git; se baja de https://github.com/plantuml/plantuml/releases).
+
 ## 6. Glosario mínimo
 
 | Término        | Significado                                                 |

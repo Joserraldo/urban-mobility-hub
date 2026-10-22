@@ -11,7 +11,7 @@ flowchart TB
   subgraph LAB["Entorno de desarrollo local"]
     NODE["Node 22 + npm<br/>servidor de desarrollo"]
     SQLF[("archivo SQLite")]
-    AED["aedes + publicadores"]
+    AED["fleet-sim + SSE"]
   end
   BR -- HTTPS --> CDN
   BR -- HTTPS --> WK

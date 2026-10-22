@@ -28,7 +28,7 @@ Recomendación: DO `FleetHub` con WebSocket (hibernación) + endpoint SSE servid
 
 ## 4. Limitaciones que afectan al plan maestro
 
-1. **Simulador MQTT con `aedes` (D4) no corre en Workers** (no hay sockets TCP de escucha ni procesos largos). Alternativa: el broker MQTT corre **solo en local/demo** (Node) y un _puente_ publica por HTTP `POST /api/ingest` (o WebSocket) al DO; en producción los "Raspberry Pi" simulados hacen directamente ese POST. Conserva los topics `umh/vehicle/{id}/telemetry|alert` como nombres lógicos.
+1. **Nota v3: el código actual NO usa MQTT/aedes; usa `fleet-sim` + SSE.** El texto siguiente es histórico. **Simulador MQTT con `aedes` (D4) no corre en Workers** (no hay sockets TCP de escucha ni procesos largos). Alternativa: el broker MQTT corre **solo en local/demo** (Node) y un _puente_ publica por HTTP `POST /api/ingest` (o WebSocket) al DO; en producción los "Raspberry Pi" simulados hacen directamente ese POST. Conserva los topics `umh/vehicle/{id}/telemetry|alert` como nombres lógicos.
 2. **Hash de contraseñas (D5)**: `argon2` nativo no funciona en Workers. Usar `bcryptjs`/`scrypt` en WASM o PBKDF2 con WebCrypto (nativo). Cifrado AES-GCM sí está disponible vía WebCrypto.
 3. **Node APIs**: activar `nodejs_compat`; evitar librerías con binarios nativos (p. ej. `better-sqlite3` solo en dev; en Workers usar D1).
 4. **Límites**: tamaño del Worker (3 MB comprimido en plan gratuito, 10 MB de pago), CPU por petición (10 ms gratis / 30 s de pago), D1 ~5 GB y 100 mil escrituras/día gratis. Suficiente para la demo; la telemetría debe muestrearse (no guardar cada punto).
