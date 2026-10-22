@@ -1,0 +1,86 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Investigación UML</title>
+<style>
+@page{size:A4;margin:2cm}
+body{font-family:"Segoe UI",Arial,sans-serif;font-size:11pt;line-height:1.45;color:#1B2A41}
+h1{font-size:22pt;margin:0 0 .3em}h2{font-size:15pt;border-bottom:2px solid #1B2A41;padding-bottom:3px;margin-top:1.4em}h3{font-size:12pt;margin-bottom:.2em}
+table{border-collapse:collapse;width:100%;margin:.6em 0}td,th{border:1px solid #6B7A90;padding:5px 8px;vertical-align:top;font-size:10pt}th{background:#E8EDF4}
+img{max-width:100%;display:block;margin:.5em auto;page-break-inside:avoid}.cover{text-align:center;padding-top:6cm;page-break-after:always}
+.draft{background:#FFF7CC;border-left:4px solid #C9A400;padding:6px 10px;font-size:10pt}figcaption{text-align:center;font-size:9.5pt;color:#555}
+</style></head><body>
+<div class="cover"><h1>Diagramas UML de paquetes, componentes y nodos</h1>
+<p>Investigación aplicada al proyecto <b>Urban Mobility Hub</b></p>
+<p>Ingeniería de Software II — UNAB</p><br>
+<p><b>José Alejandro Téllez Prada<br>Jaime Alejandro Vega Barboza<br>Santiago Gonzalez Nigrinis</b></p><p>Octubre de 2026</p></div>
+
+<h2>1. Concepto 1: qué son y qué simbología usan</h2>
+<h3>1.1 Diagrama de paquetes</h3>
+<p>Es un diagrama <b>estructural</b> de UML que organiza los elementos de un modelo (clases, módulos, subsistemas) en <b>paquetes</b> y muestra las <b>dependencias</b> entre ellos. Sirve para ver la arquitectura por capas de un sistema mediano o grande y para controlar el acoplamiento. Cada paquete es un espacio de nombres y los paquetes pueden anidarse.</p>
+<table><tr><th>Símbolo</th><th>Significado</th></tr>
+<tr><td>Rectángulo con pestaña superior (carpeta)</td><td>Paquete; el nombre va en la pestaña o dentro.</td></tr>
+<tr><td>Paquete dentro de paquete</td><td>Anidamiento / jerarquía.</td></tr>
+<tr><td>Flecha punteada</td><td>Dependencia: si el destino cambia, el origen puede verse afectado.</td></tr>
+<tr><td>«import»</td><td>El paquete origen incorpora los elementos públicos del destino a su espacio de nombres.</td></tr>
+<tr><td>«access»</td><td>El origen usa elementos del destino sin incorporarlos (acceso privado).</td></tr>
+<tr><td>«merge»</td><td>Se fusiona el contenido del destino en el origen (usado en metamodelado).</td></tr></table>
+
+<h3>1.2 Diagrama de componentes</h3>
+<p>Diagrama estructural que describe el sistema como un conjunto de <b>componentes</b> (unidades modulares, reemplazables, que encapsulan su implementación) y las <b>interfaces</b> mediante las que se relacionan. Muestra qué ofrece y qué necesita cada pieza.</p>
+<table><tr><th>Símbolo</th><th>Significado</th></tr>
+<tr><td>Rectángulo con icono de componente o «component»</td><td>Componente.</td></tr>
+<tr><td>Círculo unido por línea (“lollipop”)</td><td>Interfaz <b>provista</b>: lo que el componente ofrece.</td></tr>
+<tr><td>Semicírculo (“socket”) o flecha punteada hacia la interfaz</td><td>Interfaz <b>requerida</b>: lo que el componente necesita.</td></tr>
+<tr><td>Lollipop encajado en socket</td><td>Conector de ensamblado entre dos componentes.</td></tr>
+<tr><td>Cuadrito sobre el borde</td><td>Puerto: punto de interacción con interfaces propias.</td></tr>
+<tr><td>Flecha punteada</td><td>Dependencia entre componentes.</td></tr></table>
+
+<h3>1.3 Diagrama de nodos (despliegue)</h3>
+<p>Diagrama que modela la <b>arquitectura física</b>: qué hardware o entornos de ejecución existen (<b>nodos</b>), qué <b>artefactos</b> de software se instalan en cada uno y cómo se comunican.</p>
+<table><tr><th>Símbolo</th><th>Significado</th></tr>
+<tr><td>Cubo 3D</td><td>Nodo (recurso computacional).</td></tr>
+<tr><td>«device»</td><td>Nodo de hardware (equipo, celular, servidor físico).</td></tr>
+<tr><td>«execution environment»</td><td>Entorno de ejecución sobre un nodo (navegador, Node, contenedor).</td></tr>
+<tr><td>Rectángulo con esquina doblada / «artifact»</td><td>Artefacto desplegado (ejecutable, bundle, archivo de base de datos).</td></tr>
+<tr><td>Línea entre nodos (con etiqueta)</td><td>Ruta de comunicación (HTTP, HTTPS, SSE).</td></tr>
+<tr><td>Nodos anidados</td><td>Un nodo contiene a otro (dispositivo → navegador → artefacto).</td></tr></table>
+
+<h2>2. Concepto 2: cómo los aplicamos en el proyecto</h2>
+<p>En <b>Urban Mobility Hub</b> (micromovilidad con mapa en vivo, gemelos digitales y detección de casco con IA) los usamos así; las fuentes están en <code>entregables/diseno/src/</code> (PlantUML) y se contrastaron con el código de <code>src/</code>.</p>
+<h3>2.1 Paquetes</h3>
+<p>Separamos <i>routes</i>, <i>components</i> (mobility, auth, commerce, catalog, site, ui), <i>lib</i> (DataSource, api-client, modelo ONNX), <i>shared/types</i> y el servidor (<i>api → services/domain → repositories → db</i>). Nos permitió comprobar que el cliente nunca importa código de <code>server/</code> (la regla <code>importProtection</code> de Vite lo impide) y que las reglas de negocio puras viven en <i>domain</i>.</p>
+<figure><img src="../diseno/img/16-paquetes.png"><figcaption>Figura 1. Diagrama de paquetes.</figcaption></figure>
+<h3>2.2 Componentes</h3>
+<p>Modelamos la SPA React, el <b>DataSource</b> (adaptador mock o API), la API REST, el stream SSE, el simulador de flota, las reglas de dominio, los repositorios sobre SQLite, el modelo de casco y los servicios externos (pasarela simulada, Brevo). Las interfaces (<i>IDataSource, IPago, IEmail, IRepositorio</i>) muestran qué piezas se pueden sustituir sin tocar el resto, por ejemplo cambiar la pasarela simulada por una real.</p>
+<figure><img src="../diseno/img/17-componentes.png"><figcaption>Figura 2. Diagrama de componentes.</figcaption></figure>
+<h3>2.3 Nodos</h3>
+<p>Hoy el sistema corre en un único equipo (Node 22 + Vite en el puerto 8080 + archivo SQLite) y el navegador del usuario ejecuta la PWA y el modelo <code>helmet.onnx</code> con WebAssembly. Lo previsto, aún sin publicar, es Cloudflare (Worker, D1, Durable Object, CDN). El diagrama distingue lo real de lo previsto y añade CI (GitHub Actions) y servicios externos (Brevo, OpenStreetMap).</p>
+<figure><img src="../diseno/img/18-nodos.png"><figcaption>Figura 3. Diagrama de nodos (despliegue).</figcaption></figure>
+<p><b>Verificación previa:</b> antes de documentar corrimos <code>typecheck</code>, 82 pruebas unitarias/integración y 19 pruebas e2e en navegador (Playwright, escritorio y móvil), todas en verde (1 omitida por ser solo-móvil).</p>
+
+<h2>3. Estrategia de búsqueda</h2>
+<h3>Fuentes consultadas</h3>
+<ol>
+<li><b>Visual Paradigm – Guía UML, “What is Package Diagram?”</b> — https://www.visual-paradigm.com/guide/uml-unified-modeling-language/what-is-package-diagram/</li>
+<li><b>Documentación de PlantUML – Deployment diagram</b> — https://plantuml.com/deployment-diagram</li>
+<li><b>OMG, Unified Modeling Language 2.5.1 (formal/17-12-05)</b> — https://www.omg.org/spec/UML/2.5.1/About-UML</li>
+<li><b>Claude (asistente de IA de Anthropic)</b>, consultado dentro del repositorio mientras se generaban los diagramas.</li></ol>
+<p class="draft">Nota: se intentó abrir también uml-diagrams.org, pero el sitio no pudo verificarse desde la herramienta (error de certificado), por eso no se cita como consultada.</p>
+
+<h3>Justificación del valor de las fuentes</h3>
+<table><tr><th>Fuente</th><th>¿Por qué la eligió?</th><th>¿Qué aporta?</th><th>¿Es confiable?</th></tr>
+<tr><td>1. Visual Paradigm</td><td>Aparece primera al buscar “diagrama de paquetes UML”; explica con lenguaje claro.</td><td>Definición, notación del paquete y dependencias «import»/«access», reglas de nombres y anidamiento.</td><td>Sí, con matices: es una empresa de herramientas UML con guías reconocidas, pero comercial; por eso se contrastó con el estándar.</td></tr>
+<tr><td>2. PlantUML</td><td>Es la herramienta con la que dibujamos los diagramas del proyecto.</td><td>Sintaxis y elementos disponibles: <i>node, artifact, cloud, database, component</i>, anidamiento y enlaces.</td><td>Sí: es la documentación oficial de la herramienta; no define la semántica UML, solo cómo dibujarla.</td></tr>
+<tr><td>3. OMG UML 2.5.1</td><td>Es el estándar que define UML; sirve para validar lo que dicen las demás fuentes.</td><td>Referencia normativa de los tres tipos de diagrama (estructura: paquetes, componentes; despliegue).</td><td>Sí, máxima confiabilidad (fuente primaria), aunque es densa y poco didáctica; en la página consultada solo se confirmó la existencia de la especificación.</td></tr>
+<tr><td>4. Claude (IA)</td><td>Rapidez y contexto: leyó el código real del repositorio.</td><td>Borrador de estereotipos y símbolos, y mapeo entre módulos reales y los diagramas.</td><td>Parcial: puede equivocarse; por eso su contenido se contrastó con las fuentes 1–3 y con el código.</td></tr></table>
+
+<h3>Cómo se realizó la búsqueda</h3>
+<p class="draft">Borrador para que el equipo lo ajuste a lo que realmente hizo.</p>
+<ul><li><b>Palabras clave:</b> “diagrama de paquetes UML”, “UML component diagram provided required interface”, “UML deployment diagram node artifact stereotype”, “PlantUML deployment diagram”, “import access package dependency”.</li>
+<li><b>Tipos de fuentes:</b> estándar oficial (OMG), guías de proveedores de herramientas UML, documentación de la herramienta de diagramación y un asistente de IA.</li>
+<li><b>Selección:</b> se priorizó una fuente primaria (OMG), se descartó lo que no se pudo verificar (sitio con error de certificado), se contrastó cada símbolo en al menos dos fuentes y se validó contra el código del proyecto.</li></ul>
+
+<h2>4. Reflexión sobre el aprendizaje</h2>
+<p class="draft">Borrador honesto; edítenlo con sus propias palabras.</p>
+<p><b>¿Qué aprendí que no sabía antes?</b> Que los tres diagramas responden a preguntas distintas: paquetes (¿cómo se organiza y quién depende de quién?), componentes (¿qué ofrece y qué necesita cada pieza?) y nodos (¿dónde corre físicamente?). También que «import» y «access» no son lo mismo, y que conviene separar en el despliegue lo real de lo previsto.</p>
+<p><b>¿Qué dificultad tuve?</b> Mantener los diagramas fieles al código: había documentos antiguos que hablaban de MQTT/aedes cuando el sistema real usa un simulador y SSE. También ajustar la sintaxis de PlantUML para que los paquetes y las interfaces se vieran legibles.</p>
+<p><b>¿Qué estrategia me funcionó mejor?</b> Combinar una fuente didáctica con el estándar y verificar todo contra el código y las pruebas automáticas antes de documentar.</p>
+</body></html>
