@@ -147,6 +147,32 @@ Principios POO presentes:
 
 ---
 
+## 14b. Diagrama de paquetes UML _(nuevo v3)_
+
+![Paquetes](img/16-paquetes.png)
+
+**Qué es.** Los paquetes reales de `src/` (routes, components, lib, server/*, shared) con sus dependencias `«import»` y `«access»`. Fuente: `src/16-paquetes.puml`.
+**Por qué existe.** Muestra que la dependencia es unidireccional (UI → DataSource → API → dominio/servicios → repositorios → SQLite) y que `shared/types` es el único código común cliente/servidor.
+**Cómo leerlo.** Flecha punteada = dependencia. `vite.config.ts` (`importProtection`) impide que el cliente importe `**/server/**`; por eso no hay flecha de Cliente a Servidor salvo HTTP `/api/*` + SSE.
+
+## 14c. Diagrama de componentes UML _(nuevo v3)_
+
+![Componentes](img/17-componentes.png)
+
+**Qué es.** Componentes ejecutables con interfaces provistas (círculo) y requeridas (flecha): `IDataSource`, `REST /api/*`, `Eventos SSE`, `IRepositorio`, `IPago`, `IEmail`. Fuente: `src/17-componentes.puml`.
+**Por qué existe.** Permite sustituir piezas sin tocar el resto: DataSource mock/api, pasarela simulada/real, Brevo simulado/real.
+**Cómo leerlo.** Un componente "provee" una interfaz con la línea corta y "requiere" otra con la flecha punteada. `fleet-sim` (reemplaza al antiguo MQTT/aedes) alimenta el stream SSE.
+
+## 14d. Diagrama de nodos (despliegue UML) _(nuevo v3)_
+
+![Nodos](img/18-nodos.png)
+
+**Qué es.** Nodos físicos/de ejecución y artefactos desplegados. Fuente: `src/18-nodos.puml`.
+**Por qué existe.** Separa lo que corre **hoy** (equipo de desarrollo: Node 22 + Vite :8080 + SQLite) de lo **previsto** (Cloudflare: Worker, D1, Durable Object FleetHub, CDN; sin publicar).
+**Cómo leerlo.** Cubo = nodo; `«device»` hardware, `«execution environment»` entorno de ejecución; hoja = artefacto. Líneas punteadas = previsto. El modelo `helmet.onnx` corre en el navegador (WASM).
+
+---
+
 ## 15. Checklist de verificación contra el código
 
 - [x] (1-oct) Tipos del cliente alineados con `src/lib/data/types.ts`.
@@ -154,6 +180,7 @@ Principios POO presentes:
 - [x] (8-oct) Tablas del DER materializadas: `src/server/db/schema.sql` (SQLite/D1-compatible; Drizzle queda opcional para prod).
 - [x] (8-oct) `payments`, `deliveries`, `notifications` y rol `courier` implementados + UI (`/entregas`, panel `/admin`).
 - [x] (8-oct) Rutas `/api/*` publicadas en el backend de desarrollo (`server/api/handlers.ts`); `docs/api/openapi.yaml` v0.2.0 extendido y **validado con js-yaml** (antes era YAML inválido, D-17).
-- [ ] Topics MQTT reales con broker (hoy: topics lógicos + intervalo en proceso; ingresa por `POST /api/ingest`).
+- [ ] Topics MQTT reales con broker (hoy no hay MQTT: `fleet-sim` en proceso + SSE; ingresa por `POST /api/ingest`).
 - [x] `services/brevo.ts` con clave por env/secret, fallback `simulated`, y prueba unitaria de la rama de fallo (`brevo.test.ts`).
 - [ ] Esquema replicado en D1 con `wrangler d1 migrations` al publicar (mismo `schema.sql`).
+- [x] (21-oct) Diagramas UML de paquetes, componentes y nodos (16-18) contrastados con `src/`. Verificación: `npm run typecheck`, `npm test` (82 pruebas) y `npm run test:e2e` (19 ok, 1 omitida solo-móvil) en verde.

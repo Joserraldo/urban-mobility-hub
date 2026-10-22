@@ -1,0 +1,93 @@
+@startuml 16-paquetes
+!include ../../_tools/uml-style.iuml
+title Diagrama de paquetes - Urban Mobility Hub (src/)
+top to bottom direction
+
+package "Cliente (navegador)" {
+  package "routes" as routes {
+  label "rutas por archivo" as l1
+}
+  package "components" as comp {
+    package "mobility" as mob {
+  label "MobilityApp, FleetMap, UnlockFlow,\nTelemetryDashboard, CourierApp" as l2
+}
+    package "auth" as auth {
+  label "login / registro" as l3
+}
+    package "commerce" as com {
+  label "compra y alquiler" as l4
+}
+    package "catalog" as cat {
+  label "fichas de catalogo" as l5
+}
+    package "site" as site {
+  label "layout, SEO" as l6
+}
+    package "ui" as ui {
+  label "shadcn / Radix" as l7
+}
+  }
+  package "lib" as lib {
+    package "data" as data {
+  label "DataSource, mock, api, queries" as l8
+}
+    package "ia" as ai {
+  label "helmet-model, camera (ONNX)" as l9
+}
+    package "api-client" as apic {
+  label "fetch + SSE" as l10
+}
+  }
+}
+
+package "shared" as shared {
+  package "types" as types {
+  label "api, domain, realtime, telemetry" as l16
+}
+}
+
+package "Servidor (Nitro / Node)" {
+  package "api" as api {
+  label "handlers REST /api/*" as l11
+}
+  package "services" as svc {
+  label "sessions, pasarela, brevo,\nfleet-sim, stream" as l12
+}
+  package "domain" as dom {
+  label "unlock, alerts,\nreservations, tracking" as l13
+}
+  package "repositories" as repo {
+  label "unico lugar con SQL" as l14
+}
+  package "db" as db {
+  label "schema.sql, seed, SQLite" as l15
+}
+}
+
+routes ..> comp : <<import>>
+mob ..> ui : <<import>>
+com ..> ui : <<import>>
+mob ..> data : <<import>>
+auth ..> data : <<import>>
+com ..> data : <<import>>
+cat ..> data : <<import>>
+mob ..> ai : <<import>>
+data ..> apic : <<import>>
+apic ..> api : HTTP /api/* + SSE
+api ..> svc : <<import>>
+api ..> dom : <<import>>
+api ..> repo : <<import>>
+svc ..> dom : <<import>>
+svc ..> repo : <<import>>
+repo ..> db : <<import>>
+
+lib ..> types : <<access>>
+comp ..> types : <<access>>
+api ..> types : <<access>>
+dom ..> types : <<access>>
+
+note bottom of comp
+  vite.config.ts (importProtection):
+  el cliente NO puede importar **/server/**
+end note
+@enduml

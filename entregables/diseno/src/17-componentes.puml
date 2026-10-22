@@ -1,0 +1,44 @@
+@startuml 17-componentes
+!include ../../_tools/uml-style.iuml
+title Diagrama de componentes - Urban Mobility Hub
+left to right direction
+
+component "SPA React\n(TanStack Start, rutas + UI)" as spa
+component "DataSource\n(mock | api)" as ds
+component "Modelo de casco\n(YOLOv8n ONNX + WASM)" as onnx
+component "API REST\n(handlers /api/*)" as rest
+component "Stream SSE" as sse
+component "Reglas de dominio\n(unlock, alerts, reservas, tracking)" as dom
+component "Simulador de flota\n(fleet-sim)" as sim
+component "Sesiones / CSRF" as ses
+component "Repositorios" as repo
+database "SQLite\n(data/umh.db)" as db
+component "Pasarela de pagos\n(simulada)" as pay
+component "Brevo (correo)" as brevo
+
+interface "IDataSource" as ids
+interface "REST /api/*" as irest
+interface "Eventos SSE" as isse
+interface "IRepositorio" as irepo
+interface "IPago" as ipay
+interface "IEmail" as iemail
+
+ds - ids
+spa ..> ids
+spa ..> onnx
+ds ..> irest
+rest - irest
+sse - isse
+ds ..> isse
+rest ..> dom
+rest ..> ses
+rest ..> irepo
+rest ..> ipay
+rest ..> iemail
+sim ..> dom
+sim ..> sse
+repo - irepo
+repo ..> db
+pay - ipay
+brevo - iemail
+@enduml

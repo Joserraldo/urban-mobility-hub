@@ -1,0 +1,47 @@
+@startuml 18-nodos
+!include ../../_tools/uml-style.iuml
+title Diagrama de nodos (despliegue UML) - Urban Mobility Hub
+
+node "Dispositivo del usuario" <<device>> {
+  node "Navegador" <<execution environment>> {
+    artifact "PWA React (bundle)" as pwa
+    artifact "helmet.onnx + ort WASM" as onnx
+  }
+}
+
+node "Equipo de desarrollo (hoy)" <<device>> {
+  node "Node 22 + Vite :8080" <<execution environment>> {
+    artifact "API REST + SSE + fleet-sim" as devapi
+    artifact "data/umh.db" as devdb
+  }
+}
+
+cloud "Cloudflare (previsto, sin publicar)" {
+  node "Worker" <<execution environment>> {
+    artifact "SSR + /api/*" as worker
+  }
+  node "Durable Object FleetHub" <<execution environment>> as dofh
+  database "D1 (SQLite)" as d1
+  node "CDN / estaticos" as cdn
+}
+
+node "GitHub Actions" <<execution environment>> as ci {
+  artifact "ci.yml / release.yml" as wf
+}
+
+node "Servicios externos" {
+  node "Brevo (correo)" as brevo
+  node "OpenStreetMap (tiles)" as osm
+}
+
+pwa --> devapi : HTTP / SSE (hoy)
+pwa ..> worker : HTTPS / SSE (previsto)
+pwa --> osm : HTTPS
+devapi --> devdb
+devapi --> brevo : HTTPS REST
+worker --> d1
+worker --> dofh
+worker --> brevo : HTTPS REST
+cdn ..> pwa : entrega bundle + modelo
+wf ..> worker : despliegue (previsto)
+@enduml
