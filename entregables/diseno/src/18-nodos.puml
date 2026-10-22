@@ -1,47 +1,57 @@
 @startuml 18-nodos
 !include ../../_tools/uml-style.iuml
-title Diagrama de nodos (despliegue UML) - Urban Mobility Hub
+title Diagrama de nodos - Donde corre cada parte de la app
+left to right direction
+skinparam node {
+  BackgroundColor #F7F9FC
+  BorderColor #1B2A41
+}
 
-node "Dispositivo del usuario" <<device>> {
-  node "Navegador" <<execution environment>> {
-    artifact "PWA React (bundle)" as pwa
-    artifact "helmet.onnx + ort WASM" as onnx
+node "Celular o computador del usuario" <<dispositivo>> #E8F1FB {
+  node "Navegador" {
+    artifact "App web (pantallas)" as pwa
+    artifact "Modelo de IA de casco" as onnx
   }
 }
 
-node "Equipo de desarrollo (hoy)" <<device>> {
-  node "Node 22 + Vite :8080" <<execution environment>> {
-    artifact "API REST + SSE + fleet-sim" as devapi
-    artifact "data/umh.db" as devdb
+node "Computador del equipo (hoy)" <<dispositivo>> #E9F7EC {
+  node "Servidor local (puerto 8080)" {
+    artifact "Peticiones + eventos en vivo\n+ simulador de flota" as devapi
+    artifact "Base de datos (umh.db)" as devdb
   }
 }
 
-cloud "Cloudflare (previsto, sin publicar)" {
-  node "Worker" <<execution environment>> {
-    artifact "SSR + /api/*" as worker
+cloud "Nube Cloudflare (previsto, aun sin publicar)" #FFF4E0 {
+  node "Servidor en la nube" {
+    artifact "Pantallas + peticiones" as worker
   }
-  node "Durable Object FleetHub" <<execution environment>> as dofh
-  database "D1 (SQLite)" as d1
-  node "CDN / estaticos" as cdn
+  node "Coordinador de eventos en vivo" as dofh
+  database "Base de datos en la nube" as d1
+  node "Entrega de archivos estaticos" as cdn
 }
 
-node "GitHub Actions" <<execution environment>> as ci {
-  artifact "ci.yml / release.yml" as wf
+node "GitHub (automatizacion)" #EEEEEE {
+  artifact "Pruebas y publicacion automatica" as wf
 }
 
-node "Servicios externos" {
-  node "Brevo (correo)" as brevo
-  node "OpenStreetMap (tiles)" as osm
+node "Servicios de terceros" #F3E8FB {
+  node "Brevo (envio de correos)" as brevo
+  node "OpenStreetMap (mapas)" as osm
 }
 
-pwa --> devapi : HTTP / SSE (hoy)
-pwa ..> worker : HTTPS / SSE (previsto)
-pwa --> osm : HTTPS
-devapi --> devdb
-devapi --> brevo : HTTPS REST
-worker --> d1
-worker --> dofh
-worker --> brevo : HTTPS REST
-cdn ..> pwa : entrega bundle + modelo
-wf ..> worker : despliegue (previsto)
+pwa --> devapi : internet local (hoy)
+pwa ..> worker : internet (previsto)
+pwa --> osm : descarga mapas
+devapi --> devdb : guarda datos
+devapi --> brevo : envia correos
+worker --> d1 : guarda datos
+worker --> dofh : eventos en vivo
+worker --> brevo : envia correos
+cdn ..> pwa : entrega la app y el modelo
+wf ..> worker : publica (previsto)
+
+legend right
+  Linea continua = ya funciona hoy.
+  Linea punteada = previsto.
+endlegend
 @enduml

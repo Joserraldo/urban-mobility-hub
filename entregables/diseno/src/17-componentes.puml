@@ -1,44 +1,68 @@
 @startuml 17-componentes
 !include ../../_tools/uml-style.iuml
-title Diagrama de componentes - Urban Mobility Hub
+title Diagrama de componentes - Piezas de la app y como se hablan
 left to right direction
+skinparam componentStyle uml2
+skinparam component {
+  BackgroundColor #F7F9FC
+  BorderColor #1B2A41
+  FontSize 13
+}
 
-component "SPA React\n(TanStack Start, rutas + UI)" as spa
-component "DataSource\n(mock | api)" as ds
-component "Modelo de casco\n(YOLOv8n ONNX + WASM)" as onnx
-component "API REST\n(handlers /api/*)" as rest
-component "Stream SSE" as sse
-component "Reglas de dominio\n(unlock, alerts, reservas, tracking)" as dom
-component "Simulador de flota\n(fleet-sim)" as sim
-component "Sesiones / CSRF" as ses
-component "Repositorios" as repo
-database "SQLite\n(data/umh.db)" as db
-component "Pasarela de pagos\n(simulada)" as pay
-component "Brevo (correo)" as brevo
+package "Lo que ve el usuario (navegador)" #E8F1FB {
+  component "Pantallas de la app\nmapa, compras, entregas" as spa
+  interface "Pedir datos" as ids
+  component "Conexion con datos\ndatos de prueba o servidor real" as ds
+  component "Deteccion de casco\ncamara + IA local" as onnx
+}
 
-interface "IDataSource" as ids
-interface "REST /api/*" as irest
-interface "Eventos SSE" as isse
-interface "IRepositorio" as irepo
-interface "IPago" as ipay
-interface "IEmail" as iemail
+package "Servidor" {
+  package "Puerta de entrada" #EEEEEE {
+    interface "Peticiones por internet" as irest
+  component "Peticiones del sistema\n(API)" as rest
+    interface "Eventos en vivo" as isse
+  component "Eventos en vivo\n(telemetria y alertas)" as sse
+    component "Sesiones y seguridad" as ses
+  }
+  package "Reglas del negocio" #E9F7EC {
+    component "Desbloqueo, reservas,\nentregas y alertas" as dom
+    component "Simulador de flota" as sim
+  }
+  package "Servicios de apoyo" #FFF4E0 {
+    interface "Cobrar" as ipay
+    component "Pagos (simulados)" as pay
+    interface "Enviar correo" as iemail
+    component "Correos (Brevo)" as brevo
+  }
+  package "Guardado de datos" #FDEBEC {
+    interface "Guardar y leer" as irepo
+    component "Repositorios\n(unico acceso a la base)" as repo
+    database "Base de datos\nSQLite" as db
+  }
+}
 
+
+spa ..> ids : pide
 ds - ids
-spa ..> ids
-spa ..> onnx
-ds ..> irest
+spa ..> onnx : valida casco
+ds ..> irest : llama
 rest - irest
 sse - isse
-ds ..> isse
-rest ..> dom
-rest ..> ses
+ds ..> isse : escucha
+rest ..> dom : aplica reglas
+rest ..> ses : verifica usuario
 rest ..> irepo
-rest ..> ipay
-rest ..> iemail
-sim ..> dom
-sim ..> sse
+rest ..> ipay : cobra
+rest ..> iemail : avisa
+sim ..> dom : mueve vehiculos
+sim ..> sse : emite eventos
 repo - irepo
 repo ..> db
 pay - ipay
 brevo - iemail
+
+note bottom of spa
+  Circulo = servicio que ofrece la pieza.
+  Flecha punteada = servicio que la pieza necesita.
+end note
 @enduml

@@ -151,7 +151,7 @@ Principios POO presentes:
 
 ![Paquetes](img/16-paquetes.png)
 
-**Qué es.** Los paquetes reales de `src/` (routes, components, lib, server/*, shared) con sus dependencias `«import»` y `«access»`. Fuente: `src/16-paquetes.puml`.
+**Qué es.** Las carpetas de `src/` agrupadas por servicios con nombres entendibles (lo que ve el usuario, servicios de movilidad, servicios de apoyo, IA, datos, puerta de entrada, compartido); cada caja indica la carpeta real que la contiene. Fuente: `src/16-paquetes.puml`.
 **Por qué existe.** Muestra que la dependencia es unidireccional (UI → DataSource → API → dominio/servicios → repositorios → SQLite) y que `shared/types` es el único código común cliente/servidor.
 **Cómo leerlo.** Flecha punteada = dependencia. `vite.config.ts` (`importProtection`) impide que el cliente importe `**/server/**`; por eso no hay flecha de Cliente a Servidor salvo HTTP `/api/*` + SSE.
 
@@ -159,7 +159,7 @@ Principios POO presentes:
 
 ![Componentes](img/17-componentes.png)
 
-**Qué es.** Componentes ejecutables con interfaces provistas (círculo) y requeridas (flecha): `IDataSource`, `REST /api/*`, `Eventos SSE`, `IRepositorio`, `IPago`, `IEmail`. Fuente: `src/17-componentes.puml`.
+**Qué es.** Las piezas de la app agrupadas por servicio y los servicios que se ofrecen entre sí (círculo = lo que ofrece, flecha = lo que necesita): pedir datos, peticiones por internet, eventos en vivo, guardar y leer, cobrar, enviar correo. Fuente: `src/17-componentes.puml`.
 **Por qué existe.** Permite sustituir piezas sin tocar el resto: DataSource mock/api, pasarela simulada/real, Brevo simulado/real.
 **Cómo leerlo.** Un componente "provee" una interfaz con la línea corta y "requiere" otra con la flecha punteada. `fleet-sim` (reemplaza al antiguo MQTT/aedes) alimenta el stream SSE.
 
@@ -167,7 +167,7 @@ Principios POO presentes:
 
 ![Nodos](img/18-nodos.png)
 
-**Qué es.** Nodos físicos/de ejecución y artefactos desplegados. Fuente: `src/18-nodos.puml`.
+**Qué es.** Dónde corre cada parte (dispositivo del usuario, equipo de desarrollo, nube prevista, GitHub, terceros); línea continua = funciona hoy, punteada = previsto. Fuente: `src/18-nodos.puml`.
 **Por qué existe.** Separa lo que corre **hoy** (equipo de desarrollo: Node 22 + Vite :8080 + SQLite) de lo **previsto** (Cloudflare: Worker, D1, Durable Object FleetHub, CDN; sin publicar).
 **Cómo leerlo.** Cubo = nodo; `«device»` hardware, `«execution environment»` entorno de ejecución; hoja = artefacto. Líneas punteadas = previsto. El modelo `helmet.onnx` corre en el navegador (WASM).
 

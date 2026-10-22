@@ -1,93 +1,89 @@
 @startuml 16-paquetes
 !include ../../_tools/uml-style.iuml
-title Diagrama de paquetes - Urban Mobility Hub (src/)
+title Diagrama de paquetes - Organizacion de carpetas de la app por grupos de servicios
 top to bottom direction
-
-package "Cliente (navegador)" {
-  package "routes" as routes {
-  label "rutas por archivo" as l1
-}
-  package "components" as comp {
-    package "mobility" as mob {
-  label "MobilityApp, FleetMap, UnlockFlow,\nTelemetryDashboard, CourierApp" as l2
-}
-    package "auth" as auth {
-  label "login / registro" as l3
-}
-    package "commerce" as com {
-  label "compra y alquiler" as l4
-}
-    package "catalog" as cat {
-  label "fichas de catalogo" as l5
-}
-    package "site" as site {
-  label "layout, SEO" as l6
-}
-    package "ui" as ui {
-  label "shadcn / Radix" as l7
-}
-  }
-  package "lib" as lib {
-    package "data" as data {
-  label "DataSource, mock, api, queries" as l8
-}
-    package "ia" as ai {
-  label "helmet-model, camera (ONNX)" as l9
-}
-    package "api-client" as apic {
-  label "fetch + SSE" as l10
-}
-  }
+skinparam nodesep 25
+skinparam ranksep 40
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  FontSize 13
 }
 
-package "shared" as shared {
-  package "types" as types {
-  label "api, domain, realtime, telemetry" as l16
-}
-}
-
-package "Servidor (Nitro / Node)" {
-  package "api" as api {
-  label "handlers REST /api/*" as l11
-}
-  package "services" as svc {
-  label "sessions, pasarela, brevo,\nfleet-sim, stream" as l12
-}
-  package "domain" as dom {
-  label "unlock, alerts,\nreservations, tracking" as l13
-}
-  package "repositories" as repo {
-  label "unico lugar con SQL" as l14
-}
-  package "db" as db {
-  label "schema.sql, seed, SQLite" as l15
-}
+package "1. LO QUE VE EL USUARIO\n(carpetas src/routes, src/components, src/content)" as ux #E8F1FB {
+  rectangle "**Paginas del sitio**\nInicio, hubs, catalogo, guias, FAQ\n//src/routes//" as paginas
+  rectangle "**Mapa y desbloqueo**\nMapa de flota, desbloquear con casco, panel de telemetria\n//src/components/mobility//" as mapa
+  rectangle "**Cuenta de usuario**\nRegistro e inicio de sesion\n//src/components/auth//" as cuenta
+  rectangle "**Comprar y alquilar**\nVentanas de compra y alquiler\n//src/components/commerce//" as compra
+  rectangle "**Catalogo de vehiculos**\nFichas con foto y precio\n//src/components/catalog//" as catalogo
+  rectangle "**Entregas a domicilio**\nApp del repartidor y panel de entregas\n//src/components/mobility//" as entregas
+  rectangle "**Marco del sitio**\nMenus, SEO, textos de ayuda y FAQ\n//src/components/site, src/content//" as marco
 }
 
-routes ..> comp : <<import>>
-mob ..> ui : <<import>>
-com ..> ui : <<import>>
-mob ..> data : <<import>>
-auth ..> data : <<import>>
-com ..> data : <<import>>
-cat ..> data : <<import>>
-mob ..> ai : <<import>>
-data ..> apic : <<import>>
-apic ..> api : HTTP /api/* + SSE
-api ..> svc : <<import>>
-api ..> dom : <<import>>
-api ..> repo : <<import>>
-svc ..> dom : <<import>>
-svc ..> repo : <<import>>
-repo ..> db : <<import>>
+package "2. SERVICIOS DE MOVILIDAD\n(carpeta src/server/domain)" as mov #E9F7EC {
+  rectangle "**Desbloqueo seguro**\nVerifica casco, reserva y distancia\n//unlock.ts//" as desbloqueo
+  rectangle "**Reservas y alquileres**\nCrea, extiende y cierra reservas\n//reservations.ts//" as reservas
+  rectangle "**Seguimiento de entregas**\nAsigna repartidor y marca retrasos\n//tracking.ts//" as seguimiento
+  rectangle "**Alertas de flota**\nBateria baja, choque, fuera de zona\n//alerts.ts//" as alertas
+}
 
-lib ..> types : <<access>>
-comp ..> types : <<access>>
-api ..> types : <<access>>
-dom ..> types : <<access>>
+package "3. SERVICIOS DE APOYO\n(carpeta src/server/services)" as apoyo #FFF4E0 {
+  rectangle "**Sesiones y seguridad**\nQuien eres y que puedes hacer\n//sessions.ts//" as sesiones
+  rectangle "**Pagos**\nPasarela simulada\n//pasarela.ts//" as pagos
+  rectangle "**Correos**\nAvisos de retraso por Brevo\n//brevo.ts//" as correos
+  rectangle "**Flota en vivo**\nSimulador de vehiculos y envio de eventos\n//fleet-sim.ts, stream.ts//" as vivo
+}
 
-note bottom of comp
-  vite.config.ts (importProtection):
-  el cliente NO puede importar **/server/**
+package "4. INTELIGENCIA ARTIFICIAL\n(carpeta src/lib)" as ia #F3E8FB {
+  rectangle "**Deteccion de casco**\nCamara + modelo en el navegador\n//helmet-model.ts, camera.ts//" as casco
+}
+
+package "5. DATOS\n(carpetas src/lib/data, src/server/db)" as datos #FDEBEC {
+  rectangle "**Acceso a datos del cliente**\nElige datos de prueba o API real\n//src/lib/data//" as datcli
+  rectangle "**Guardado en base de datos**\nUnico lugar con SQL + datos de ejemplo\n//src/server/repositories.ts, db//" as guardado
+}
+
+package "6. PUERTA DE ENTRADA\n(carpeta src/server/api)" as puerta #EEEEEE {
+  rectangle "**Peticiones del sistema**\nRecibe lo que pide la pantalla y lo reparte\n//handlers.ts//" as api
+}
+
+package "7. COMPARTIDO\n(carpeta src/shared)" as comun #EEEEEE {
+  rectangle "**Vocabulario comun**\nDefiniciones de vehiculo, hub, reserva, alerta\n//src/shared/types//" as tipos
+}
+
+paginas -[hidden]right-> marco
+paginas -[hidden]down-> mapa
+marco -[hidden]down-> cuenta
+mapa -[hidden]right-> cuenta
+mapa -[hidden]down-> compra
+cuenta -[hidden]down-> catalogo
+compra -[hidden]right-> catalogo
+compra -[hidden]down-> entregas
+ux -[hidden]right-> ia
+ia -[hidden]right-> comun
+ux -[hidden]down-> puerta
+puerta -[hidden]down-> mov
+mov -[hidden]right-> apoyo
+desbloqueo -[hidden]right-> reservas
+desbloqueo -[hidden]down-> alertas
+reservas -[hidden]down-> seguimiento
+sesiones -[hidden]right-> pagos
+sesiones -[hidden]down-> correos
+pagos -[hidden]down-> vivo
+mov -[hidden]down-> datos
+mapa --> casco : valida casco
+paginas --> datcli : pide datos
+datcli --> api : por internet
+api --> desbloqueo : aplica reglas
+api --> sesiones : usa
+reservas --> guardado : lee y guarda
+alertas ..> correos : avisa
+vivo ..> alertas : genera
+paginas ..> tipos : usa
+api ..> tipos : usa
+
+note bottom of ux
+  El navegador nunca puede importar carpetas del servidor
+  (regla de vite.config.ts), asi la logica sensible queda protegida.
 end note
 @enduml
