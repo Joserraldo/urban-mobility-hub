@@ -7,7 +7,7 @@ repositorio, verificado por ejecución.
 - Fecha de la auditoría: **26 de octubre de 2026**
 - Artefacto auditado: copia ZIP de `github.com/Joserraldo/urban-mobility-hub`, rama `main`
   (sin historial Git; ver §5)
-- Estado del código al iniciar: commit local `ed9b49c` (importación del ZIP prístino)
+- Estado del código al iniciar: primer commit local (importación del ZIP prístino)
 - Entorno: Windows, Node.js 24.22.1, npm 11.19.1, navegador Edge (canal del sistema)
 
 > **Alcance de esta auditoría:** solo se **documentan** brechas. No se corrigió código, ni
@@ -88,7 +88,7 @@ Estas limitaciones afectan la fuerza de las conclusiones y se repiten donde apli
 1. **No hay historial Git en la copia entregada.** El ZIP no incluye `.git`; por tanto no existen
    ramas, tags, PRs, releases ni ejecuciones de CI verificables *en este artefacto*. Para poder
    versionar esta auditoría se inicializó un repositorio local (`git init -b main`) con el estado
-   prístino como commit `ed9b49c`. Ese repositorio **no** es el del proyecto.
+   prístino como primer commit. Ese repositorio **no** es el del proyecto.
 2. **No hay despliegue público.** `entregables/gcs/despliegue.md` lo declara (“plan listo, nada
    publicado”) y no se crearon cuentas ni recursos Cloudflare. Todo lo relativo a D1, Durable
    Objects, `wrangler`, disponibilidad y correo real es ⚪ no verificable.

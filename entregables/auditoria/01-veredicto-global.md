@@ -42,7 +42,7 @@ Ordenadas por riesgo para la entrega, no por facilidad de arreglo.
 | B7  | **No existe el camino de timeout del pago.** La pasarela simulada solo devuelve `approved`/`rejected`; UC18-E2 exige `rejected` con `reason='timeout'` y negocio intacto. | RF-26, UC18      | `src/server/services/pasarela.ts:24-34`; `handlers.ts:684-707`                                    |
 | B8  | **Las alertas activas se borran solas cada 2 s.** El simulador reevalúa con telemetría “sana” y devuelve `alert_state` a `ok`; el KPI de alertas activas cae a 0 aunque el evento quede en la bitácora. | RF-11, RF-12     | `src/server/services/fleet-sim.ts:27-50,62-66`                                                    |
 | B9  | **Los artefactos SQA prometidos no existen.** El plan cita `03-matriz-trazabilidad.md` y `04-informe-ejecucion.md`; el directorio solo tiene 01, 02, 03, 04-revisión y 05. | Plan SQA §3       | `entregables/sqa/`                                                                                |
-| B10 | **La configuración prometida no es verificable.** La copia no trae `.git`: no hay ramas, tags `v0.1…v0.3`, LB-0…LB-3, PRs ni CI ejecutado. | GCS §3, §5, §6   | ZIP sin `.git`; `git log` vacío antes de `ed9b49c`                                                |
+| B10 | **La configuración prometida no es verificable.** La copia no trae `.git`: no hay ramas, tags `v0.1…v0.3`, LB-0…LB-3, PRs ni CI ejecutado. | GCS §3, §5, §6   | ZIP sin `.git`; `git log` vacío antes del primer commit local                                        |
 
 ## 4. Lo que sí está sólido (para no equilibrar mal el juicio)
 
