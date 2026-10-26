@@ -15,7 +15,7 @@ documentado y una **arquitectura de producción que no existe** en el artefacto 
 | ---------------------------------- | -------------------------------------------------------- | ----------------------------------------------- | --------- |
 | Requisitos funcionales (27)        | RF-01…RF-27 implementados y verificados                   | 19 cumplen · 7 parciales · 1 no cumple           | 🟡 Alto   |
 | Requisitos no funcionales (12)     | RNF-01…RNF-12 medidos                                     | 7 cumplen · 2 parciales · 2 fallan · 1 sin medir | 🟡 Medio  |
-| Casos de uso (20)                  | UC01…UC20 con flujos, alternos y excepciones              | 18 verificables · 2 con excepciones no modeladas | 🟡 Alto   |
+| Casos de uso (20)                  | UC01…UC20 con flujos, alternos y excepciones              | 11 cumplen · 8 parciales · 1 no cumple           | 🟡 Alto   |
 | Arquitectura objetivo              | REST + WebSocket + MQTT + SQLite/D1                       | REST + SSE + SQLite en dev; sin WS/MQTT/D1       | ❌ Bajo   |
 | Despliegue                         | Cloudflare Workers/Pages + D1 + Durable Objects           | Nada publicado; el build no sirve `/api/*`       | ❌ Nulo   |
 | SQA                                | Plan proactivo + matriz de trazabilidad + informe         | Plan y revisiones; faltan 2 artefactos           | 🟡 Medio  |
