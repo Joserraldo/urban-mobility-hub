@@ -1,0 +1,47 @@
+@startuml 20-secuencia-entrega-domicilio
+!include estilo.iuml
+title Entrega a domicilio y aviso de retraso
+
+actor Operador as O
+actor Domiciliario as D
+participant "Sitio web" as UI
+participant "Servidor" as API
+database "Base de datos" as DB
+participant "Servicio de correo" as BR
+
+== Asignar la entrega ==
+O -> UI : ve las reservas a domicilio pendientes
+O -> UI : elige domiciliario y hora límite
+UI -> API : asignar entrega
+alt el domiciliario ya tiene 5 entregas activas
+  API -->> UI : "Este domiciliario está ocupado"
+else puede recibirla
+  API -> DB : crea la entrega como asignada
+  API -->> UI : asignada
+end
+
+== Hacer la entrega ==
+D -> UI : abre "Mis entregas"
+UI -> API : pedir mis entregas
+API -->> UI : lista con dirección y hora límite
+D -> UI : "Entregado"
+UI -> API : confirmar entrega
+API -> DB : entrega, reserva y vehículo\nse actualizan juntos (todo o nada)
+API -->> UI : listo
+
+== Si hay retraso ==
+alt el domiciliario avisa el retraso
+  D -> UI : "Marcar tardía" y escribe la causa
+  UI -> API : marcar tardía
+else pasa la hora límite sin entregar
+  API -> API : revisión automática periódica
+end
+API -> DB : la entrega queda tardía
+API -> BR : envía el correo al cliente y al operador
+alt el correo sale
+  API -> DB : aviso registrado como enviado
+else falla o no hay clave del servicio
+  API -> DB : aviso registrado como fallido o simulado
+  note right : la app no se detiene por esto
+end
+@enduml

@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-05, RF-06; RNF-07; RF-25 (domicilio vía UC14–UC16)                                                                                           |
 | Prioridad           | P1                                                                                                                                              |
 | Estimación          | 6 h (HU-05a..c)                                                                                                                                 |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png`; secuencia `../../diseno/img/12-secuencia-alquiler-pago.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png`; secuencia `../../diagramas/img/17-secuencia-alquiler-pago.png` |
 | Historias           | HU-05a, HU-05b, HU-05c                                                                                                                          |
 
 **Intención.** Crear una reserva de alquiler en 3 pasos (seleccionar → elegir modalidad → confirmar), cobrar el prepago base con UC18 (`«include»`) y dejar el vehículo `reserved`. Si es a domicilio, captura la dirección y la geocodifica; el reparto físico lo ejecutan UC14–UC16.

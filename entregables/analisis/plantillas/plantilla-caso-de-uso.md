@@ -18,7 +18,7 @@
 | Requisito(s)        | (RF-xx del SRS)                                                       |
 | Prioridad           | P1 / P2 / P3                                                          |
 | Estimación          | (horas; suma de las historias de usuario asociadas)                   |
-| Diagramas           | maestro `img/01-casos-de-uso.png`; secuencia `../diseno/img/xx-….png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; secuencia `../diseno/img/xx-….png` |
 | Historias           | HU-xx, HU-xx (ver `historias-de-uso.md`)                              |
 
 **Intención.** (Una frase: qué logra el actor y por qué le importa.)

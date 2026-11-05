@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-25 (nuevo); continúa RF-05 (modalidad domicilio)                                                                                                   |
 | Prioridad           | P2                                                                                                                                                    |
 | Estimación          | 5 h (HU-14a..b)                                                                                                                                       |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; operador `../img/03-casos-de-uso-operador.png`; secuencia `../../diseno/img/13-secuencia-entrega-domicilio.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; operador `../../diagramas/img/04-casos-de-uso-operador.png`; secuencia `../../diagramas/img/20-secuencia-entrega-domicilio.png` |
 | Historias           | HU-14a, HU-14b                                                                                                                                        |
 
 **Intención.** Convertir una reserva con modalidad `domicilio` en trabajo asignado a un domiciliario con hora límite, para que el cliente reciba el vehículo en su dirección.

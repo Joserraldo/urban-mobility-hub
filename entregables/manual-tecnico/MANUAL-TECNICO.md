@@ -83,7 +83,7 @@ src/
 ├─ server.ts          Envoltura SSR con página de error
 └─ start.ts           createStart + middlewares
 docs/api/             Contrato OpenAPI
-entregables/          Análisis, diseño, gestión, SQA, GCS, interfaces, manual (+ _tools: render-uml, casos_de_uso.py, capturar.mjs, smoke-api.ps1, seed-capture.ps1)
+entregables/          Análisis, diseño, gestión, SQA, GCS, interfaces, manual (+ diagramas/ con todas las imágenes y fuentes; _tools: capturar.mjs, smoke-api.ps1, seed-capture.ps1)
 tests/  .github/  .husky/  lighthouserc.json  (calidad e integración continua)
 ```
 
@@ -102,7 +102,7 @@ tests/  .github/  .husky/  lighthouserc.json  (calidad e integración continua)
 
 ### Vistas UML (v3)
 
-Paquetes (`diseno/img/16-paquetes.png`), componentes (`17-componentes.png`) y nodos (`18-nodos.png`); fuentes PlantUML en `entregables/diseno/src/`. Regenerar: `powershell -File entregables/_tools/render-uml.ps1` (requiere Java y `entregables/_tools/plantuml.jar`, ignorado por git; se baja de https://github.com/plantuml/plantuml/releases).
+Paquetes (`entregables/diagramas/img/10-paquetes.png`), componentes (`11-componentes.png`) y nodos (`12-nodos.png`); todos los diagramas y sus fuentes están en `entregables/diagramas/` (índice en su `README.md`). Regenerar: `sh entregables/diagramas/generar.sh` o `powershell -File entregables/diagramas/generar.ps1` (requiere Java y `entregables/diagramas/plantuml.jar`, ignorado por git; se baja de https://github.com/plantuml/plantuml/releases).
 
 ## 6. Glosario mínimo
 

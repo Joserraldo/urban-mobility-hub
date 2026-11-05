@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-12 (bitácora de alertas); RNF-04 (log auditable, solo-append)                                                                                                                               |
 | Prioridad           | P1                                                                                                                                                                                             |
 | Estimación          | 3 h (HU-12a)                                                                                                                                                                                   |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; operador `../img/03-casos-de-uso-operador.png`; secuencia `../../diseno/img/05-secuencia-alerta.png`; estados `../../diseno/img/07-estados-vehiculo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; operador `../../diagramas/img/04-casos-de-uso-operador.png`; secuencia `../../diagramas/img/19-secuencia-alerta.png`; estados `../../diagramas/img/22-estados-vehiculo.png` |
 | Historias           | HU-12a                                                                                                                                                                                         |
 
 **Intención.** Consultar el historial completo y ordenado de alertas de la flota, con su origen, vehículo, tipo y marca de tiempo, sabiendo que el registro es append-only (no se edita ni se borra) y que cada alerta nueva aparece en menos de un segundo.

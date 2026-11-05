@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-10; RNF-03 (plantilla biométrica cifrada); `«extend»` de UC08                                                                             |
 | Prioridad           | P2                                                                                                                                           |
 | Estimación          | 5 h (HU-09a..b)                                                                                                                              |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png`; secuencia `../../diseno/img/04-secuencia-desbloqueo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png`; secuencia `../../diagramas/img/18-secuencia-desbloqueo.png` |
 | Historias           | HU-09a, HU-09b                                                                                                                               |
 
 **Intención.** Sustituir el escaneo del QR por una verificación facial cuando el cliente no puede leer el código, respetando que el rostro solo se usa si hay consentimiento vigente y la plantilla está cifrada, y devolviendo el control a UC08 en el paso de casco.

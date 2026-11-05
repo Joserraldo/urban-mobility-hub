@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-26 (nuevo); deriva de RF-03 y RF-05                                                                                                                                  |
 | Prioridad           | P1                                                                                                                                                                      |
 | Estimación          | 8 h (HU-18a..c)                                                                                                                                                         |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; secuencias `../../diseno/img/11-secuencia-compra-pago.png`, `12-secuencia-alquiler-pago.png`, `14-secuencia-auth-pago-cierre.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; secuencias `../../diagramas/img/16-secuencia-compra-pago.png`, `12-secuencia-alquiler-pago.png`, `14-secuencia-auth-pago-cierre.png` |
 | Historias           | HU-18a, HU-18b, HU-18c                                                                                                                                                  |
 
 **Intención.** Cobrar un monto en COP y dejar un comprobante con referencia de la pasarela, reutilizable desde la compra, el alquiler y el cargo del viaje.

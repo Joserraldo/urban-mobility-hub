@@ -1,0 +1,49 @@
+@startuml 18-secuencia-desbloqueo
+!include estilo.iuml
+title Desbloquear el vehículo: QR + casco (alternativa: rostro)
+
+actor Cliente as U
+participant "Sitio web\n(usa la cámara)" as UI
+participant "Servidor" as API
+database "Base de datos" as DB
+participant "Vehículo" as V
+
+U -> UI : "Desbloquear" sobre su vehículo reservado
+UI -> API : iniciar desbloqueo
+API -> DB : verifica que tenga la reserva
+API -> DB : abre una sesión de desbloqueo\n(vence en 2 minutos)
+API -->> UI : paso 1: escanear el QR
+
+U -> UI : escanea el QR del vehículo
+UI -> API : envía el código
+alt código correcto y a tiempo
+  API -->> UI : paso 2: mostrar el casco
+else código incorrecto o se venció el tiempo
+  API -->> UI : desbloqueo negado con el motivo
+end
+
+U -> UI : muestra el casco a la cámara
+UI -> UI : la IA detecta el casco en el mismo\nnavegador (el video no se sube)
+UI -> API : resultado y nivel de confianza
+alt confianza de 80 % o más
+  API -->> UI : se habilita "Iniciar viaje"
+else no se ve el casco
+  API -->> UI : "No se detectó el casco"\n(el vehículo sigue bloqueado)
+end
+
+U -> UI : "Iniciar viaje"
+UI -> API : iniciar
+API -> DB : reserva activa y vehículo en uso
+API -> V : orden de desbloqueo
+API -->> UI : viaje en curso (se cobra por minuto)
+
+opt Alternativa: desbloquear con el rostro en lugar del QR
+  U -> UI : "Usar mi rostro"
+  UI -> API : resultado de la comparación facial
+  alt parecido de 85 % o más y aceptó el uso de biometría
+    API -->> UI : continúa con el paso del casco
+  else no coincide o no dio permiso
+    API -->> UI : "No reconocimos tu rostro"
+  end
+end
+@enduml

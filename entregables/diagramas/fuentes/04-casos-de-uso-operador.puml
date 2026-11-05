@@ -1,0 +1,41 @@
+@startuml 04-casos-de-uso-operador
+!include estilo.iuml
+left to right direction
+title Casos de uso del Operador
+
+actor Cliente as C
+actor Operador as O
+O --|> C
+
+rectangle "Plataforma de micromovilidad" {
+  usecase "Ver indicadores y\nestado de la flota" as UC10 #E6F4EF
+  usecase "Simular un evento\nde un vehículo" as UC11 #E6F4EF
+  usecase "Revisar el historial\nde alertas" as UC12 #E6F4EF
+  usecase "Administrar vehículos y hubs\n(crear, editar, retirar)" as UC13 #E6F4EF
+  usecase "Asignar una entrega\na un domiciliario" as UC14 #E6F4EF
+  usecase "Reportar posición\ny alertas" as UC20 #F0EBFA
+}
+
+actor "Vehículo" as V
+
+O --- UC10
+O --- UC11
+O --- UC12
+O --- UC13
+O --- UC14
+V --- UC20
+UC20 ..> UC12 : <<include>>
+UC11 ..> UC12 : <<include>>
+
+note bottom of O
+  El operador también es un cliente
+  (flecha con triángulo = herencia):
+  puede comprar, alquilar y desbloquear.
+end note
+
+legend right
+  |= Símbolo |= Qué significa |
+  | óvalo verde | lo hace el operador |
+  | óvalo morado | lo hace el vehículo solo |
+endlegend
+@enduml

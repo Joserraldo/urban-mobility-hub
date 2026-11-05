@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-04, RF-08; RNF-01                                                               |
 | Prioridad           | P1                                                                                 |
 | Estimación          | 5 h (HU-06a..b)                                                                    |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png` |
 | Historias           | HU-06a, HU-06b                                                                     |
 
 **Intención.** Mostrar en un mapa, en vivo, los vehículos de alquiler disponibles, los hubs y el stock en venta, y mantener cada posición reflejada en ≤ 5 s desde su telemetría por suscripción a tiempo real.

@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-21; RNF-05                                                                                                                                      |
 | Prioridad           | P1                                                                                                                                                 |
 | Estimación          | 4 h (HU-02a..b)                                                                                                                                    |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png`; secuencia `../../diseno/img/14-secuencia-auth-pago-cierre.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png`; secuencia `../../diagramas/img/15-secuencia-registro-login-cierre.png` |
 | Historias           | HU-02a, HU-02b                                                                                                                                     |
 
 **Intención.** Autenticar al dueño de un correo contra el `password_hash` y sostener una sesión firmada con expiración —la puerta única de identidad que `«include»` UC18 y que requieren UC03–UC17 y UC20—; cerrarla revoca el token.

@@ -1,0 +1,55 @@
+@startuml 03-casos-de-uso-cliente
+!include estilo.iuml
+left to right direction
+title Casos de uso del Cliente
+
+actor Cliente as C
+
+rectangle "Plataforma de micromovilidad" {
+  usecase "Registrarse y aceptar\nel uso de sus datos" as UC01 #FFF4CC
+  usecase "Iniciar o\ncerrar sesión" as UC02 #FFF4CC
+  usecase "Ver catálogo\nde venta" as UC03 #E8F0FE
+  usecase "Comprar un vehículo" as UC04 #E8F0FE
+  usecase "Alquilar un vehículo\n(en un hub o a domicilio)" as UC05 #E8F0FE
+  usecase "Ver la flota en el mapa" as UC06 #E8F0FE
+  usecase "Ver detalle de un hub" as UC07 #E8F0FE
+  usecase "Desbloquear el vehículo\n(QR + casco)" as UC08 #E8F0FE
+  usecase "Desbloquear con el rostro" as UC09 #E8F0FE
+  usecase "Pagar" as UC18 #FFF4CC
+}
+
+actor "Pasarela de pagos" as P
+actor "Servicio de mapas" as M
+actor "Reconocimiento facial" as F
+
+C --- UC01
+C --- UC02
+C --- UC03
+C --- UC04
+C --- UC05
+C --- UC06
+C --- UC07
+C --- UC08
+
+UC04 ..> UC18 : <<include>>
+UC05 ..> UC18 : <<include>>
+UC18 ..> UC02 : <<include>>
+UC08 ..> UC05 : <<include>>
+UC09 ..> UC08 : <<extend>>
+UC18 --> P
+UC06 --> M
+UC09 --> F
+
+note bottom of UC18
+  Para comprar o alquilar siempre se paga,
+  y para pagar hay que tener la sesión iniciada.
+end note
+
+legend right
+  |= Símbolo |= Qué significa |
+  | óvalo azul | lo hace solo el cliente |
+  | óvalo amarillo | lo hacen todos los roles |
+  | «include» | siempre ocurre |
+  | «extend» | ocurre solo a veces (alternativa) |
+endlegend
+@enduml

@@ -1,0 +1,40 @@
+@startuml 15-secuencia-registro-login-cierre
+!include estilo.iuml
+title Registro, inicio de sesión y cierre del viaje
+
+actor Cliente as U
+participant "Sitio web" as UI
+participant "Servidor" as API
+database "Base de datos" as DB
+participant "Pasarela de pagos" as PS
+
+== Registrarse ==
+U -> UI : nombre, correo, contraseña\ny acepta el uso de sus datos
+UI -> API : crear cuenta
+alt no aceptó el uso de sus datos
+  API -->> UI : "Debes aceptar el tratamiento de datos"
+else todo correcto
+  API -> DB : guarda el usuario\n(la contraseña va cifrada, nunca en claro)
+  API -> DB : guarda el consentimiento
+  API -->> UI : cuenta creada
+end
+
+== Iniciar sesión ==
+U -> UI : correo y contraseña
+UI -> API : iniciar sesión
+API -> DB : busca el usuario
+alt la contraseña no coincide
+  API -->> UI : "Correo o contraseña incorrectos"\n(no dice cuál de los dos falló)
+else coincide
+  API -->> UI : sesión abierta
+end
+
+== Terminar el viaje ==
+U -> UI : "Terminar viaje"
+UI -> API : cerrar la reserva activa
+API -> API : calcula el costo\n(minutos usados x tarifa, redondeado hacia arriba)
+API -> PS : cobra el total
+PS -->> API : aprobado
+API -> DB : guarda el pago y marca la reserva como completada
+API -->> UI : "Gracias. Total: $X"\n(el vehículo queda disponible)
+@enduml

@@ -1,0 +1,55 @@
+@startuml 07-dfd-nivel-1
+!include estilo.iuml
+title DFD nivel 1 — Los procesos internos y dónde se guarda cada dato
+
+actor "Cliente" as U
+actor "Operador" as O
+actor "Domiciliario" as D
+rectangle "Pasarela de pagos" as PAY
+rectangle "Servicio de correo" as BRV
+rectangle "Vehículos" as IOT
+
+usecase "1\nVender y\nalquilar" as P1
+usecase "2\nCobrar" as P2
+usecase "3\nIdentificar y\ndesbloquear" as P3
+usecase "4\nSeguir la flota\ny dar alertas" as P4
+usecase "5\nAdministrar" as P5
+usecase "6\nEntregar a\ndomicilio" as P6
+
+database "A1 Usuarios y\npermisos" as D1
+database "A2 Vehículos\ny hubs" as D2
+database "A3 Reservas\ny compras" as D3
+database "A4 Historial\nde alertas" as D4
+database "A5 Pagos, entregas\ny correos" as D5
+
+U --> P1 : "pedido de compra o alquiler"
+P1 --> U : "confirmación"
+P1 <--> D2 : "vehículos disponibles"
+P1 --> D3 : "nueva reserva / compra"
+P1 --> P2 : "monto a cobrar"
+P2 --> PAY : "orden de cobro"
+PAY --> P2 : "resultado"
+P2 --> D5 : "comprobante"
+P1 --> P6 : "reserva a domicilio"
+
+U --> P3 : "usuario, QR, casco"
+P3 <--> D1 : "datos del usuario"
+P3 --> D3 : "reserva pasa a activa"
+P3 --> IOT : "orden de desbloqueo"
+
+IOT --> P4 : "posición, batería, eventos"
+P4 --> D2 : "posición actual"
+P4 --> D4 : "nueva alerta"
+P4 --> O : "aviso inmediato"
+
+O --> P5 : "cambios, simulación"
+P5 <--> D2 : "vehículos y hubs"
+P5 --> P4 : "evento simulado"
+P5 --> O : "indicadores"
+
+O --> P6 : "asigna domiciliario y hora límite"
+D --> P6 : "entregado / tardía"
+P6 --> D : "lista de entregas"
+P6 --> D5 : "estado de la entrega"
+P6 --> BRV : "aviso de retraso"
+@enduml

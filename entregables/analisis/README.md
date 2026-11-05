@@ -1,9 +1,8 @@
 # Artefactos de análisis
 
 Fase SDLC: **Análisis** (qué debe hacer el sistema, sin decir todavía cómo).
-El plano maestro de casos de uso se genera con `python ../_tools/casos_de_uso.py` (simbología UML
-estricta, layout determinista); los planos por rol y los DFD están en PlantUML (`src/*.puml`) y se regeneran
-con `powershell -File ../_tools/render-uml.ps1`. Versiones anteriores archivadas en `mmd/_v1/` e `img/_v1/`.
+Las imágenes y sus fuentes están en [`../diagramas/`](../diagramas/README.md) (del 01 al 07); cómo
+regenerarlas se explica allí.
 
 > **v2 (8-oct-2026).** Cambios: "Usuario final" pasa a llamarse **Cliente**; nuevo actor **Domiciliario**;
 > nuevos externos **API de Mapas** y **API de correo (Brevo)**; nuevo caso abstracto **UC18 Realizar pago**
@@ -17,7 +16,7 @@ con `powershell -File ../_tools/render-uml.ps1`. Versiones anteriores archivadas
 
 ## 1. Diagrama de casos de uso — plano maestro
 
-![Casos de uso](img/01-casos-de-uso.png)
+![Casos de uso](../diagramas/img/02-casos-de-uso-general.png)
 
 **Qué es.** Un mapa de _quién_ usa el sistema y _para qué_, con simbología UML estricta: monigote = actor, óvalo = caso de uso, línea continua = iniciación, flecha punteada = `«include»` (obligatorio) / `«extend»` (opcional, la flecha va del caso que extiende al caso base), triángulo hueco = herencia.
 
@@ -56,9 +55,9 @@ con `powershell -File ../_tools/render-uml.ps1`. Versiones anteriores archivadas
 
 ### 1a. Plano del Cliente · 1b. Plano del Operador · 1c. Plano del Domiciliario
 
-![Cliente](img/02-casos-de-uso-cliente.png) ![Operador](img/03-casos-de-uso-operador.png) ![Domiciliario](img/04-casos-de-uso-domiciliario.png)
+![Cliente](../diagramas/img/03-casos-de-uso-cliente.png) ![Operador](../diagramas/img/04-casos-de-uso-operador.png) ![Domiciliario](../diagramas/img/05-casos-de-uso-domiciliario.png)
 
-Los tres recortes del maestro, uno por rol, para presentar el alcance sin saturar. Están en `src/*.puml` (PlantUML) y se regeneran con `render-uml.ps1`.
+Los tres recortes del maestro, uno por rol, para presentar el alcance sin saturar. Fuentes en `../diagramas/fuentes/` (03 a 05).
 
 ### 1b. Descripciones escritas, plantillas e historias
 
@@ -70,7 +69,7 @@ Los tres recortes del maestro, uno por rol, para presentar el alcance sin satura
 
 ## 2. DFD nivel 0 (diagrama de contexto) — RF-19
 
-![DFD nivel 0](img/02-dfd-nivel-0.png)
+![DFD nivel 0](../diagramas/img/06-dfd-nivel-0.png)
 
 **Qué es.** El sistema completo como **una sola burbuja** y todo lo que entra y sale de ella. Los rectángulos son quienes se comunican con el sistema (entidades externas) y las flechas son datos, no acciones.
 
@@ -84,7 +83,7 @@ Los tres recortes del maestro, uno por rol, para presentar el alcance sin satura
 
 ## 3. DFD nivel 1 — RF-19
 
-![DFD nivel 1](img/03-dfd-nivel-1.png)
+![DFD nivel 1](../diagramas/img/07-dfd-nivel-1.png)
 
 **Qué es.** La burbuja del nivel 0 abierta en cinco procesos, con los almacenes de datos (cilindros) donde se guarda la información.
 

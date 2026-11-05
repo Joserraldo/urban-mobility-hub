@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-27 (nuevo)                                                                                                                                                                                                    |
 | Prioridad           | P2                                                                                                                                                                                                               |
 | Estimación          | 5 h (HU-19a..c)                                                                                                                                                                                                  |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; domiciliario `../img/04-casos-de-uso-domiciliario.png`; secuencia `../../diseno/img/13-secuencia-entrega-domicilio.png`; estados `../../diseno/img/15-estados-entrega.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; domiciliario `../../diagramas/img/05-casos-de-uso-domiciliario.png`; secuencia `../../diagramas/img/20-secuencia-entrega-domicilio.png`; estados `../../diagramas/img/23-estados-entrega.png` |
 | Historias           | HU-19a, HU-19b, HU-19c                                                                                                                                                                                           |
 
 **Intención.** Cuando una entrega a domicilio se pasa de su hora límite (`deadline_at`), avisar por correo al cliente (transparencia) y al operador (acción), dejando registro auditable del envío.

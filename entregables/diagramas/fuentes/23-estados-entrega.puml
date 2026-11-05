@@ -1,0 +1,23 @@
+@startuml 23-estados-entrega
+!include estilo.iuml
+title Estados de una entrega a domicilio
+
+state "Asignada" as A
+state "En camino" as P
+state "Entregada" as E
+state "Tardía" as T
+
+[*] --> A : el operador elige domiciliario\ny hora límite
+A --> P : el domiciliario sale
+P --> E : el cliente recibe el vehículo
+A --> T : pasó la hora límite\n(el sistema la marca solo)
+P --> T : el domiciliario avisa\nel retraso y la causa
+T --> E : finalmente se entrega
+E --> [*]
+
+note right of T
+  Al llegar a "Tardía" se envía un correo
+  al cliente y al operador. Si el correo
+  falla, queda registrado y la app sigue.
+end note
+@enduml

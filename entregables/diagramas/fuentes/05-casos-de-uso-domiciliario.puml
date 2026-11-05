@@ -1,0 +1,37 @@
+@startuml 05-casos-de-uso-domiciliario
+!include estilo.iuml
+left to right direction
+title Casos de uso del Domiciliario
+
+actor Cliente as C
+actor Domiciliario as D
+D --|> C
+
+rectangle "Plataforma de micromovilidad" {
+  usecase "Ver mis entregas\nasignadas" as UC15 #FDF0E4
+  usecase "Entregar el vehículo\nal cliente" as UC16 #FDF0E4
+  usecase "Marcar la entrega\ncomo tardía" as UC17 #FDF0E4
+  usecase "Avisar del retraso\npor correo" as UC19 #F0EBFA
+}
+
+actor "Servicio de correo" as B
+
+D --- UC15
+D --- UC16
+UC17 ..> UC16 : <<extend>>
+UC19 ..> UC17 : <<extend>>
+UC19 --> B
+
+note bottom of UC17
+  Si pasa la hora límite sin entregar,
+  el sistema la marca tardía solo
+  y envía el correo al cliente y al operador.
+end note
+
+legend right
+  |= Símbolo |= Qué significa |
+  | óvalo naranja | lo hace el domiciliario |
+  | óvalo morado | lo hace el sistema solo |
+  | «extend» | ocurre solo si hay retraso |
+endlegend
+@enduml
