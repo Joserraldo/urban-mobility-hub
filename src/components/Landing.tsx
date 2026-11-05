@@ -299,7 +299,7 @@ export function Landing({
                 ["Ciudad", "Bucaramanga"],
               ].map(([label, value]) => (
                 <div key={label as string} className="group/stat">
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
                   <dd className="text-xl font-bold transition-colors group-hover/stat:text-primary-glow sm:text-2xl">
                     {value}
                   </dd>
@@ -345,7 +345,7 @@ export function Landing({
       <section aria-label="Nuestra flota" className="border-y border-border bg-surface/30">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
           <Reveal>
-            <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-center text-xs font-semibold text-muted-foreground">
               La flota, en fotos reales
             </p>
           </Reveal>
@@ -633,7 +633,7 @@ export function Landing({
                   />
                 </div>
                 <div className="p-6">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="text-sm font-semibold text-muted-foreground">
                     {tarifaLabel[t.kind]}
                   </p>
                   <p className="mt-3 text-3xl font-bold">
@@ -792,9 +792,7 @@ export function Landing({
 
           <Reveal delay={0.1}>
             <div id="red" className="rounded-3xl border border-border bg-surface p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Red de hubs
-              </h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">Red de hubs</h3>
               <ul className="mt-3 divide-y divide-border">
                 {hubs.map((h) => (
                   <li key={h.id}>

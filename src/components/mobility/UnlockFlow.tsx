@@ -23,6 +23,8 @@ import { keys, useMe } from "@/lib/data/queries";
 import { DataError, type Reservation, type UnlockSession, type Vehicle } from "@/lib/data/types";
 import { formatCOP, statusLabel } from "@/lib/format";
 import { helmetModelState, preloadHelmetModel } from "@/lib/helmet-model";
+import { playSound } from "@/lib/sound";
+import { UnlockBurst } from "@/components/mobility/UnlockBurst";
 
 // Flujo de desbloqueo en 3 pasos (RF-09): 1) QR  2) verificación de casco  3) "Iniciar viaje".
 // Alterno RF-10: reconocimiento facial en lugar del QR. Todo el estado vive en el DataSource.
@@ -47,6 +49,15 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const [attempt, setAttempt] = useState(0);
 
   const step = session?.step ?? "qr";
+
+  // Sonido en cada cambio de paso: avanzar suena a "paso superado"; negado o vencido, a error.
+  const prevStep = useRef(step);
+  useEffect(() => {
+    if (prevStep.current === step) return;
+    prevStep.current = step;
+    if (step === "helmet" || step === "ready") playSound("step");
+    else if (step === "denied" || step === "expired") playSound("error");
+  }, [step]);
   const camera = useCamera(
     !!session && (step === "qr" || step === "helmet") && !reservation,
     step === "helmet" ? "user" : "environment",
@@ -88,6 +99,7 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
         await fn();
       } catch (e) {
         setError(msg(e));
+        playSound("error");
       } finally {
         setBusy(null);
       }
@@ -187,9 +199,7 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     >
       <header className="flex items-center justify-between px-5 py-4">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Desbloqueo seguro
-          </p>
+          <p className="text-xs text-muted-foreground">Desbloqueo seguro</p>
           <p className="truncate text-base font-semibold">
             {vehicle.model} · {vehicle.id}
           </p>
@@ -238,7 +248,11 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
           </p>
         ) : reservation ? (
           <div className="w-full max-w-sm space-y-5 text-center" data-testid="unlock-trip">
-            <CheckCircle2 className="mx-auto size-16 text-success" aria-hidden />
+            {finished ? (
+              <CheckCircle2 className="mx-auto size-16 text-success" aria-hidden />
+            ) : (
+              <UnlockBurst />
+            )}
             <p>
               Reserva:{" "}
               <strong data-testid="reservation-status">
@@ -288,9 +302,7 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                   icon={<QrCode className="size-24 text-primary-glow/70" aria-hidden />}
                 />
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">
-                    Paso 1 de 3
-                  </p>
+                  <p className="text-xs font-semibold text-primary-glow">Paso 1 de 3</p>
                   <h2 className="text-lg font-semibold">Escanea el código QR</h2>
                   <p className="text-sm text-muted-foreground">
                     {camera.status === "denied"
@@ -403,7 +415,7 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                   }
                 />
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">
+                  <p className="text-xs font-semibold text-primary-glow">
                     Paso {step === "ready" ? 3 : 2} de 3
                   </p>
                   <h2 className="flex items-center justify-center gap-2 text-lg font-semibold">

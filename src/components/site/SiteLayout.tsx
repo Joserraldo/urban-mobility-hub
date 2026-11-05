@@ -236,11 +236,7 @@ export function PageHeading({
 }) {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-6 pt-12 sm:px-6">
-      {eyebrow && (
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-glow">
-          {eyebrow}
-        </p>
-      )}
+      {eyebrow && <p className="text-xs font-semibold text-primary-glow">{eyebrow}</p>}
       <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
       {lead && <p className="mt-3 max-w-3xl text-lg text-muted-foreground">{lead}</p>}
     </div>

@@ -2,35 +2,103 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BatteryCharging,
   ChevronUp,
-  Layers,
+  CircleHelp,
+  Footprints,
+  LocateFixed,
   MapPin,
+  Navigation,
   Package,
   Settings,
   ShoppingBag,
+  SlidersHorizontal,
   Timer,
   User as UserIcon,
   X,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 
+import { GuidedTour, type TourStep } from "@/components/common/GuidedTour";
+import { SoundToggle } from "@/components/common/SoundToggle";
 import { VehicleIcon } from "@/components/common/vehicle-icon";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { BuyDialog, ReserveDialog } from "@/components/commerce/CommerceDialogs";
-import type { MapLayers } from "@/components/mobility/FleetMap";
+import type { MapFocus, MapLayers } from "@/components/mobility/FleetMap";
+import { MapHeader } from "@/components/mobility/MapHeader";
 import { MobileNav } from "@/components/mobility/MobileNav";
 import { UnlockFlow } from "@/components/mobility/UnlockFlow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useFleetLive, useHubs, useMe, useVehicles } from "@/lib/data/queries";
-import type { RentalModality, Vehicle } from "@/lib/data/types";
+import type { RentalModality, Vehicle, VehicleKind } from "@/lib/data/types";
 import { formatCOP, kindLabel } from "@/lib/format";
+import {
+  batteryLevel,
+  CITY_CENTER,
+  distanceM,
+  formatDistance,
+  nearest,
+  walkMinutes,
+  type LatLng,
+} from "@/lib/geo";
+import { playSound } from "@/lib/sound";
 
 // El mapa solo existe en el navegador (Leaflet usa window): se carga bajo demanda.
 const FleetMap = lazy(() => import("@/components/mobility/FleetMap"));
 
 type Mode = "rent" | "buy";
+type KindFilter = VehicleKind | "all";
+
+const KIND_FILTERS: [KindFilter, string][] = [
+  ["all", "Todos"],
+  ["scooter", "Patinetas"],
+  ["bike", "Bicicletas"],
+  ["drone", "Drones"],
+];
+const BATTERY_FILTERS: [number, string][] = [
+  [0, "Cualquiera"],
+  [50, "50 % o más"],
+  [80, "80 % o más"],
+];
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    title: "Te mostramos el mapa en 1 minuto",
+    body: "Son seis pasos cortos sobre los controles reales. Puedes saltarlo y volver a verlo con el botón de ayuda.",
+  },
+  {
+    target: '[data-tour="mode"]',
+    title: "Alquilar o comprar",
+    body: "Alquilar muestra los vehículos que puedes usar por minuto. Comprar abre el catálogo de venta de cada hub.",
+  },
+  {
+    target: '[data-tour="submode"]',
+    title: "Recógelo o te lo llevamos",
+    body: "En un hub lo recoges tú. A domicilio solo aparecen los vehículos que podemos llevarte, y se marcan las zonas que cubrimos.",
+  },
+  {
+    target: '[data-tour="legend"]',
+    title: "Cómo leer los marcadores",
+    body: "El anillo de cada vehículo es su batería: verde alta, amarillo media, rojo baja. Los cuadrados azules son hubs, con su ocupación debajo. Si un vehículo late en rojo, tiene una alerta.",
+  },
+  {
+    target: '[data-tour="actions"]',
+    title: "Encuentra el más cercano",
+    body: "Usa tu ubicación y te llevamos al vehículo disponible más cerca, con la distancia y los minutos caminando.",
+  },
+  {
+    target: '[data-tour="filters"]',
+    title: "Filtra lo que ves",
+    body: "Elige tipo de vehículo, batería mínima y qué capas mostrar en el mapa.",
+  },
+  {
+    target: '[data-tour="account"]',
+    title: "Tus reservas",
+    body: "Aquí ves tus reservas y terminas el viaje. Para desbloquear, toca un vehículo: QR, casco y listo.",
+  },
+];
 
 export function MobilityApp() {
   const hubsQ = useHubs();
@@ -46,6 +114,13 @@ export function MobilityApp() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [layerOverride, setLayerOverride] = useState<Partial<MapLayers>>({});
   const [layersOpen, setLayersOpen] = useState(false);
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [minBattery, setMinBattery] = useState(0);
+  const [userPos, setUserPos] = useState<(LatLng & { accuracy?: number }) | null>(null);
+  const [mapCenter, setMapCenter] = useState<LatLng>(CITY_CENTER);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [tourSignal, setTourSignal] = useState(0);
   const [isClient, setIsClient] = useState(false);
   useEffect(() => setIsClient(true), []);
 
@@ -55,12 +130,110 @@ export function MobilityApp() {
   const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
   const rentals = vehicles.filter((v) => v.mode === "rent");
   const forSale = vehicles.filter((v) => v.mode === "sale");
-  const visibleRentals = rentals.filter((v) => (submode === "delivery" ? v.delivery : true));
+  const visibleRentals = rentals.filter(
+    (v) =>
+      (submode === "delivery" ? v.delivery : true) &&
+      (kindFilter === "all" || v.kind === kindFilter) &&
+      v.battery >= minBattery,
+  );
+  // El mapa recibe el stock de venta completo y solo los vehículos de alquiler que pasan los filtros.
+  const mapVehicles = useMemo(
+    () => [...forSale, ...visibleRentals],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [vehicles, submode, kindFilter, minBattery],
+  );
+  const filtersActive = kindFilter !== "all" || minBattery > 0;
+  const alerts = rentals.filter((v) => v.alert !== "ok").length;
 
   const layers: MapLayers = {
     vehicles: layerOverride.vehicles ?? mode === "rent",
     hubs: layerOverride.hubs ?? true,
     sale: layerOverride.sale ?? mode === "buy",
+    coverage: layerOverride.coverage ?? (mode === "rent" && submode === "delivery"),
+  };
+
+  const activeHubs = hubs.filter((h) => h.active).length;
+  const avgBattery = rentals.length
+    ? Math.round(rentals.reduce((sum, v) => sum + v.battery, 0) / rentals.length)
+    : 0;
+  const tickerMessages = [
+    {
+      text: `${visibleRentals.filter((v) => v.alert === "ok").length} vehículos listos para alquilar`,
+    },
+    { text: `${activeHubs} hubs activos en la ciudad` },
+    { text: `Batería media de la flota: ${avgBattery} %` },
+    ...(alerts > 0
+      ? [
+          {
+            text: `${alerts} ${alerts === 1 ? "vehículo con alerta" : "vehículos con alerta"}`,
+            tone: "alert" as const,
+          },
+        ]
+      : []),
+  ];
+
+  const origin = userPos ?? mapCenter;
+  const vehicleDistance = vehicle ? distanceM(origin, vehicle) : null;
+  const route =
+    userPos && vehicle && vehicle.mode === "rent" ? { from: userPos, to: vehicle } : null;
+
+  const flyTo = (p: LatLng, zoom?: number) =>
+    setFocus({ ...p, ...(zoom ? { zoom } : {}), key: Date.now() });
+
+  const locate = () => {
+    if (!("geolocation" in navigator)) {
+      toast.error("Tu navegador no comparte la ubicación. Mueve el mapa hasta tu zona.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const p = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        // Fuera de Bucaramanga (demo): se avisa en vez de volar a otra ciudad sin flota.
+        if (distanceM(p, CITY_CENTER) > 30_000) {
+          toast("Estás fuera de Bucaramanga", {
+            description: "La flota de la demo está en Bucaramanga; usamos el centro de la ciudad.",
+          });
+          setUserPos({ ...CITY_CENTER, accuracy: 60 });
+          flyTo(CITY_CENTER, 15);
+          return;
+        }
+        setUserPos(p);
+        flyTo(p, 16);
+        playSound("locate");
+      },
+      () => {
+        setLocating(false);
+        playSound("error");
+        toast.error("No pudimos obtener tu ubicación", {
+          description:
+            "Revisa el permiso de ubicación del navegador. Mientras, usamos el centro del mapa.",
+        });
+      },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const findNearest = () => {
+    if (mode !== "rent") setMode("rent");
+    const candidates = visibleRentals.filter((v) => v.alert === "ok");
+    const best = nearest(origin, candidates);
+    if (!best) {
+      playSound("error");
+      toast("No hay vehículos disponibles con estos filtros", {
+        description: "Quita algún filtro o cambia de modalidad.",
+      });
+      return;
+    }
+    setHubId(null);
+    setVehicleId(best.item.id);
+    flyTo(best.item, 16);
+    playSound("locate");
   };
 
   const closePanels = () => {
@@ -87,16 +260,24 @@ export function MobilityApp() {
           }
         >
           <FleetMap
-            vehicles={vehicles}
+            vehicles={mapVehicles}
             hubs={hubs}
             layers={layers}
             selectedHubId={hubId ?? undefined}
             selectedVehicleId={vehicleId ?? undefined}
+            userPos={userPos}
+            focus={focus}
+            route={route}
+            onCenterChange={setMapCenter}
             onSelectHub={(id) => {
+              playSound("tap");
               setVehicleId(null);
               setHubId(id);
+              const h = hubs.find((x) => x.id === id);
+              if (h) flyTo(h);
             }}
             onSelectVehicle={(id) => {
+              playSound("tap");
               setHubId(null);
               setVehicleId(id);
             }}
@@ -129,51 +310,47 @@ export function MobilityApp() {
 
       {/* Controles superiores */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-3 p-4 md:left-auto md:right-0 md:w-[420px]">
-        <div className="pointer-events-auto grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-          <MobileNav />
-          <div className="min-w-0 text-center">
-            <h1 className="truncate text-sm font-semibold tracking-tight">NODO Mobility</h1>
-            <p className="truncate text-[11px] text-muted-foreground" aria-live="polite">
-              {hubs.filter((h) => h.active).length} hubs activos ·{" "}
-              <span data-testid="live-indicator" data-live={live}>
-                {live ? "en vivo" : "sin conexión en vivo"}
-              </span>
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {me?.role === "operator" && (
+        <MapHeader
+          live={live}
+          messages={tickerMessages}
+          left={<MobileNav />}
+          right={
+            <div className="flex gap-1.5" data-tour="account">
+              {me?.role === "operator" && (
+                <Button
+                  asChild
+                  size="icon"
+                  variant="secondary"
+                  className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur"
+                >
+                  <Link to="/admin" aria-label="Panel del operador" data-testid="app-link-admin">
+                    <Settings className="size-5" aria-hidden />
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 size="icon"
                 variant="secondary"
                 className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur"
               >
-                <Link to="/admin" aria-label="Panel del operador" data-testid="app-link-admin">
-                  <Settings className="size-5" aria-hidden />
+                <Link
+                  to={me ? "/mis-reservas" : "/login"}
+                  aria-label={me ? "Mis reservas" : "Ingresar"}
+                  data-testid="app-link-account"
+                >
+                  <UserIcon className="size-5" aria-hidden />
                 </Link>
               </Button>
-            )}
-            <Button
-              asChild
-              size="icon"
-              variant="secondary"
-              className="rounded-full border border-border bg-surface-elevated/90 backdrop-blur"
-            >
-              <Link
-                to={me ? "/mis-reservas" : "/login"}
-                aria-label={me ? "Mis reservas" : "Ingresar"}
-                data-testid="app-link-account"
-              >
-                <UserIcon className="size-5" aria-hidden />
-              </Link>
-            </Button>
-          </div>
-        </div>
+            </div>
+          }
+        />
 
         {/* Alquilar / Comprar */}
         <div
           role="group"
           aria-label="Modo"
+          data-tour="mode"
           className="pointer-events-auto rounded-full border border-border bg-surface-elevated/95 p-1 backdrop-blur"
         >
           <div className="relative grid grid-cols-2">
@@ -195,6 +372,7 @@ export function MobilityApp() {
                 data-testid={`mode-${value}`}
                 aria-pressed={mode === value}
                 onClick={() => {
+                  if (mode !== value) playSound("toggle");
                   setMode(value);
                   setLayerOverride({});
                   closePanels();
@@ -211,11 +389,11 @@ export function MobilityApp() {
           </div>
         </div>
 
-        <div className="pointer-events-auto flex gap-2">
+        <div className="pointer-events-auto flex gap-2" data-tour="submode">
           {mode === "rent" &&
             (
               [
-                ["hub", "En punto / estación", MapPin],
+                ["hub", "Recoger en hub", MapPin],
                 ["delivery", "A domicilio", Package],
               ] as const
             ).map(([value, label, Icon]) => (
@@ -224,8 +402,11 @@ export function MobilityApp() {
                 type="button"
                 data-testid={`submode-${value}`}
                 aria-pressed={submode === value}
-                onClick={() => setSubmode(value)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium backdrop-blur transition-colors ${
+                onClick={() => {
+                  if (submode !== value) playSound("toggle");
+                  setSubmode(value);
+                }}
+                className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-medium backdrop-blur transition-colors ${
                   submode === value
                     ? "border-primary bg-primary/20 text-foreground"
                     : "border-border bg-surface/80 text-muted-foreground"
@@ -239,44 +420,168 @@ export function MobilityApp() {
             type="button"
             size="icon"
             variant="secondary"
-            className="ml-auto shrink-0 rounded-full border border-border bg-surface-elevated/90"
-            aria-label="Capas del mapa"
+            className="relative ml-auto shrink-0 rounded-full border border-border bg-surface-elevated/90"
+            aria-label="Filtros y capas del mapa"
             aria-expanded={layersOpen}
-            onClick={() => setLayersOpen((o) => !o)}
+            onClick={() => {
+              playSound("toggle");
+              setLayersOpen((o) => !o);
+            }}
             data-testid="map-layers-toggle"
+            data-tour="filters"
           >
-            <Layers className="size-4" />
+            <SlidersHorizontal className="size-4" />
+            {filtersActive && (
+              <span
+                className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-primary-glow ring-2 ring-background"
+                aria-label="Hay filtros activos"
+              />
+            )}
           </Button>
         </div>
 
-        {layersOpen && (
-          <div
-            role="group"
-            aria-label="Capas del mapa"
-            className="pointer-events-auto flex flex-wrap gap-2 rounded-2xl border border-border bg-surface-elevated/95 p-3 backdrop-blur"
-          >
-            {(
-              [
-                ["vehicles", "Vehículos"],
-                ["hubs", "Hubs"],
-                ["sale", "Stock en venta"],
-              ] as const
-            ).map(([k, label]) => (
-              <button
-                key={k}
-                type="button"
-                data-testid={`map-layer-${k}`}
-                aria-pressed={layers[k]}
-                onClick={() => toggleLayer(k)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  layers[k] ? "border-primary bg-primary/20" : "border-border text-muted-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {layersOpen && (
+            <motion.div
+              key="filters"
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "top right" }}
+              className="pointer-events-auto space-y-3 rounded-2xl border border-border bg-surface-elevated/95 p-4 backdrop-blur"
+              data-testid="map-filters"
+            >
+              <ChipGroup label="Tipo de vehículo">
+                {KIND_FILTERS.map(([k, label]) => (
+                  <Chip
+                    key={k}
+                    active={kindFilter === k}
+                    onClick={() => setKindFilter(k)}
+                    testId={`filter-kind-${k}`}
+                  >
+                    {k !== "all" && <VehicleIcon kind={k} className="size-3.5" />}
+                    {label}
+                  </Chip>
+                ))}
+              </ChipGroup>
+              <ChipGroup label="Batería mínima">
+                {BATTERY_FILTERS.map(([n, label]) => (
+                  <Chip
+                    key={n}
+                    active={minBattery === n}
+                    onClick={() => setMinBattery(n)}
+                    testId={`filter-battery-${n}`}
+                  >
+                    {label}
+                  </Chip>
+                ))}
+              </ChipGroup>
+              <ChipGroup label="Capas del mapa">
+                {(
+                  [
+                    ["vehicles", "Vehículos"],
+                    ["hubs", "Hubs"],
+                    ["sale", "Stock en venta"],
+                    ["coverage", "Zonas de cobertura"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <Chip
+                    key={k}
+                    active={layers[k]}
+                    onClick={() => toggleLayer(k)}
+                    testId={`map-layer-${k}`}
+                  >
+                    {label}
+                  </Chip>
+                ))}
+              </ChipGroup>
+              {filtersActive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKindFilter("all");
+                    setMinBattery(0);
+                  }}
+                  className="text-xs text-primary-glow underline-offset-4 hover:underline"
+                >
+                  Quitar filtros
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Acciones del mapa: ubicación, más cercano y ayuda */}
+      <div
+        className="absolute bottom-6 right-4 z-20 flex flex-col items-end gap-2"
+        data-tour="actions"
+      >
+        <SoundToggle className="rounded-full border border-border bg-surface-elevated/95 shadow-panel backdrop-blur" />
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          onClick={() => setTourSignal((n) => n + 1)}
+          aria-label="Ver tutorial del mapa"
+          className="rounded-full border border-border bg-surface-elevated/95 shadow-panel backdrop-blur"
+          data-testid="tour-open"
+        >
+          <CircleHelp className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          onClick={locate}
+          disabled={locating}
+          aria-label={locating ? "Buscando tu ubicación" : "Ir a mi ubicación"}
+          className="rounded-full border border-border bg-surface-elevated/95 shadow-panel backdrop-blur"
+          data-testid="btn-locate"
+        >
+          <LocateFixed
+            className={`size-5 ${locating ? "animate-pulse text-primary-glow" : ""} ${userPos ? "text-primary-glow" : ""}`}
+          />
+        </Button>
+        <Button
+          type="button"
+          onClick={findNearest}
+          className="rounded-full bg-gradient-primary px-4 shadow-glow"
+          data-testid="btn-nearest"
+        >
+          <Navigation className="mr-1.5 size-4" aria-hidden />
+          Más cercano
+        </Button>
+      </div>
+
+      {/* Leyenda en vivo (escritorio) */}
+      <div
+        className="absolute bottom-6 right-44 z-10 hidden w-64 rounded-2xl border border-border bg-surface-elevated/95 p-4 text-xs shadow-panel backdrop-blur lg:block"
+        data-tour="legend"
+        data-testid="map-legend"
+      >
+        <p className="flex items-center gap-2 font-medium">
+          <span className="relative flex size-2">
+            {live && (
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none" />
+            )}
+            <span
+              className={`relative inline-flex size-2 rounded-full ${live ? "bg-success" : "bg-muted-foreground"}`}
+            />
+          </span>
+          {visibleRentals.length} vehículos para alquilar
+          {alerts > 0 && <span className="text-destructive">· {alerts} con alerta</span>}
+        </p>
+        <ul className="mt-3 space-y-1.5 text-muted-foreground">
+          <LegendRow color="var(--success)">Batería alta (50 % o más)</LegendRow>
+          <LegendRow color="var(--warning)">Batería media (20–49 %)</LegendRow>
+          <LegendRow color="var(--destructive)">Batería baja o alerta</LegendRow>
+          <li className="flex items-center gap-2">
+            <span className="size-3 rounded-[4px] bg-gradient-primary" aria-hidden />
+            Hub, con su ocupación debajo
+          </li>
+        </ul>
       </div>
 
       {/* Panel de hub (RF-07) */}
@@ -369,17 +674,33 @@ export function MobilityApp() {
               subtitle={vehicle.id}
               onClose={closePanels}
             />
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Stat label="Batería" value={`${vehicle.battery}%`} accent={vehicle.battery < 25} />
+            {vehicleDistance !== null && (
+              <Rise i={1}>
+                <p
+                  className="mt-3 flex items-center gap-1.5 text-sm text-foreground"
+                  data-testid="vehicle-distance"
+                >
+                  <Footprints className="size-4 text-primary-glow" aria-hidden />A{" "}
+                  {formatDistance(vehicleDistance)} · {walkMinutes(vehicleDistance)} min caminando
+                  {!userPos && (
+                    <span className="text-xs text-muted-foreground">
+                      (desde el centro del mapa)
+                    </span>
+                  )}
+                </p>
+              </Rise>
+            )}
+            <Rise i={2} className="mt-4 grid grid-cols-2 gap-3">
+              <BatteryStat value={vehicle.battery} />
               <Stat label="Tarifa" value={`${formatCOP(vehicle.pricePerMinute ?? 0)} / min`} />
-            </div>
+            </Rise>
             <p className="mt-3 text-xs text-muted-foreground">{vehicle.spec}</p>
             {vehicle.alert !== "ok" && (
               <p className="mt-2 text-xs text-destructive" role="status">
                 Este vehículo reporta una alerta y no está disponible.
               </p>
             )}
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <Rise i={3} className="mt-4 grid grid-cols-2 gap-2">
               <ReserveDialog
                 vehicle={vehicle}
                 redirectTo="/app"
@@ -401,7 +722,7 @@ export function MobilityApp() {
               >
                 Desbloquear
               </Button>
-            </div>
+            </Rise>
           </motion.section>
         )}
       </AnimatePresence>
@@ -504,6 +825,111 @@ export function MobilityApp() {
       <AnimatePresence>
         {unlocking && <UnlockFlow vehicle={unlocking} onClose={() => setUnlocking(null)} />}
       </AnimatePresence>
+
+      {isClient && !loading && (
+        <GuidedTour
+          storageKey="umh-tour-app-v1"
+          steps={TOUR_STEPS}
+          openSignal={tourSignal}
+          finishLabel="Buscar el más cercano"
+          onFinish={findNearest}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Bloque que entra escalonado dentro de una hoja (orden `i`, ~50 ms entre bloques). */
+function Rise({
+  i,
+  className,
+  children,
+}: {
+  i: number;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.08 + i * 0.05 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label}>
+      <p className="mb-1.5 text-xs text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Chip({
+  active,
+  onClick,
+  testId,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  testId?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      data-testid={testId}
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary-glow ${
+        active
+          ? "border-primary bg-primary/20 text-foreground"
+          : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function LegendRow({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <li className="flex items-center gap-2">
+      <span
+        className="size-3 rounded-full border-[3px]"
+        style={{ borderColor: color }}
+        aria-hidden
+      />
+      {children}
+    </li>
+  );
+}
+
+function BatteryStat({ value }: { value: number }) {
+  const level = batteryLevel(value);
+  const color = level === "high" ? "bg-success" : level === "mid" ? "bg-warning" : "bg-destructive";
+  return (
+    <div className="rounded-xl border border-border bg-surface-elevated p-3">
+      <p className="text-[11px] text-muted-foreground">Batería</p>
+      <p
+        className={`mt-1 text-base font-semibold tabular-nums ${level === "low" ? "text-destructive" : "text-foreground"}`}
+      >
+        {value}%
+      </p>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border" aria-hidden>
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </div>
     </div>
   );
 }
@@ -539,7 +965,7 @@ function PanelHeader({
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="rounded-xl border border-border bg-surface-elevated p-3">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
       <p
         className={`mt-1 text-base font-semibold ${accent ? "text-destructive" : "text-foreground"}`}
       >
@@ -560,7 +986,7 @@ function HubList({
 }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+      <h3 className="text-xs font-semibold text-muted-foreground">
         {title} ({items.length})
       </h3>
       {items.length === 0 && (

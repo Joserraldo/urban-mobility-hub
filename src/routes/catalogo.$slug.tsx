@@ -108,9 +108,7 @@ function VehiclePage() {
           </span>
           <div className="space-y-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-primary-glow">
-                {kindLabel[v.kind]}
-              </p>
+              <p className="text-xs text-primary-glow">{kindLabel[v.kind]}</p>
               <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{v.model}</h1>
             </div>
             <p className="text-3xl font-bold text-primary-glow">{formatCOP(v.price ?? 0)}</p>
@@ -122,15 +120,11 @@ function VehiclePage() {
             </div>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-xl border border-border bg-surface p-4">
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Especificación técnica
-                </dt>
+                <dt className="text-xs text-muted-foreground">Especificación técnica</dt>
                 <dd className="mt-1 font-medium">{v.spec}</dd>
               </div>
               <div className="rounded-xl border border-border bg-surface p-4">
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Disponible en
-                </dt>
+                <dt className="text-xs text-muted-foreground">Disponible en</dt>
                 <dd className="mt-1 flex items-center gap-1.5 font-medium">
                   <MapPin className="size-4 text-primary-glow" aria-hidden />
                   {hub ? (

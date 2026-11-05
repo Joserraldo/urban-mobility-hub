@@ -237,8 +237,34 @@ textarea {
   font-family: var(--font-sans);
   z-index: 0;
 }
+/* Mapa "de noche": monocromo azul en el tono de la marca (calles claras sobre azul profundo). */
 .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6);
+  filter: invert(1) grayscale(1) brightness(0.92) sepia(0.55) hue-rotate(185deg) saturate(2.4)
+    contrast(1.08) brightness(0.78);
+}
+.leaflet-container {
+  background: oklch(0.16 0.03 265);
+}
+/* Viñeta azul en los bordes, por encima del mapa y debajo de los controles de Leaflet. */
+.leaflet-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 700;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, oklch(0.14 0.05 265 / 65%) 100%);
+}
+
+.leaflet-control-zoom a {
+  background: var(--surface-elevated) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+/* En celular se hace zoom con los dedos; los botones chocaban con el menú. */
+@media (max-width: 767px) {
+  .leaflet-control-zoom {
+    display: none;
+  }
 }
 .leaflet-control-attribution {
   background: oklch(0.145 0.005 285 / 80%) !important;
@@ -276,6 +302,45 @@ textarea {
   border: 2px solid oklch(1 0 0 / 35%);
   box-shadow: var(--shadow-glow);
 }
+/* Pulso lento de los hubs activos: estaciones de carga "transmitiendo". */
+.umh-hub:not(.is-inactive)::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 16px;
+  border: 2px solid var(--primary-glow);
+  opacity: 0;
+  animation: umh-hub-pulse 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  animation-delay: var(--pulse-delay, 0s);
+  pointer-events: none;
+}
+@keyframes umh-hub-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+/* Entrada en cascada de los marcadores, solo la primera vez que carga el mapa. */
+.umh-marker button.is-enter {
+  animation: umh-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--enter-delay, 0s);
+}
+.umh-vehicle.is-alert.is-enter {
+  animation:
+    umh-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards var(--enter-delay, 0s),
+    umh-pulse 1.4s ease-out infinite;
+}
+@keyframes umh-pop {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
 .umh-hub svg {
   width: 22px;
   height: 22px;
@@ -290,22 +355,124 @@ textarea {
   opacity: 0.6;
 }
 .umh-vehicle {
-  width: 36px;
-  height: 36px;
+  /* Anillo de batería: arco de color = % restante; el resto es la pista apagada. */
+  --ring: var(--success);
+  width: 40px;
+  height: 40px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 0;
+  background: conic-gradient(var(--ring) calc(var(--bat, 100) * 1%), oklch(0.32 0.01 285) 0);
+  color: var(--primary-glow) !important;
+  box-shadow: 0 6px 16px -4px oklch(0 0 0 / 60%);
+}
+.umh-vehicle.bat-mid {
+  --ring: var(--warning);
+}
+.umh-vehicle.bat-low {
+  --ring: var(--destructive);
+}
+.umh-core {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   background: var(--surface-elevated);
-  border: 2px solid var(--primary-glow);
-  color: var(--primary-glow) !important;
-  box-shadow: 0 4px 14px oklch(0 0 0 / 50%);
+  transition: background-color 0.2s ease;
+}
+.umh-core svg {
+  width: 17px;
+  height: 17px;
 }
 .umh-vehicle.is-alert {
-  border-color: var(--destructive);
+  --ring: var(--destructive);
   color: var(--destructive) !important;
   animation: umh-pulse 1.4s ease-out infinite;
 }
-.umh-vehicle.is-selected {
+.umh-vehicle.is-selected .umh-core {
   background: var(--primary);
-  color: white !important;
+  color: white;
+}
+.umh-vehicle.is-selected {
+  transform: scale(1.15);
+}
+/* Onda de confirmación al seleccionar un marcador (se reproduce una vez). */
+.umh-vehicle.is-selected::after,
+.umh-hub.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--primary-glow);
+  pointer-events: none;
+  animation: umh-select-ripple 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes umh-select-ripple {
+  from {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.umh-occ {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: -11px;
+  height: 6px;
+  border-radius: 999px;
+  background: oklch(0.2 0.01 285);
+  border: 1px solid oklch(1 0 0 / 35%);
+  overflow: hidden;
+}
+.umh-occ i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+.umh-coverage {
+  fill: var(--primary-glow);
+  fill-opacity: 0.07;
+  stroke: var(--primary-glow);
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+}
+.umh-accuracy {
+  fill: var(--primary-glow);
+  fill-opacity: 0.12;
+  stroke: none;
+}
+.umh-user {
+  fill: oklch(0.72 0.17 250);
+  fill-opacity: 1;
+  stroke: white;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px oklch(0.72 0.17 250 / 80%));
+}
+.umh-route {
+  fill: none;
+  stroke: var(--primary-glow);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 1 10;
+  animation: umh-route-draw 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes umh-route-draw {
+  from {
+    stroke-dashoffset: 400;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
 }
 .umh-sale {
   position: absolute;
@@ -334,5 +501,14 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .umh-vehicle.is-alert {
     animation: none;
+  }
+  .umh-route {
+    animation: none;
+  }
+  .umh-hub::before,
+  .umh-vehicle.is-selected::after,
+  .umh-hub.is-selected::after,
+  .umh-marker button.is-enter {
+    animation: none !important;
   }
 }

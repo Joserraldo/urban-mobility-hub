@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getDataSource } from "@/lib/data";
+import { playSound } from "@/lib/sound";
+import { SuccessCheck } from "@/components/common/SuccessCheck";
 import { keys, useMe } from "@/lib/data/queries";
 import {
   DataError,
@@ -77,8 +79,10 @@ export function BuyDialog({
       setDone(purchase);
       void qc.invalidateQueries({ queryKey: keys.purchases });
       toast.success(`Compra confirmada: ${vehicle.model}`);
+      playSound("success");
     } catch (e) {
       setError(messageOf(e));
+      playSound("error");
     } finally {
       setBusy(false);
     }
@@ -106,7 +110,7 @@ export function BuyDialog({
         </DialogHeader>
         {done ? (
           <div data-testid="purchase-status" className="space-y-3 text-center">
-            <CheckCircle2 className="mx-auto size-10 text-success" aria-hidden />
+            <SuccessCheck />
             <p className="font-semibold">¡Compra confirmada!</p>
             <p className="text-sm text-muted-foreground">
               Referencia {done.id}. Recoge tu vehículo en {hubName ?? "el hub"}. Puedes verla en
@@ -186,10 +190,12 @@ export function ReserveDialog({
         ...(modality === "delivery" ? { address } : {}),
       });
       setDone(reservation);
+      playSound("success");
       onReserved?.(reservation);
       void qc.invalidateQueries({ queryKey: keys.reservations });
     } catch (e) {
       setError(messageOf(e));
+      playSound("error");
     } finally {
       setBusy(false);
     }
@@ -217,7 +223,7 @@ export function ReserveDialog({
         </DialogHeader>
         {done ? (
           <div className="space-y-3 text-center">
-            <CheckCircle2 className="mx-auto size-10 text-success" aria-hidden />
+            <SuccessCheck />
             <p>
               Estado de la reserva:{" "}
               <strong data-testid="reservation-status" data-status={done.status}>

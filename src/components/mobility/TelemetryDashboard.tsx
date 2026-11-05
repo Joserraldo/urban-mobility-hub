@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
+  CircleHelp,
   ArrowLeft,
   BatteryLow,
   Cpu,
@@ -16,6 +17,11 @@ import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { AdminCatalog } from "@/components/mobility/AdminCatalog";
+import { AnimatedNumber } from "@/components/common/AnimatedNumber";
+import { GuidedTour, type TourStep } from "@/components/common/GuidedTour";
+import { SoundToggle } from "@/components/common/SoundToggle";
+import { playSound } from "@/lib/sound";
+import { batteryLevel } from "@/lib/geo";
 import { VehicleIcon } from "@/components/common/vehicle-icon";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +57,38 @@ const simulations: { type: ActiveAlertType; icon: typeof Siren; label: string; t
     { type: "low-battery", icon: BatteryLow, label: "Batería crítica", testId: "sim-low-battery" },
   ];
 
+const ADMIN_TOUR: TourStep[] = [
+  {
+    title: "Así se usa el panel del operador",
+    body: "Cinco pasos: indicadores, simulador, flota, historial y catálogo. Puedes saltarlo y repetirlo con el botón de ayuda arriba.",
+  },
+  {
+    target: '[data-tour="kpis"]',
+    title: "El estado de la flota de un vistazo",
+    body: "Se actualizan solos. Si hay alertas activas, el indicador se pone en rojo hasta que las atiendas.",
+  },
+  {
+    target: '[data-tour="simulator"]',
+    title: "Prueba una alerta",
+    body: "Elige un vehículo y dispara un evento: sin casco, caída, pérdida de GPS o batería crítica. Llega como aviso y queda en el historial. Restablecer lo devuelve a la normalidad.",
+  },
+  {
+    target: '[data-tour="fleet"]',
+    title: "Flota conectada",
+    body: "Los vehículos con alerta suben arriba. Toca uno para ver su gemelo digital: batería, posición y estado.",
+  },
+  {
+    target: '[data-tour="log"]',
+    title: "Historial de alertas",
+    body: "Cada alerta queda guardada y nunca se borra. El número en milisegundos es cuánto tardó en llegar.",
+  },
+  {
+    target: '[data-tour="catalog"]',
+    title: "Vehículos y hubs",
+    body: "Crea, edita con el lápiz o retira vehículos y hubs. El mapa y la tienda se actualizan al instante.",
+  },
+];
+
 export function TelemetryDashboard() {
   const meQ = useMe();
   const live = useFleetLive();
@@ -62,6 +100,9 @@ export function TelemetryDashboard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string>("");
   const [latency, setLatency] = useState<number | null>(null);
+  const [tourSignal, setTourSignal] = useState(0);
+  // Alertas recién llegadas: se resaltan un momento en el historial.
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
 
   const hubs = hubsQ.data ?? [];
   const vehicles = useMemo(() => vehiclesQ.data ?? [], [vehiclesQ.data]);
@@ -76,6 +117,17 @@ export function TelemetryDashboard() {
       if (e.type !== "alert") return;
       const a: AlertEvent = e.alert;
       setLatency(Math.max(0, Date.now() - a.ts));
+      playSound("alert");
+      setFresh((f) => new Set(f).add(a.id));
+      window.setTimeout(
+        () =>
+          setFresh((f) => {
+            const n = new Set(f);
+            n.delete(a.id);
+            return n;
+          }),
+        2500,
+      );
       toast.custom(
         () => (
           <div
@@ -128,6 +180,10 @@ export function TelemetryDashboard() {
     ? Math.round(vehicles.reduce((s, v) => s + v.battery, 0) / vehicles.length)
     : 0;
   const activeAlerts = vehicles.filter((v) => v.alert !== "ok").length;
+  // Los vehículos con alerta van primero; el resto conserva su orden.
+  const fleetSorted = [...vehicles].sort(
+    (a, b) => Number(b.alert !== "ok") - Number(a.alert !== "ok"),
+  );
 
   const simulate = (type: ActiveAlertType) => {
     if (!target) return;
@@ -139,7 +195,10 @@ export function TelemetryDashboard() {
           setSelectedId(target);
           setLatency((l) => l ?? Math.round(performance.now() - t0));
         },
-        onError: (e) => toast.error(e.message),
+        onError: (e) => {
+          playSound("error");
+          toast.error(e.message);
+        },
       },
     );
   };
@@ -149,13 +208,14 @@ export function TelemetryDashboard() {
       await getDataSource().clearAlert(vehicleId);
       await qc.invalidateQueries({ queryKey: keys.vehicles });
       toast.success("Estado del vehículo restablecido");
+      playSound("step");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo restablecer el vehículo");
     }
   };
 
   return (
-    <Shell live={live}>
+    <Shell live={live} onHelp={() => setTourSignal((n) => n + 1)}>
       {loading && <LoadingState rows={4} label="Cargando telemetría…" testId="admin-loading" />}
       {error && (
         <ErrorState
@@ -172,29 +232,31 @@ export function TelemetryDashboard() {
           <section
             aria-label="Indicadores de flota"
             className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+            data-tour="kpis"
           >
             <Kpi
               testId="kpi-connected"
               label="Vehículos conectados"
-              value={`${vehicles.length}`}
+              value={vehicles.length}
               icon={Cpu}
             />
             <Kpi
               testId="kpi-hubs"
               label="Hubs activos"
-              value={`${hubs.filter((h) => h.active).length}`}
+              value={hubs.filter((h) => h.active).length}
               icon={MapPin}
             />
             <Kpi
               testId="kpi-battery"
               label="Batería media"
-              value={`${fleetBattery}%`}
+              value={fleetBattery}
+              suffix="%"
               icon={Gauge}
             />
             <Kpi
               testId="kpi-alerts"
               label="Alertas activas"
-              value={`${activeAlerts}`}
+              value={activeAlerts}
               icon={ShieldAlert}
               danger={activeAlerts > 0}
             />
@@ -203,11 +265,9 @@ export function TelemetryDashboard() {
           <section
             aria-labelledby="sim-t"
             className="rounded-2xl border border-border bg-surface p-5"
+            data-tour="simulator"
           >
-            <h2
-              id="sim-t"
-              className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-            >
+            <h2 id="sim-t" className="text-base font-semibold tracking-tight">
               Simulador de eventos IoT
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -265,38 +325,68 @@ export function TelemetryDashboard() {
           </section>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-            <section aria-labelledby="fleet-t" className="space-y-3">
-              <h2
-                id="fleet-t"
-                className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-              >
+            <section aria-labelledby="fleet-t" className="space-y-3" data-tour="fleet">
+              <h2 id="fleet-t" className="text-base font-semibold tracking-tight">
                 Flota conectada
               </h2>
               {vehicles.length === 0 && <EmptyState title="No hay vehículos registrados" />}
               <ul className="space-y-3">
-                {vehicles.map((v) => (
-                  <li key={v.id}>
+                {fleetSorted.map((v) => (
+                  <motion.li
+                    key={v.id}
+                    layout="position"
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  >
                     <button
                       type="button"
                       onClick={() => setSelectedId(v.id)}
                       aria-pressed={selected?.id === v.id}
                       data-testid={`fleet-row-${v.id}`}
-                      className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-4 text-left transition-colors ${
+                      className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-4 text-left transition-colors duration-200 ${
                         selected?.id === v.id
                           ? "border-primary bg-primary/10"
-                          : "border-border bg-surface-elevated hover:border-primary/50"
+                          : v.alert !== "ok"
+                            ? "border-destructive/50 bg-destructive/10 hover:border-destructive"
+                            : "border-border bg-surface-elevated hover:border-primary/50"
                       }`}
                     >
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/20">
-                        <VehicleIcon kind={v.kind} className="size-5 text-primary-glow" />
+                      <span
+                        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
+                          v.alert !== "ok" ? "bg-destructive/20" : "bg-primary/20"
+                        }`}
+                      >
+                        <VehicleIcon
+                          kind={v.kind}
+                          className={`size-5 ${v.alert !== "ok" ? "text-destructive" : "text-primary-glow"}`}
+                        />
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium">
                           {v.model} · {v.id}
                         </span>
                         <span className="block truncate text-[11px] text-muted-foreground">
-                          GPS {formatCoords(v.lat, v.lng)} · {v.battery}% batería ·{" "}
+                          GPS {formatCoords(v.lat, v.lng)} ·{" "}
                           {v.mode === "rent" ? "Alquiler" : "Venta"}
+                        </span>
+                        <span className="mt-1.5 flex items-center gap-2">
+                          <span
+                            className="h-1 w-24 overflow-hidden rounded-full bg-border"
+                            aria-hidden
+                          >
+                            <span
+                              className={`block h-full rounded-full transition-[width] duration-500 ${
+                                batteryLevel(v.battery) === "high"
+                                  ? "bg-success"
+                                  : batteryLevel(v.battery) === "mid"
+                                    ? "bg-warning"
+                                    : "bg-destructive"
+                              }`}
+                              style={{ width: `${v.battery}%` }}
+                            />
+                          </span>
+                          <span className="text-[11px] tabular-nums text-muted-foreground">
+                            {v.battery}% batería
+                          </span>
                         </span>
                       </span>
                       <Badge
@@ -307,7 +397,7 @@ export function TelemetryDashboard() {
                         {alertLabel[v.alert]}
                       </Badge>
                     </button>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             </section>
@@ -318,10 +408,7 @@ export function TelemetryDashboard() {
                 data-testid="twin-detail"
                 className="rounded-2xl border border-border bg-surface p-5"
               >
-                <h2
-                  id="twin-t"
-                  className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-                >
+                <h2 id="twin-t" className="text-base font-semibold tracking-tight">
                   Gemelo digital
                 </h2>
                 {selected ? (
@@ -382,12 +469,10 @@ export function TelemetryDashboard() {
               <section
                 aria-labelledby="log-t"
                 className="rounded-2xl border border-border bg-surface p-5"
+                data-tour="log"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h2
-                    id="log-t"
-                    className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-                  >
+                  <h2 id="log-t" className="text-base font-semibold tracking-tight">
                     Registro de alertas
                   </h2>
                   {latency !== null && (
@@ -410,27 +495,37 @@ export function TelemetryDashboard() {
                     />
                   ) : alerts.length === 0 ? (
                     <p className="mt-3 text-xs text-muted-foreground" data-testid="alert-log-empty">
-                      Sin eventos registrados.
+                      Aún no hay alertas. Dispara una desde el simulador para ver cómo llega.
                     </p>
                   ) : (
                     <ul className="mt-3 space-y-2">
-                      {alerts.slice(0, 20).map((e) => (
-                        <li
-                          key={e.id}
-                          data-testid="alert-log-row"
-                          className="flex items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs"
-                        >
-                          <span className="min-w-0 truncate font-medium">
-                            {alertLabel[e.type]} · {e.vehicleId} · {formatCoords(e.lat, e.lng)}
-                          </span>
-                          <time
-                            dateTime={new Date(e.ts).toISOString()}
-                            className="shrink-0 text-muted-foreground"
+                      <AnimatePresence initial={false}>
+                        {alerts.slice(0, 20).map((e) => (
+                          <motion.li
+                            key={e.id}
+                            layout="position"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            data-testid="alert-log-row"
+                            className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs transition-colors duration-700 ${
+                              fresh.has(e.id)
+                                ? "border-destructive bg-destructive/30"
+                                : "border-destructive/40 bg-destructive/10"
+                            }`}
                           >
-                            {formatTime(e.ts)}
-                          </time>
-                        </li>
-                      ))}
+                            <span className="min-w-0 truncate font-medium">
+                              {alertLabel[e.type]} · {e.vehicleId} · {formatCoords(e.lat, e.lng)}
+                            </span>
+                            <time
+                              dateTime={new Date(e.ts).toISOString()}
+                              className="shrink-0 text-muted-foreground"
+                            >
+                              {formatTime(e.ts)}
+                            </time>
+                          </motion.li>
+                        ))}
+                      </AnimatePresence>
                     </ul>
                   )}
                 </div>
@@ -438,31 +533,55 @@ export function TelemetryDashboard() {
             </div>
           </div>
 
-          <AdminCatalog vehicles={vehicles} hubs={hubs} />
+          <div data-tour="catalog">
+            <AdminCatalog vehicles={vehicles} hubs={hubs} />
+          </div>
+          <GuidedTour storageKey="umh-tour-admin-v1" steps={ADMIN_TOUR} openSignal={tourSignal} />
         </>
       )}
     </Shell>
   );
 }
 
-function Shell({ children, live }: { children: React.ReactNode; live?: boolean }) {
+function Shell({
+  children,
+  live,
+  onHelp,
+}: {
+  children: React.ReactNode;
+  live?: boolean;
+  onHelp?: () => void;
+}) {
   return (
     <div className="min-h-[100dvh] bg-background pb-16">
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto grid max-w-6xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-3 px-4 py-4">
           <Button asChild size="icon" variant="secondary" className="rounded-full">
             <Link to="/app" aria-label="Volver a la app" data-testid="admin-back">
               <ArrowLeft className="size-5" aria-hidden />
             </Link>
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold sm:text-lg">
-              Panel de telemetría · Digital Twin
-            </h1>
+            <h1 className="truncate text-base font-semibold sm:text-lg">Panel del operador</h1>
             <p className="truncate text-xs text-muted-foreground">
-              Monitoreo IoT en vivo de la flota NODO
+              Estado en vivo de la flota, alertas y catálogo
             </p>
           </div>
+          <SoundToggle className="rounded-full" />
+          {onHelp ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="rounded-full"
+              onClick={onHelp}
+              aria-label="Ver tutorial del panel"
+              data-testid="admin-tour-open"
+            >
+              <CircleHelp className="size-5" aria-hidden />
+            </Button>
+          ) : (
+            <span />
+          )}
           <Badge variant="secondary" className="gap-1.5" data-testid="admin-live">
             <Activity
               className={`size-3.5 ${live ? "text-success" : "text-muted-foreground"}`}
@@ -480,23 +599,40 @@ function Shell({ children, live }: { children: React.ReactNode; live?: boolean }
 function Kpi({
   label,
   value,
+  suffix,
   icon: Icon,
   danger,
   testId,
 }: {
   label: string;
-  value: string;
+  value: number;
+  suffix?: string;
   icon: typeof Cpu;
   danger?: boolean;
   testId: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-      <Icon className={`size-4 ${danger ? "text-destructive" : "text-primary-glow"}`} aria-hidden />
-      <p className="mt-3 text-2xl font-bold tracking-tight" data-testid={testId}>
-        {value}
+    <div
+      className={`rounded-2xl border p-4 transition-colors duration-300 ${
+        danger ? "border-destructive/60 bg-destructive/10" : "border-border bg-surface-elevated"
+      }`}
+    >
+      <span className="flex items-center gap-2">
+        <Icon
+          className={`size-4 ${danger ? "text-destructive" : "text-primary-glow"}`}
+          aria-hidden
+        />
+        {danger && (
+          <span className="relative flex size-2" aria-hidden>
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-70 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+          </span>
+        )}
+      </span>
+      <p className={`mt-3 text-2xl font-bold tracking-tight ${danger ? "text-destructive" : ""}`}>
+        <AnimatedNumber value={value} suffix={suffix ?? ""} testId={testId} />
       </p>
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -504,7 +640,7 @@ function Kpi({
 function Field({ label, value, testId }: { label: string; value: string; testId?: string }) {
   return (
     <div className="rounded-xl border border-border bg-surface-elevated p-3">
-      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dt className="text-[10px] text-muted-foreground">{label}</dt>
       <dd className="mt-1 truncate font-medium" data-testid={testId}>
         {value}
       </dd>

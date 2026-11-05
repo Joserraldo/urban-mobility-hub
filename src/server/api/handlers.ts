@@ -44,6 +44,22 @@ const ALERT_OUT: Record<string, string> = {
 };
 
 const BASE_PREPAY_COP = 10_000;
+/** UC14-E2: un domiciliario no recibe más de este número de entregas abiertas a la vez. */
+export const MAX_ACTIVE_DELIVERIES = 5;
+
+/** Ejecuta varias escrituras como una sola: si una falla, no queda ninguna (todo o nada). */
+function atomically<T>(fn: () => T): T {
+  const db = getDb();
+  db.exec("BEGIN");
+  try {
+    const out = fn();
+    db.exec("COMMIT");
+    return out;
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+}
 
 // ---------- payloads tipados ----------
 type RegisterBody = {
@@ -116,8 +132,8 @@ async function body<T>(request: Request): Promise<T> {
 }
 
 /**
- * Router REST del backend de desarrollo. Cada ruta toca las tablas que aparecen
- * en las secuencias PlantUML (entregables/diseno/src) y en docs/api/openapi.yaml
+ * Router REST del backend de desarrollo. Cada ruta sigue las secuencias de
+ * entregables/diagramas (15 a 20) y el contrato de docs/api/openapi.yaml
  * (contrato-first, RNF-10).
  */
 export async function handle(request: Request): Promise<Response> {
@@ -256,6 +272,8 @@ export async function handle(request: Request): Promise<Response> {
       const modality = String(b.modality ?? "hub");
       if (!["hub", "delivery"].includes(modality))
         throw httpError(422, "modality debe ser hub|delivery");
+      if (modality === "delivery" && !v.deliverable)
+        throw httpError(422, "Este vehículo no tiene entrega a domicilio; recógelo en su hub");
       if (modality === "delivery" && !String(b.address ?? "").trim())
         throw httpError(422, "Para domicilio necesitas una dirección");
       const r = {
@@ -317,11 +335,13 @@ export async function handle(request: Request): Promise<Response> {
           402,
           `El cobro del viaje fue rechazado (${result.reason ?? "?"}). Intenta de nuevo.`,
         );
-      repos.reservations.setStatus(r.id, "completed", {
-        ended_at: Date.now(),
-        total_cost_cop: total,
+      atomically(() => {
+        repos.reservations.setStatus(r.id, "completed", {
+          ended_at: Date.now(),
+          total_cost_cop: total,
+        });
+        repos.vehicles.setStatus(r.vehicle_id, "available");
       });
-      if (r.modality !== "delivery") repos.vehicles.setStatus(r.vehicle_id, "available");
       return ok({
         reservation: repos.reservations.byId(r.id),
         total,
@@ -335,7 +355,10 @@ export async function handle(request: Request): Promise<Response> {
       const b = await body<UnlockCreateBody>(request);
       const r = repos.reservations.byId(String(b.reservationId)) as ReservationRow | undefined;
       if (!r || r.user_id !== u.id || r.status !== "requested")
-        throw httpError(409, "Necesitas una reserva 'requested' para desbloquear");
+        throw httpError(
+          409,
+          "Primero reserva este vehículo (y paga el valor base); luego podrás desbloquearlo",
+        );
       const session = createUnlockSession(String(b.vehicleId ?? r.vehicle_id));
       repos.unlock.create({
         id: session.id,
@@ -392,8 +415,10 @@ export async function handle(request: Request): Promise<Response> {
         if (!canStartTrip(session, now))
           throw httpError(409, `No se puede iniciar el viaje (paso '${session.step}')`);
         const next = transition({ status: reservation.status as never }, "start");
-        repos.reservations.setStatus(reservation.id, next.status, { started_at: now });
-        repos.vehicles.setStatus(session.vehicleId, "in_use");
+        atomically(() => {
+          repos.reservations.setStatus(reservation.id, next.status, { started_at: now });
+          repos.vehicles.setStatus(session.vehicleId, "in_use");
+        });
         stream.emit("vehicle", { vehicleId: session.vehicleId, status: "in_use" });
         return ok({
           reservation: repos.reservations.byId(reservation.id),
@@ -566,6 +591,15 @@ export async function handle(request: Request): Promise<Response> {
         .get(String(b.courierId)) as { id: string; role: string } | undefined;
       if (!courier || courier.role !== "courier")
         throw httpError(422, "El destinatario debe ser un domiciliario");
+      const open = repos.deliveries.list({
+        courierId: courier.id,
+        status: ["assigned", "in_progress", "late"],
+      });
+      if (open.length >= MAX_ACTIVE_DELIVERIES)
+        throw httpError(
+          422,
+          `Este domiciliario ya tiene ${open.length} entregas abiertas (máximo ${MAX_ACTIVE_DELIVERIES}); elige otro`,
+        );
       const minutes = Number(b.deadlineMinutes ?? 45);
       const d = {
         id: uid("DEL"),
@@ -615,16 +649,24 @@ export async function handle(request: Request): Promise<Response> {
           throw httpError(409, `No puedes entregar desde '${d.status}'`);
         if (d.status === "late" && !String(b.reason ?? "").trim() && u.role === "courier")
           throw httpError(422, "Una entrega tardía se confirma con justificación (UC16 E3)");
-        repos.deliveries.update(d.id, { status: "delivered", delivered_at: Date.now() });
+        // UC16: entrega, reserva y vehículo cambian juntos (todo o nada). El cliente ya tiene el
+        // vehículo: la reserva queda activa (empieza a contar el tiempo) y se cierra cuando él
+        // termina el viaje, igual que en la modalidad hub.
         const r = repos.reservations.byId(d.reservation_id) as ReservationRow | undefined;
-        if (r) {
-          repos.reservations.setStatus(r.id, "active", { started_at: Date.now() });
-          repos.reservations.setStatus(r.id, "completed", { ended_at: Date.now() });
-          repos.vehicles.setStatus(r.vehicle_id, "in_use");
-        }
+        const now = Date.now();
+        atomically(() => {
+          repos.deliveries.update(d.id, { status: "delivered", delivered_at: now });
+          if (r && r.status === "requested") {
+            repos.reservations.setStatus(r.id, "active", { started_at: now });
+            repos.vehicles.setStatus(r.vehicle_id, "in_use");
+          }
+        });
       } else if (action === "late") {
         if (d.status === "delivered") throw httpError(409, "Entrega ya completada");
-        markLate(d.id, String(b.reason ?? "marcada tardía por el domiciliario"));
+        if (d.status === "late") throw httpError(409, "La entrega ya está marcada como tardía");
+        const reason = String(b.reason ?? "").trim();
+        if (!reason) throw httpError(422, "Escribe la causa del retraso (UC17)");
+        markLate(d.id, reason);
       } else {
         throw httpError(422, "action debe ser start|deliver|late");
       }
@@ -698,11 +740,16 @@ async function payPurchase(u: { id: string }, purchaseId: string): Promise<Respo
     created_at: Date.now(),
   });
   if (result.status === "rejected") {
+    if (result.reason === "timeout")
+      // UC18-E2: la pasarela no respondió; la compra sigue pendiente y se puede reintentar.
+      throw httpError(402, "La pasarela de pagos no respondió a tiempo. Intenta de nuevo.");
     repos.purchases.setStatus(p.id, "failed");
     throw httpError(402, `Pago rechazado: ${result.reason ?? "motivo no informado"}`);
   }
-  repos.purchases.setStatus(p.id, "paid", Date.now());
-  repos.vehicles.setStatus(p.vehicle_id, "sold");
+  atomically(() => {
+    repos.purchases.setStatus(p.id, "paid", Date.now());
+    repos.vehicles.setStatus(p.vehicle_id, "sold");
+  });
   return ok({ purchase: repos.purchases.byId(p.id), reference: result.reference ?? null });
 }
 
@@ -722,7 +769,13 @@ async function payReservation(u: { id: string }, reservationId: string): Promise
     reason: result.reason ?? null,
     created_at: Date.now(),
   });
-  if (result.status === "rejected") throw httpError(402, `Pago rechazado: ${result.reason ?? "?"}`);
+  if (result.status === "rejected")
+    throw httpError(
+      402,
+      result.reason === "timeout"
+        ? "La pasarela de pagos no respondió a tiempo. Intenta de nuevo."
+        : `Pago rechazado: ${result.reason ?? "?"}`,
+    );
   repos.vehicles.setStatus(r.vehicle_id, "reserved");
   return ok({ reservation: r, prepayCop: BASE_PREPAY_COP, reference: result.reference ?? null });
 }

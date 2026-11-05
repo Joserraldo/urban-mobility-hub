@@ -281,7 +281,8 @@ export function createMockDataSource(): DataSource {
   const tick = () => {
     const ts = Date.now();
     for (const v of vehicles) {
-      if (v.mode !== "rent" || v.alert === "gps-lost") continue;
+      // Solo se mueve lo que está en viaje; lo disponible queda estacionado.
+      if (v.mode !== "rent" || v.status !== "in_use" || v.alert === "gps-lost") continue;
       v.lat += (Math.random() - 0.5) * 0.0006;
       v.lng += (Math.random() - 0.5) * 0.0006;
       emit({ type: "position", vehicleId: v.id, lat: v.lat, lng: v.lng, ts });

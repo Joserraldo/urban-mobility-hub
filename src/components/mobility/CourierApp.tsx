@@ -2,6 +2,8 @@ import { Bike, CheckCircle2, Clock, Loader2, MapPin, PhoneCall } from "lucide-re
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { playSound } from "@/lib/sound";
+
 import { Button } from "@/components/ui/button";
 import { isApiMode, useDeliveryAction, useMyDeliveries, type Delivery } from "@/lib/api-client";
 import { useMe } from "@/lib/data/queries";
@@ -58,11 +60,20 @@ export function CourierApp() {
     action.mutate(
       { id, action: a, ...(reason ? { reason } : {}) },
       {
-        onSuccess: (d) =>
+        onSuccess: (d) => {
+          playSound(d.status === "late" ? "alert" : d.status === "delivered" ? "success" : "step");
           toast.success(
-            `Entrega ${d.status === "late" ? "marcada tardía (aviso Brevo enviado)" : `en '${d.status}'`}`,
-          ),
-        onError: (e) => toast.error(e.message),
+            d.status === "late"
+              ? "Entrega marcada tardía. Avisamos al cliente y al operador por correo."
+              : d.status === "delivered"
+                ? "Entrega confirmada. ¡Buen trabajo!"
+                : "Entrega en camino",
+          );
+        },
+        onError: (e) => {
+          playSound("error");
+          toast.error(e.message);
+        },
       },
     );
   };
@@ -74,8 +85,8 @@ export function CourierApp() {
           <Bike className="size-6 text-primary-glow" aria-hidden /> Mis entregas · {me.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          UC15-UC17: la bandeja lee la tabla <code>deliveries</code> filtrada por tu
-          <code> courier_id</code>. Ordenada por vencimiento.
+          Tus entregas asignadas, de la más urgente a la menos urgente. Si vas tarde, marca la
+          entrega como tardía y escribe la causa: avisamos al cliente y al operador.
         </p>
       </header>
 
