@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-23 (CRUD vehículos), RF-24 (CRUD hubs); RNF-08 (alta visible sin cambiar código)                                                      |
 | Prioridad           | P3                                                                                                                                       |
 | Estimación          | 6 h (HU-13a..b)                                                                                                                          |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; operador `../img/03-casos-de-uso-operador.png`; estados `../../diseno/img/07-estados-vehiculo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; operador `../../diagramas/img/04-casos-de-uso-operador.png`; estados `../../diagramas/img/22-estados-vehiculo.png` |
 | Historias           | HU-13a, HU-13b                                                                                                                           |
 
 **Intención.** Mantener la oferta real del negocio: alta, edición y baja de vehículos (tipo, modelo, modo, precio/tarifa, condición, especificación, hub, aptitud de entrega) y de hubs (ubicación y capacidad), con la regla dura de no dejar hubs huérfanos, para que los cambios se reflejen en mapa y catálogo sin tocar código.

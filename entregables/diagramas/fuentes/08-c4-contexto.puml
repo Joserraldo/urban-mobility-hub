@@ -1,0 +1,30 @@
+@startuml 08-c4-contexto
+!include estilo.iuml
+left to right direction
+title C4 nivel 1 — El sistema y con quién se comunica
+
+actor "Cliente\ncompra y alquila" as U #FEF3C7
+actor "Operador\nvigila la flota" as O #FEF3C7
+actor "Domiciliario\nlleva el vehículo" as D #FEF3C7
+
+rectangle "**Plataforma de micromovilidad**\nsitio web + servidor + simulador de vehículos" as S #DBEAFE
+
+rectangle "Pasarela de pagos\n(simulada)" as PAY #EEEEEE
+rectangle "Servicio de mapas\n(OpenStreetMap)" as MAP #EEEEEE
+rectangle "Servicio de correo\n(Brevo)" as MAIL #EEEEEE
+rectangle "Vehículos\n(simulados por ahora)" as V #EEEEEE
+
+U --> S : usa
+O --> S : usa
+D --> S : usa
+S --> PAY : cobra
+S --> MAP : pide mapas
+S --> MAIL : envía avisos
+V --> S : envía posición y alertas
+
+legend right
+  Azul = lo que construimos.
+  Gris = servicios externos.
+  Amarillo = personas.
+endlegend
+@enduml

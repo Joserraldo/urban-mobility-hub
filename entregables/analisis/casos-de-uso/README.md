@@ -28,5 +28,5 @@ directa de los criterios de aceptación de `../historias-de-uso.md`.
 | UC19 | [Notificar retraso por correo](UC19-notificar-retraso-correo.md)       | Sistema                 | RF-27        | P2        | 5 h | HU-19a..c |
 | UC20 | [Reportar telemetría y alertas](UC20-reportar-telemetria-alertas.md)   | Vehículo IoT            | RF-08, RF-11 | P1        | 6 h | HU-20a,b  |
 
-**Lectura rápida para la clase:** maestro en `../img/01-casos-de-uso.png` → este índice →
+**Lectura rápida para la clase:** maestro en `../../diagramas/img/02-casos-de-uso-general.png` → este índice →
 2 casos completos a elección del docente (sugeridos: UC08 desbloqueo y UC16/UC19 entrega+correo).

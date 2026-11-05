@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-03; RNF-07; incluye RF-26 (UC18)                                                                                                           |
 | Prioridad           | P1                                                                                                                                            |
 | Estimación          | 5 h (HU-04a..b)                                                                                                                               |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png`; secuencia `../../diseno/img/11-secuencia-compra-pago.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png`; secuencia `../../diagramas/img/16-secuencia-compra-pago.png` |
 | Historias           | HU-04a, HU-04b                                                                                                                                |
 
 **Intención.** Reservar para el cliente un vehículo de venta en 3 pasos (seleccionar → confirmar → pagar), dejar la compra pagada y marcar el vehículo como vendido. El cobro en sí lo ejecuta UC18 (`«include»`).

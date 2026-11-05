@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-08 (posición desde telemetría), RF-11 (estados de alerta), RF-16 (gemelo digital); RNF-01 (posición ≤ 5 s), RNF-02 (alerta visible < 1 s)   |
 | Prioridad           | P1                                                                                                                                             |
 | Estimación          | 6 h (HU-20a..b)                                                                                                                                |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; secuencia `../../diseno/img/05-secuencia-alerta.png`; estados `../../diseno/img/07-estados-vehiculo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; secuencia `../../diagramas/img/19-secuencia-alerta.png`; estados `../../diagramas/img/22-estados-vehiculo.png` |
 | Historias           | HU-20a, HU-20b                                                                                                                                 |
 
 **Intención.** Recibir la telemetría que emite cada vehículo (posición, batería, impacto, GPS, casco), mover el gemelo digital en el mapa dentro del plazo y, si la muestra cruza un umbral, actualizar el estado de alerta del vehículo y registrar la alerta para que el operador la vea casi al instante.

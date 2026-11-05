@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-02; RNF-11                                                                      |
 | Prioridad           | P2                                                                                 |
 | Estimación          | 3 h (HU-03a)                                                                       |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png` |
 | Historias           | HU-03a                                                                             |
 
 **Intención.** Mostrar los vehículos en modo venta disponibles, con precio COP, condición y hub de recolección, sin exigir sesión: VER es público y está pensada para indexarse; COMPRAR (UC04) es lo que se porta.

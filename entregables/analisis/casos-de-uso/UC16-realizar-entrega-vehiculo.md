@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-25; extiende el flujo a domicilio de UC05 (alquiler) y UC04 (compra con entrega)                                                                                                                              |
 | Prioridad           | P2                                                                                                                                                                                                               |
 | Estimación          | 6 h (HU-16a..b)                                                                                                                                                                                                  |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; domiciliario `../img/04-casos-de-uso-domiciliario.png`; secuencia `../../diseno/img/13-secuencia-entrega-domicilio.png`; estados `../../diseno/img/15-estados-entrega.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; domiciliario `../../diagramas/img/05-casos-de-uso-domiciliario.png`; secuencia `../../diagramas/img/20-secuencia-entrega-domicilio.png`; estados `../../diagramas/img/23-estados-entrega.png` |
 | Historias           | HU-16a, HU-16b                                                                                                                                                                                                   |
 
 **Intención.** Materializar el paso físico: el domiciliario lleva el vehículo a la `address` de la reserva, lo entrega al cliente y lo confirma en el sistema, cerrando la reserva y dejando el estado de `deliveries`, `reservations` y `vehicles` coherentes entre sí.

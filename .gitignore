@@ -51,4 +51,5 @@ test-results/
 
 # binarios de herramientas y salidas locales de auditoría
 entregables/_tools/plantuml.jar
+entregables/diagramas/plantuml.jar
 .lighthouseci/

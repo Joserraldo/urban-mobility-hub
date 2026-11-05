@@ -1,0 +1,29 @@
+@startuml 09-c4-contenedores
+!include estilo.iuml
+title C4 nivel 2 — Las piezas principales del sistema
+
+actor "Cliente / Operador /\nDomiciliario" as U
+
+rectangle "Plataforma de micromovilidad" {
+  rectangle "**Sitio web**\npáginas públicas, mapa,\npanel del operador" as WEB #DBEAFE
+  rectangle "**Servidor (API)**\nrecibe pedidos, aplica\nlas reglas del negocio" as API #DBEAFE
+  rectangle "**Canal en vivo**\nenvía posiciones y\nalertas al instante" as RT #DBEAFE
+  rectangle "**Simulador de flota**\nhace de los vehículos\nreales" as SIM #DBEAFE
+  database "**Base de datos**\nusuarios, vehículos,\nreservas, pagos, alertas" as DB #DBEAFE
+}
+rectangle "Servicios externos\npagos · mapas · correo" as EXT #EEEEEE
+
+U --> WEB : navega
+WEB --> API : pide y envía datos
+RT --> WEB : actualizaciones en vivo
+API --> DB : guarda y lee
+SIM --> API : posición y eventos
+API --> RT : publica cambios
+API --> EXT : usa
+
+note bottom of DB
+  Hoy todo corre en el computador del equipo.
+  La publicación en la nube está prevista,
+  no realizada (ver diagrama de nodos).
+end note
+@enduml

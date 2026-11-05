@@ -47,13 +47,13 @@ img{max-width:100%;display:block;margin:.5em auto;page-break-inside:avoid}.cover
 <p>En <b>Urban Mobility Hub</b> (micromovilidad con mapa en vivo, gemelos digitales y detección de casco con IA) los usamos así; las fuentes están en <code>entregables/diseno/src/</code> (PlantUML) y se contrastaron con el código de <code>src/</code>.</p>
 <h3>2.1 Paquetes</h3>
 <p>Separamos <i>routes</i>, <i>components</i> (mobility, auth, commerce, catalog, site, ui), <i>lib</i> (DataSource, api-client, modelo ONNX), <i>shared/types</i> y el servidor (<i>api → services/domain → repositories → db</i>). Nos permitió comprobar que el cliente nunca importa código de <code>server/</code> (la regla <code>importProtection</code> de Vite lo impide) y que las reglas de negocio puras viven en <i>domain</i>.</p>
-<figure><img src="../diseno/img/16-paquetes.png"><figcaption>Figura 1. Diagrama de paquetes.</figcaption></figure>
+<figure><img src="../diagramas/img/10-paquetes.png"><figcaption>Figura 1. Diagrama de paquetes.</figcaption></figure>
 <h3>2.2 Componentes</h3>
 <p>Modelamos la SPA React, el <b>DataSource</b> (adaptador mock o API), la API REST, el stream SSE, el simulador de flota, las reglas de dominio, los repositorios sobre SQLite, el modelo de casco y los servicios externos (pasarela simulada, Brevo). Las interfaces (<i>IDataSource, IPago, IEmail, IRepositorio</i>) muestran qué piezas se pueden sustituir sin tocar el resto, por ejemplo cambiar la pasarela simulada por una real.</p>
-<figure><img src="../diseno/img/17-componentes.png"><figcaption>Figura 2. Diagrama de componentes.</figcaption></figure>
+<figure><img src="../diagramas/img/11-componentes.png"><figcaption>Figura 2. Diagrama de componentes.</figcaption></figure>
 <h3>2.3 Nodos</h3>
 <p>Hoy el sistema corre en un único equipo (Node 22 + Vite en el puerto 8080 + archivo SQLite) y el navegador del usuario ejecuta la PWA y el modelo <code>helmet.onnx</code> con WebAssembly. Lo previsto, aún sin publicar, es Cloudflare (Worker, D1, Durable Object, CDN). El diagrama distingue lo real de lo previsto y añade CI (GitHub Actions) y servicios externos (Brevo, OpenStreetMap).</p>
-<figure><img src="../diseno/img/18-nodos.png"><figcaption>Figura 3. Diagrama de nodos (despliegue).</figcaption></figure>
+<figure><img src="../diagramas/img/12-nodos.png"><figcaption>Figura 3. Diagrama de nodos (despliegue).</figcaption></figure>
 <p><b>Verificación previa:</b> antes de documentar corrimos <code>typecheck</code>, 82 pruebas unitarias/integración y 19 pruebas e2e en navegador (Playwright, escritorio y móvil), todas en verde (1 omitida por ser solo-móvil).</p>
 
 <h2>3. Estrategia de búsqueda</h2>

@@ -128,4 +128,4 @@ Toda la documentación del proyecto **está versionada en este repo**, en `entre
 | `entregables/interfaces/`     | **Compilación de interfaces**: captura real de cada pantalla con su requisito                                                                                                                                                       |
 | `docs/api/openapi.yaml`       | Contrato REST `/api/*`                                                                                                                                                                                                              |
 
-> Los diagramas se regeneran desde código: `powershell -File entregables/_tools/render-uml.ps1` (PlantUML) y `python entregables/_tools/casos_de_uso.py` (casos de uso). No edites los PNG a mano.
+> Todos los diagramas están en `entregables/diagramas/` (índice en su `README.md`) y se regeneran desde código con `sh entregables/diagramas/generar.sh` (o `generar.ps1` en Windows). No edites los PNG a mano.

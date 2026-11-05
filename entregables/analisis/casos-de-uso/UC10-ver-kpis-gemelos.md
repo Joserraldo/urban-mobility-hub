@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-13 (KPIs), RF-14 (gemelos digitales), RF-17 (el tablero y el mapa comparten fuente)                                                   |
 | Prioridad           | P1                                                                                                                                       |
 | Estimación          | 3 h (HU-10a)                                                                                                                             |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; operador `../img/03-casos-de-uso-operador.png`; estados `../../diseno/img/07-estados-vehiculo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; operador `../../diagramas/img/04-casos-de-uso-operador.png`; estados `../../diagramas/img/22-estados-vehiculo.png` |
 | Historias           | HU-10a                                                                                                                                   |
 
 **Intención.** Dar al operador una foto en vivo de la flota —cuántos vehículos responden, cuántos hubs operan, batería promedio y alertas abiertas— junto con la tabla de gemelos digitales que reproduce, con los mismos datos, lo que se ve en el mapa.

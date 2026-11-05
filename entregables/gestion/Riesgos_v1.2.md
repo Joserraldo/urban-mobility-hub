@@ -26,7 +26,7 @@ Fecha de la propuesta: 1 de octubre de 2026
 
 ## 2. Matriz de riesgos v1.2 (ordenada por nivel y probabilidad)
 
-![Matriz de riesgos](img/01-matriz-riesgos.png)
+![Matriz de riesgos](../diagramas/img/24-matriz-riesgos.png)
 
 Criterio de nivel (sin cambio): **Bajo** impacto ≤ 2 · **Medio** impacto = 3 · **Alto** impacto ≥ 4.
 

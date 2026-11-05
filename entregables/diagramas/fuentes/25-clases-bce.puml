@@ -1,0 +1,151 @@
+@startuml 25-clases-bce
+!include estilo.iuml
+title Diagrama de clases BCE — Interfaces → Controladores → Entidades
+top to bottom direction
+skinparam nodesep 35
+skinparam ranksep 70
+skinparam packageStyle rectangle
+skinparam packageTitleFontSize 14
+skinparam defaultTextAlignment center
+skinparam boundary {
+  BackgroundColor #CFE3F7
+  BorderColor #2F6DB5
+  FontSize 12
+}
+skinparam control {
+  BackgroundColor #D4EFD8
+  BorderColor #2E8B3E
+  FontSize 12
+}
+skinparam entity {
+  BackgroundColor #FBE3C2
+  BorderColor #C47312
+  FontSize 12
+}
+
+' ================= Actores =================
+actor Cliente as AC
+actor Operador as AO
+actor Domiciliario as AD
+
+package "1. INTERFACES (Boundary) — lo que ve cada actor" as B #F4F8FD {
+  boundary "**PantallaRegistroLogin**\n<size:10>pedirDatos()</size>\n<size:10>mostrarError()</size>" as PantallaRegistroLogin
+  boundary "**PantallaCatalogo**\n<size:10>listarVehiculos()</size>\n<size:10>confirmarCompra()</size>" as PantallaCatalogo
+  boundary "**PantallaMapaAlquiler**\n<size:10>mostrarFlota()</size>\n<size:10>elegirModalidad()</size>" as PantallaMapaAlquiler
+  boundary "**PantallaMisReservas**\n<size:10>verReservas()</size>\n<size:10>terminarViaje()</size>" as PantallaMisReservas
+  boundary "**PantallaDesbloqueo**\n<size:10>escanearQR()</size>\n<size:10>mostrarCasco()</size>\n<size:10>iniciarViaje()</size>" as PantallaDesbloqueo
+  boundary "**PanelOperador**\n<size:10>verIndicadores()</size>\n<size:10>simularEvento()</size>\n<size:10>editarCatalogo()</size>\n<size:10>asignarEntrega()</size>" as PanelOperador
+  boundary "**BandejaDomiciliario**\n<size:10>verEntregas()</size>\n<size:10>confirmarEntrega()</size>\n<size:10>marcarTardia()</size>" as BandejaDomiciliario
+}
+
+package "2. CONTROLADORES (Control) — aplican las reglas del negocio" as C #F3FAF4 {
+  control "**ControlAutenticacion**\n<size:10>registrar()</size>\n<size:10>iniciarSesion()</size>\n<size:10>cerrarSesion()</size>" as ControlAutenticacion
+  control "**ControlCompra**\n<size:10>comprar(vehiculo)</size>" as ControlCompra
+  control "**ControlPago**\n<size:10>pagar(monto)</size>\n<size:10>calcularCostoViaje()</size>" as ControlPago
+  control "**ControlReserva**\n<size:10>reservar(vehiculo, modalidad)</size>\n<size:10>cancelar()</size>\n<size:10>terminarViaje()</size>" as ControlReserva
+  control "**ControlDesbloqueo**\n<size:10>abrirSesion()</size>\n<size:10>validarQR()</size>\n<size:10>validarCasco()</size>\n<size:10>validarRostro()</size>" as ControlDesbloqueo
+  control "**ControlCatalogo**\n<size:10>guardarVehiculo()</size>\n<size:10>guardarHub()</size>\n<size:10>retirar()</size>" as ControlCatalogo
+  control "**ControlAlertas**\n<size:10>evaluarLectura()</size>\n<size:10>limpiarAlerta()</size>" as ControlAlertas
+  control "**ControlEntregas**\n<size:10>asignar()</size>\n<size:10>entregar()</size>\n<size:10>marcarTardia()</size>" as ControlEntregas
+}
+
+package "3. ENTIDADES (Entity) — la información que se guarda" as E #FFFAF0 {
+  entity "**Usuario**\n<size:10>nombre, correo, rol</size>" as Usuario
+  entity "**Consentimiento**\n<size:10>propósito, fecha</size>" as Consentimiento
+  entity "**Compra**\n<size:10>precio, estado</size>" as Compra
+  entity "**Pago**\n<size:10>monto, referencia</size>" as Pago
+  entity "**Reserva**\n<size:10>modalidad, estado</size>" as Reserva
+  entity "**SesionDesbloqueo**\n<size:10>paso, vence</size>" as SesionDesbloqueo
+  entity "**Vehiculo**\n<size:10>tipo, modo,</size>\n<size:10>estado, batería</size>" as Vehiculo
+  entity "**Hub**\n<size:10>nombre, capacidad</size>" as Hub
+  entity "**Alerta**\n<size:10>tipo, fecha</size>" as Alerta
+  entity "**Entrega**\n<size:10>horaLimite, estado</size>" as Entrega
+}
+
+package "4. INTERFACES CON SISTEMAS EXTERNOS (Boundary)" as X #F4F8FD {
+  boundary "**InterfazPasarelaPagos**\n<size:10>cobrar(monto)</size>" as InterfazPasarelaPagos
+  boundary "**InterfazVehiculo**\n<size:10>recibirLectura()</size>\n<size:10>enviarDesbloqueo()</size>" as InterfazVehiculo
+  boundary "**InterfazCorreo**\n<size:10>enviarAviso()</size>" as InterfazCorreo
+}
+
+' --- orden de izquierda a derecha en cada capa (alinea columnas y evita cruces) ---
+AC -[hidden]right- AO
+AO -[hidden]right- AD
+PantallaRegistroLogin -[hidden]right- PantallaCatalogo
+PantallaCatalogo -[hidden]right- PantallaMapaAlquiler
+PantallaMapaAlquiler -[hidden]right- PantallaMisReservas
+PantallaMisReservas -[hidden]right- PantallaDesbloqueo
+PantallaDesbloqueo -[hidden]right- PanelOperador
+PanelOperador -[hidden]right- BandejaDomiciliario
+ControlAutenticacion -[hidden]right- ControlCompra
+ControlCompra -[hidden]right- ControlPago
+ControlPago -[hidden]right- ControlReserva
+ControlReserva -[hidden]right- ControlDesbloqueo
+ControlDesbloqueo -[hidden]right- ControlCatalogo
+ControlCatalogo -[hidden]right- ControlAlertas
+ControlAlertas -[hidden]right- ControlEntregas
+Usuario -[hidden]right- Consentimiento
+Consentimiento -[hidden]right- Compra
+Compra -[hidden]right- Pago
+Pago -[hidden]right- Reserva
+Reserva -[hidden]right- SesionDesbloqueo
+SesionDesbloqueo -[hidden]right- Vehiculo
+Vehiculo -[hidden]right- Hub
+Hub -[hidden]right- Alerta
+Alerta -[hidden]right- Entrega
+InterfazPasarelaPagos -[hidden]right- InterfazVehiculo
+InterfazVehiculo -[hidden]right- InterfazCorreo
+Entrega -[hidden]down- InterfazPasarelaPagos
+
+' --- Actores -> Interfaces ---
+AC -- PantallaRegistroLogin
+AC -- PantallaCatalogo
+AC -- PantallaMapaAlquiler
+AC -- PantallaMisReservas
+AC -- PantallaDesbloqueo
+AO -- PanelOperador
+AD -- BandejaDomiciliario
+
+' --- Interfaces -> Controladores ---
+PantallaRegistroLogin --> ControlAutenticacion
+PantallaCatalogo --> ControlCompra
+PantallaMapaAlquiler --> ControlReserva
+PantallaMisReservas --> ControlReserva
+PantallaDesbloqueo --> ControlDesbloqueo
+PanelOperador --> ControlCatalogo
+PanelOperador --> ControlAlertas
+PanelOperador --> ControlEntregas
+BandejaDomiciliario --> ControlEntregas
+
+' --- entre controladores (punteado, misma fila) ---
+ControlCompra .right.> ControlPago : incluye pagar
+ControlReserva .left.> ControlPago : incluye pagar
+
+' --- Controladores -> Entidades ---
+ControlAutenticacion --> Usuario
+ControlAutenticacion --> Consentimiento
+ControlCompra --> Compra
+ControlPago --> Pago
+ControlReserva --> Reserva
+ControlDesbloqueo --> SesionDesbloqueo
+ControlCatalogo --> Vehiculo
+ControlCatalogo --> Hub
+ControlAlertas --> Alerta
+ControlEntregas --> Entrega
+
+' --- Controladores -> sistemas externos (punteado, hacia abajo) ---
+ControlPago .[norank].> InterfazPasarelaPagos : cobra
+ControlDesbloqueo .[norank].> InterfazVehiculo : desbloquea
+InterfazVehiculo ..> ControlAlertas : envía lecturas
+ControlEntregas ..> InterfazCorreo : avisa retraso
+
+legend bottom
+  |= Símbolo |= Capa |= Regla |
+  | círculo con línea en T | Interfaz (Boundary) | el actor solo habla con interfaces; las interfaces solo hablan con controladores |
+  | círculo con flecha | Controlador (Control) | aplica las reglas; usa entidades y servicios externos |
+  | círculo subrayado | Entidad (Entity) | guarda datos; no conoce las pantallas |
+  Flecha continua = usa.  Flecha punteada = pide un servicio.
+  Una interfaz nunca toca una entidad directamente.
+  Las relaciones entre entidades (1 a muchos) están en el diagrama 14.
+endlegend
+@enduml

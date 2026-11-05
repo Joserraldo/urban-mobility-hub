@@ -7,7 +7,7 @@ Tres archivos nuevos que corrigen el SRS, el Plan y el Análisis de Riesgos. **L
 | `SRS_v1.2.md`               | H2, H5, H6, H7, H9 (+ H10 nuevo: contraseñas se _hashean_, no se cifran)  |
 | `Plan_v1.2.md`              | H1 (COCOMO), H8 (cronograma), re-estimación por RF nuevos, capacidad real |
 | `Riesgos_v1.2.md`           | H3 (SGR faltantes), H4 (RD10), H9 (RD8) + RD14, RD15                      |
-| `img/01-matriz-riesgos.png` | Matriz de riesgos v1.2 (fuente en `mmd/`)                                 |
+| `../diagramas/img/24-matriz-riesgos.png` | Matriz de riesgos v1.2 (fuente en `../diagramas/fuentes/`)                                 |
 
 ## Resumen de hallazgos
 

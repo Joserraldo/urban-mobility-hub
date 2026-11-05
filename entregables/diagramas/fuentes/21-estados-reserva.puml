@@ -1,0 +1,17 @@
+@startuml 21-estados-reserva
+!include estilo.iuml
+title Estados de una reserva
+
+state "Solicitada" as S
+state "Activa\n(en viaje)" as A
+state "Completada" as C
+state "Cancelada" as X
+
+[*] --> S : el cliente reserva\ny paga el valor base
+S --> A : desbloquea el vehículo\no se lo entregan en casa
+S --> X : el cliente cancela
+A --> C : termina el viaje\ny se cobra por minuto
+A --> X : el operador la cierra\npor un incidente
+C --> [*]
+X --> [*]
+@enduml

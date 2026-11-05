@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-20; RNF-03, RNF-05; Ley 1581 de 2012                                                                                                            |
 | Prioridad           | P1                                                                                                                                                 |
 | Estimación          | 4 h (HU-01a..b)                                                                                                                                    |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png`; secuencia `../../diseno/img/14-secuencia-auth-pago-cierre.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png`; secuencia `../../diagramas/img/15-secuencia-registro-login-cierre.png` |
 | Historias           | HU-01a, HU-01b                                                                                                                                     |
 
 **Intención.** Crear la identidad en `users` con la contraseña hasheada y los consentimientos explícitos y SEPARADOS que exige la Ley 1581. Sin consentimiento de datos personales no nace la cuenta; sin consentimiento biométrico no existe plantilla facial.

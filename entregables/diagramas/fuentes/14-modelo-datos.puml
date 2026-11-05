@@ -1,0 +1,115 @@
+@startuml 14-modelo-datos
+!include estilo.iuml
+title Modelo de datos — Qué se guarda y cómo se relaciona
+hide circle
+skinparam linetype ortho
+
+entity "Usuario" as users {
+  * id
+  --
+  nombre
+  correo (único)
+  contraseña cifrada
+  rol: cliente | operador | domiciliario
+}
+entity "Consentimiento" as consents {
+  * id
+  --
+  propósito: datos personales | biometría
+  fecha de aceptación
+  revocado
+}
+entity "Plantilla facial" as bio {
+  * usuario
+  --
+  datos cifrados
+}
+entity "Hub" as hubs {
+  * id
+  --
+  nombre, zona
+  ubicación
+  capacidad
+  puntos de carga
+}
+entity "Vehículo" as vehicles {
+  * id
+  --
+  tipo: patineta | bicicleta | dron
+  modo: alquiler | venta
+  estado
+  precio o tarifa por minuto
+  batería, ubicación
+  ¿se entrega a domicilio?
+}
+entity "Reserva" as reservations {
+  * id
+  --
+  modalidad: hub | domicilio
+  dirección
+  estado
+  inicio, fin, costo total
+}
+entity "Compra" as purchases {
+  * id
+  --
+  precio
+  estado: pendiente | pagada | fallida
+}
+entity "Pago" as payments {
+  * id
+  --
+  de una compra o de una reserva
+  monto
+  referencia de la pasarela
+  aprobado | rechazado
+}
+entity "Entrega" as deliveries {
+  * id
+  --
+  estado
+  hora límite
+  causa del retraso
+}
+entity "Alerta" as alert_log {
+  * id
+  --
+  tipo
+  ubicación, fecha
+  origen: vehículo | simulador
+}
+entity "Sesión de desbloqueo" as unlock {
+  * id
+  --
+  paso: QR | casco | listo | negado | vencido
+  vence a los 2 minutos
+}
+entity "Aviso por correo" as notifications {
+  * id
+  --
+  destinatario
+  estado: enviado | fallido | simulado
+}
+
+users ||--o{ consents : otorga
+users |o--o| bio : tiene
+users ||--o{ reservations : hace
+users ||--o{ purchases : hace
+users ||--o{ deliveries : reparte
+users ||--o{ notifications : recibe
+hubs ||--o{ vehicles : aloja
+vehicles ||--o{ reservations : se reserva
+vehicles ||--o| purchases : se vende
+vehicles ||--o{ alert_log : genera
+reservations ||--o{ unlock : abre
+reservations ||--o{ payments : genera
+purchases ||--o{ payments : genera
+reservations ||--o| deliveries : si es a domicilio
+
+legend right
+  * = identificador
+  ||--o{ = uno a muchos
+  |o--o| = uno a cero o uno
+  El historial de alertas solo crece: nunca se edita ni se borra.
+endlegend
+@enduml

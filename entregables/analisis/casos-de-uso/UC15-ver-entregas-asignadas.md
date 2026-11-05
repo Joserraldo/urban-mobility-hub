@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-25                                                                                        |
 | Prioridad           | P2                                                                                           |
 | Estimación          | 3 h (HU-15a)                                                                                 |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; domiciliario `../img/04-casos-de-uso-domiciliario.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; domiciliario `../../diagramas/img/05-casos-de-uso-domiciliario.png` |
 | Historias           | HU-15a                                                                                       |
 
 **Intención.** Mostrar al domiciliario la lista de entregas que le asignaron (`assigned` o `in_progress`) con dirección, cliente y hora límite, ordenadas por urgencia (deadline más próximo primero), para que sepa qué hacer y en qué orden.

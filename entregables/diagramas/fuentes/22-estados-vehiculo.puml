@@ -1,0 +1,41 @@
+@startuml 22-estados-vehiculo
+!include estilo.iuml
+title Estados de un vehículo
+
+state "Disponible" as D
+state "Reservado" as R
+state "Vendido" as V
+state "Fuera de servicio" as F
+state "En uso" as E {
+  state "Sin novedad" as OK
+  state "Sin casco" as NC
+  state "Caída" as CA
+  state "Sin GPS" as GPS
+  state "Batería baja" as BAT
+  [*] --> OK
+  OK --> NC
+  OK --> CA
+  OK --> GPS
+  OK --> BAT
+  NC --> OK : se resuelve
+  CA --> OK : el operador atiende
+  GPS --> OK : vuelve la señal
+  BAT --> OK : se recarga
+}
+
+[*] --> D
+D --> R : alguien lo reserva
+R --> D : se cancela la reserva
+R --> E : se desbloquea
+E --> D : termina el viaje
+D --> V : alguien lo compra
+D --> F : el operador lo retira
+F --> D : vuelve a servicio
+V --> [*]
+
+note right of E
+  Mientras está en uso, el vehículo
+  puede pasar a un estado de alerta.
+  La alerta queda en el historial.
+end note
+@enduml

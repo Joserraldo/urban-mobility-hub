@@ -1,0 +1,30 @@
+@startuml 19-secuencia-alerta
+!include estilo.iuml
+title Un vehículo reporta su estado y se genera una alerta
+
+participant "Vehículo\n(simulado)" as S
+participant "Servidor" as API
+participant "Reglas de\nseguridad" as ST
+database "Base de datos" as DB
+participant "Canal en vivo" as RT
+actor Operador as O
+
+S -> API : posición, batería, casco, golpes
+API -> ST : evalúa la lectura
+ST -> ST : revisa en orden de gravedad:\ncaída > sin casco > sin GPS > batería baja
+alt hay un problema
+  ST -> DB : marca el vehículo con la alerta
+  ST -> DB : la agrega al historial\n(el historial nunca se borra)
+  ST -> RT : avisa
+  RT -->> O : el panel la muestra en rojo\n(en menos de 1 segundo)
+else todo bien
+  ST -> DB : actualiza la posición
+  ST -> RT : nueva posición
+  RT -->> O : el punto se mueve en el mapa\n(cada 5 segundos o menos)
+end
+
+note over S, O
+  El operador puede simular el mismo evento desde su panel;
+  sigue este mismo camino y queda marcado como "simulado".
+end note
+@enduml

@@ -1,0 +1,38 @@
+@startuml 06-dfd-nivel-0
+!include estilo.iuml
+left to right direction
+title DFD nivel 0 — Qué información entra y sale del sistema
+
+actor "Cliente" as U
+actor "Operador" as O
+actor "Domiciliario" as D
+rectangle "Pasarela de pagos" as PAY
+rectangle "Reconocimiento facial" as FAC
+rectangle "Servicio de mapas" as MAP
+rectangle "Servicio de correo" as BRV
+rectangle "Vehículos\n(simulados)" as IOT
+
+usecase "0\nPlataforma de\nmicromovilidad" as SYS
+
+U --> SYS : "datos de registro, compra,\nalquiler, QR, foto del casco"
+SYS --> U : "catálogo, mapa,\nconfirmaciones"
+O --> SYS : "cambios al catálogo,\nasignación de entregas"
+SYS --> O : "indicadores, alertas"
+D --> SYS : "avance de la entrega"
+SYS --> D : "entregas pendientes"
+SYS --> PAY : "orden de cobro"
+PAY --> SYS : "pago aprobado / rechazado"
+SYS --> FAC : "rostro a comparar"
+FAC --> SYS : "coincide / no coincide"
+SYS --> MAP : "pide el mapa"
+MAP --> SYS : "mapa base"
+SYS --> BRV : "aviso de retraso"
+IOT --> SYS : "posición, batería, alertas"
+SYS --> IOT : "orden de desbloqueo"
+
+note bottom of SYS
+  Las flechas son DATOS, no acciones.
+  Si un dato no aparece aquí,
+  el sistema no lo maneja.
+end note
+@enduml

@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-07                                                                              |
 | Prioridad           | P2                                                                                 |
 | Estimación          | 2 h (HU-07a)                                                                       |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; cliente `../img/02-casos-de-uso-cliente.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; cliente `../../diagramas/img/03-casos-de-uso-cliente.png` |
 | Historias           | HU-07a                                                                             |
 
 **Intención.** Mostrar la ficha de un hub: capacidad, ocupados (calculado), vehículos en carga y el desglose de unidades disponibles para alquiler y para venta en ese hub.

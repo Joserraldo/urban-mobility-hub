@@ -1,0 +1,32 @@
+@startuml 16-secuencia-compra-pago
+!include estilo.iuml
+title Comprar un vehículo (incluye Pagar)
+
+actor Cliente as U
+participant "Sitio web" as UI
+participant "Servidor" as API
+participant "Pasarela de pagos\n(simulada)" as PS
+database "Base de datos" as DB
+
+U -> UI : elige un vehículo del catálogo\ny confirma la compra
+UI -> API : comprar
+API -> DB : ¿el vehículo sigue en venta?
+alt no hay sesión o ya no está disponible
+  API -->> UI : mensaje explicando el problema
+else disponible
+  API -> DB : registra la compra como pendiente
+  group Pagar
+    API -> PS : cobra el precio
+    alt pago aprobado
+      PS -->> API : aprobado + referencia
+      API -> DB : guarda el pago, la compra queda pagada\ny el vehículo vendido
+      API -->> UI : compra confirmada con su referencia
+    else pago rechazado
+      PS -->> API : rechazado
+      API -> DB : guarda el intento; la compra queda fallida
+      API -->> UI : "Pago rechazado, intenta con otro método"
+      note right : el vehículo NO se marca vendido
+    end
+  end
+end
+@enduml

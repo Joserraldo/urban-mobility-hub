@@ -8,7 +8,7 @@
 | Requisito(s)        | RF-15 (simular un evento sin hardware)                                                                                                                                                         |
 | Prioridad           | P1                                                                                                                                                                                             |
 | Estimación          | 2 h (HU-11a)                                                                                                                                                                                   |
-| Diagramas           | maestro `../img/01-casos-de-uso.png`; operador `../img/03-casos-de-uso-operador.png`; secuencia `../../diseno/img/05-secuencia-alerta.png`; estados `../../diseno/img/07-estados-vehiculo.png` |
+| Diagramas           | maestro `../../diagramas/img/02-casos-de-uso-general.png`; operador `../../diagramas/img/04-casos-de-uso-operador.png`; secuencia `../../diagramas/img/19-secuencia-alerta.png`; estados `../../diagramas/img/22-estados-vehiculo.png` |
 | Historias           | HU-11a                                                                                                                                                                                         |
 
 **Intención.** Provocar a voluntad un evento de seguridad o una posición para probar la ruta de alertas sin hardware físico, usando EXACTAMENTE las mismas constantes y el mismo disparador que la telemetría real, de modo que el resultado sea indistinguible del de UC20 salvo por el origen.
