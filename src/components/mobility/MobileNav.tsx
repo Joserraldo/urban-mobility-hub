@@ -56,9 +56,7 @@ export function MobileNav() {
 
         <div className="space-y-6 overflow-y-auto px-5 py-6">
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Servicios
-            </h3>
+            <h3 className="text-xs font-semibold text-muted-foreground">Servicios</h3>
             {services.map((s) => (
               <div
                 key={s.title}
@@ -74,9 +72,7 @@ export function MobileNav() {
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Quiénes somos
-            </h3>
+            <h3 className="text-xs font-semibold text-muted-foreground">Quiénes somos</h3>
             <p className="text-sm text-muted-foreground">
               Operamos una flota conectada por IoT con un Gemelo Digital de cada vehículo:
               telemetría en vivo, batería, ubicación y alertas de seguridad para decidir en
@@ -89,9 +85,7 @@ export function MobileNav() {
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Panel técnico
-            </h3>
+            <h3 className="text-xs font-semibold text-muted-foreground">Panel técnico</h3>
             <Link to="/admin">
               <Button variant="secondary" className="w-full justify-start">
                 <Gauge className="mr-2 size-4" />

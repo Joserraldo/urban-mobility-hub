@@ -24,11 +24,15 @@ export function stopSimulator(): void {
   timers = {};
 }
 
+/**
+ * Solo se mueven los vehículos que están en un viaje (`in_use`). Los disponibles quedan
+ * estacionados donde están: el cliente tiene que poder caminar hasta ellos.
+ */
 function moveFleet(): void {
   const rows = getDb()
     .prepare(
       `SELECT id, lat, lng, battery, mode, alert_state FROM vehicles
-       WHERE mode = 'rent' AND status IN ('available','in_use')`,
+       WHERE mode = 'rent' AND status = 'in_use'`,
     )
     .all() as { id: string; lat: number; lng: number; battery: number; alert_state: string }[];
 
@@ -38,12 +42,14 @@ function moveFleet(): void {
       ts: Date.now(),
       lat: v.lat + (Math.random() - 0.5) * 0.0016,
       lng: v.lng + (Math.random() - 0.5) * 0.0016,
-      battery: Math.max(4, Math.round((v.battery - Math.random() * 0.35) * 100) / 100),
+      // El paseo simulado no baja de 20 %: la batería crítica se prueba con el simulador del
+      // operador, no aparece sola en toda la flota tras unos minutos de demo.
+      battery: Math.max(20, Math.round((v.battery - Math.random() * 0.35) * 100) / 100),
       speedKmh: 12 + Math.random() * 12,
       helmetOn: true,
       impactG: 1,
       gpsFixAgeMs: 800,
-      tripActive: false,
+      tripActive: true,
     };
     applyTelemetry(t, "telemetry");
   }
@@ -58,11 +64,16 @@ const DB_ALERT: Record<string, string> = {
   "low-battery": "low_battery",
 };
 
-/** Un solo camino para telemetría real/simulada (así el mismo código sirve al botón del operador). */
+/**
+ * Un solo camino para telemetría real/simulada (así el mismo código sirve al botón del operador).
+ * Una alerta activa NO se borra con una lectura sana: queda hasta que el operador la atiende
+ * (`POST /api/admin/alerts/{id}/clear`). Así el KPI de alertas activas no cae a 0 a los 2 s (R2).
+ */
 export function applyTelemetry(t: Telemetry, origin: "telemetry" | "simulator") {
-  const alert = DB_ALERT[evaluateTelemetry(t)] ?? "ok";
+  const evaluated = DB_ALERT[evaluateTelemetry(t)] ?? "ok";
   const prev = repos.vehicles.byId(t.vehicleId);
   if (!prev) return;
+  const alert = evaluated === "ok" ? prev.alert_state : evaluated;
   repos.vehicles.updateLive(t.vehicleId, t.lat, t.lng, Math.round(t.battery), alert);
   stream.emit("position", {
     type: "position",
@@ -72,7 +83,7 @@ export function applyTelemetry(t: Telemetry, origin: "telemetry" | "simulator") 
     ts: t.ts,
   });
 
-  if (alert !== "ok" && prev.alert_state === "ok") {
+  if (evaluated !== "ok" && evaluated !== prev.alert_state) {
     const a = {
       id: uid("ALR"),
       vehicle_id: t.vehicleId,

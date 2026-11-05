@@ -22,9 +22,7 @@ export function VehicleCard({
       <span className="flex size-11 items-center justify-center rounded-xl bg-primary/20">
         <VehicleIcon kind={v.kind} className="size-5 text-primary-glow" />
       </span>
-      <p className="mt-4 text-xs uppercase tracking-wide text-muted-foreground">
-        {kindLabel[v.kind]}
-      </p>
+      <p className="mt-4 text-xs text-muted-foreground">{kindLabel[v.kind]}</p>
       <h3 className="mt-1 text-lg font-semibold">
         <Link
           to="/catalogo/$slug"

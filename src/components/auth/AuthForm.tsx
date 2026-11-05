@@ -35,6 +35,7 @@ export function AuthForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [consent, setConsent] = useState(false);
+  const [biometric, setBiometric] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isRegister = mode === "register";
   const pending = login.isPending || register.isPending;
@@ -48,7 +49,7 @@ export function AuthForm({
       return setError("Debes aceptar el tratamiento de datos personales para registrarte.");
     try {
       const user = isRegister
-        ? await register.mutateAsync({ name, email, password, consent })
+        ? await register.mutateAsync({ name, email, password, consent, biometric })
         : await login.mutateAsync({ email, password });
       await navigate({ to: homeForRole(user.role, redirect) });
     } catch (err) {
@@ -117,10 +118,25 @@ export function AuthForm({
             className="mt-0.5"
           />
           <Label htmlFor="auth-consent" className="text-sm font-normal leading-relaxed">
-            Autorizo de forma expresa e informada el tratamiento de mis datos personales y, si
-            decido activarlo, de mi plantilla facial (dato biométrico) para el desbloqueo de
-            vehículos, conforme a la Ley 1581 de 2012. La plantilla se guarda cifrada y puedo
-            revocar esta autorización en cualquier momento.
+            Autorizo de forma expresa e informada el tratamiento de mis datos personales conforme a
+            la Ley 1581 de 2012 (obligatorio).
+          </Label>
+        </div>
+      )}
+
+      {isRegister && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-elevated p-4">
+          <Checkbox
+            id="auth-biometric"
+            checked={biometric}
+            onCheckedChange={(v) => setBiometric(v === true)}
+            data-testid="auth-biometric"
+            className="mt-0.5"
+          />
+          <Label htmlFor="auth-biometric" className="text-sm font-normal leading-relaxed">
+            <span className="font-medium">Opcional:</span> autorizo el uso de mi rostro (dato
+            biométrico sensible) para desbloquear vehículos sin escanear el QR. Si no lo marco,
+            igual puedo usar el QR. Puedo revocar esta autorización cuando quiera.
           </Label>
         </div>
       )}

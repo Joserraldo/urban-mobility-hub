@@ -55,6 +55,10 @@ export function useFleetLive() {
         qc.setQueryData<AlertEvent[]>(keys.alerts, (old) =>
           old?.some((a) => a.id === e.alert.id) ? old : [e.alert, ...(old ?? [])],
         );
+        // La alerta también cambia el estado del vehículo: mapa, flota e indicadores la ven al instante.
+        qc.setQueryData<Vehicle[]>(keys.vehicles, (old) =>
+          old?.map((v) => (v.id === e.alert.vehicleId ? { ...v, alert: e.alert.type } : v)),
+        );
       }
     });
     setLive(true);

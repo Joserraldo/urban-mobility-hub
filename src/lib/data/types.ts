@@ -102,7 +102,14 @@ export type FleetEvent =
 
 export type Unsubscribe = () => void;
 
-export type RegisterInput = { name: string; email: string; password: string; consent: boolean };
+export type RegisterInput = {
+  name: string;
+  email: string;
+  password: string;
+  consent: boolean;
+  /** Consentimiento biométrico separado y opcional (RF-20, RF-22). */
+  biometric?: boolean;
+};
 export type LoginInput = { email: string; password: string };
 export type ReservationInput = {
   vehicleId: string;

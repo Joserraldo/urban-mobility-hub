@@ -107,7 +107,7 @@ function HubPage() {
             ["En carga", `${h.charging}`],
           ].map(([k, v]) => (
             <div key={k} className="rounded-2xl border border-border bg-surface p-5">
-              <dt className="text-xs uppercase tracking-wide text-muted-foreground">{k}</dt>
+              <dt className="text-xs text-muted-foreground">{k}</dt>
               <dd className="mt-1 text-2xl font-bold">{v}</dd>
             </div>
           ))}
