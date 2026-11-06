@@ -114,13 +114,16 @@ function CatalogPage() {
             }
           />
         ) : (
-          <ul data-testid="catalog-list" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((v) => (
-              <li key={v.id} className="contents">
-                <VehicleCard vehicle={v} hubName={hubs.find((h) => h.id === v.hubId)?.name} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <h2 className="sr-only">Vehículos en venta</h2>
+            <ul data-testid="catalog-list" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.map((v) => (
+                <li key={v.id} className="contents">
+                  <VehicleCard vehicle={v} hubName={hubs.find((h) => h.id === v.hubId)?.name} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </SiteLayout>

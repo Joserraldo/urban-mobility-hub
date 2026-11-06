@@ -60,12 +60,17 @@ export function requireRole(request: Request, ...roles: SessionUser["role"][]): 
   return user;
 }
 
+/** En producción la cookie solo viaja por HTTPS (F-C01 del informe de código). */
+function secureFlag(): string {
+  return process.env["NODE_ENV"] === "production" ? "; Secure" : "";
+}
+
 export function sessionCookie(token: string): string {
-  return `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${TTL_MS / 1000}`;
+  return `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${TTL_MS / 1000}${secureFlag()}`;
 }
 
 export function clearSessionCookie(): string {
-  return `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
+  return `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secureFlag()}`;
 }
 
 function parseCookie(header: string): Record<string, string> {
