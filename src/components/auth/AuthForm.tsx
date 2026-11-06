@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,7 @@ import { useAuthActions } from "@/lib/data/queries";
 const safeRedirect = (r: string | undefined) =>
   r && r.startsWith("/") && !r.startsWith("//") ? r : "/app";
 
-/** El destino depende del rol (UC02): el domiciliario va a su bandeja, el operador al panel. */
+/** El destino depende del rol: el domiciliario va a su bandeja, el operador al panel. */
 const homeForRole = (role: string, redirect?: string) =>
   redirect
     ? safeRedirect(redirect)
@@ -37,6 +37,8 @@ export function AuthForm({
   const [consent, setConsent] = useState(false);
   const [biometric, setBiometric] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const isRegister = mode === "register";
   const pending = login.isPending || register.isPending;
 
@@ -69,6 +71,8 @@ export function AuthForm({
           <Label htmlFor="auth-name">Nombre completo</Label>
           <Input
             id="auth-name"
+            maxLength={80}
+            disabled={!ready}
             autoComplete="name"
             required
             value={name}
@@ -81,6 +85,7 @@ export function AuthForm({
         <Label htmlFor="auth-email">Correo electrónico</Label>
         <Input
           id="auth-email"
+          disabled={!ready}
           type="email"
           autoComplete="email"
           required
@@ -93,6 +98,7 @@ export function AuthForm({
         <Label htmlFor="auth-password">Contraseña</Label>
         <Input
           id="auth-password"
+          disabled={!ready}
           type="password"
           autoComplete={isRegister ? "new-password" : "current-password"}
           required
@@ -103,7 +109,7 @@ export function AuthForm({
         />
         {isRegister && (
           <p className="text-xs text-muted-foreground">
-            Mínimo 8 caracteres. Se almacena cifrada, nunca en texto plano.
+            Mínimo 8 caracteres. Se guarda protegida (hash), nunca en texto plano.
           </p>
         )}
       </div>
@@ -119,7 +125,15 @@ export function AuthForm({
           />
           <Label htmlFor="auth-consent" className="text-sm font-normal leading-relaxed">
             Autorizo de forma expresa e informada el tratamiento de mis datos personales conforme a
-            la Ley 1581 de 2012 (obligatorio).
+            la Ley 1581 de 2012 (obligatorio). Lee la{" "}
+            <Link to="/privacidad" target="_blank" className="underline">
+              política de privacidad
+            </Link>{" "}
+            y los{" "}
+            <Link to="/terminos" target="_blank" className="underline">
+              términos
+            </Link>
+            .
           </Label>
         </div>
       )}
@@ -157,7 +171,7 @@ export function AuthForm({
           data-testid="demo-credentials"
         >
           <p className="mb-1 font-semibold text-foreground/80">
-            Cuentas de demostración (backend: npm run dev:api)
+            Cuentas de prueba (proyecto académico)
           </p>
           <p>
             cliente@demo.co · operador@demo.co · domi1@demo.co — contraseña <code>Demo1234!</code>
@@ -165,7 +179,12 @@ export function AuthForm({
         </div>
       )}
 
-      <Button type="submit" className="w-full" disabled={pending} data-testid="auth-submit">
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={pending || !ready}
+        data-testid="auth-submit"
+      >
         {pending && <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />}
         {isRegister ? "Crear cuenta" : "Ingresar"}
       </Button>

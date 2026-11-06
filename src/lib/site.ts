@@ -5,7 +5,7 @@ export const SITE = {
   legalName: "NODO Mobility — Plataforma Multimodal de Micromovilidad",
   url:
     (import.meta.env["VITE_SITE_URL"] as string | undefined)?.replace(/\/$/, "") ??
-    "https://urban-mobility-hub.pages.dev",
+    "https://urbanmobility.duckdns.org",
   locale: "es_CO",
   description:
     "Alquila por minuto o compra patinetas eléctricas, bicicletas eléctricas y drones de carga en Bucaramanga. Red de hubs conectados con verificación de casco y alertas de seguridad IoT.",

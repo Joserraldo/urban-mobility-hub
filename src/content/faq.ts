@@ -34,7 +34,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "¿Qué hace la plataforma con mis datos biométricos?",
-    a: "Tu plantilla facial se guarda cifrada, nunca en texto plano, y solo si aceptas expresamente el tratamiento de datos al registrarte, conforme a la Ley 1581 de 2012 de Colombia. El reconocimiento facial es opcional: siempre puedes desbloquear con QR.",
+    a: "En esta versión de demostración la comparación facial se hace en tu propio dispositivo (la plantilla no sale de él), y solo si aceptas expresamente el tratamiento de datos al registrarte, conforme a la Ley 1581 de 2012 de Colombia. El reconocimiento facial es opcional: siempre puedes desbloquear con QR.",
   },
   {
     q: "¿Qué es un gemelo digital?",

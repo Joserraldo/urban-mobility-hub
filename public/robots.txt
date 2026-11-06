@@ -47,4 +47,4 @@ Disallow: /login
 Disallow: /registro
 Disallow: /mis-reservas
 
-Sitemap: https://urban-mobility-hub.pages.dev/sitemap.xml
+Sitemap: https://urbanmobility.duckdns.org/sitemap.xml

@@ -44,6 +44,8 @@ const ALERT_OUT: Record<string, string> = {
 };
 
 const BASE_PREPAY_COP = 10_000;
+/** Operaciones de cobro en curso: evita doble cobro por doble clic o peticiones paralelas. */
+const inFlight = new Set<string>();
 /** UC14-E2: un domiciliario no recibe más de este número de entregas abiertas a la vez. */
 export const MAX_ACTIVE_DELIVERIES = 5;
 
@@ -144,7 +146,7 @@ export async function handle(request: Request): Promise<Response> {
   try {
     // ---------- system ----------
     if (method === "GET" && path === "/api/health") {
-      return ok({ ok: true, source: "sqlite", db: process.env["UMH_DB_PATH"] ?? "data/umh.db" });
+      return ok({ ok: true, source: "sqlite" });
     }
 
     if (method === "GET" && path === "/api/stream") {
@@ -159,8 +161,12 @@ export async function handle(request: Request): Promise<Response> {
         .trim()
         .toLowerCase();
       const password = String(b.password ?? "");
-      if (!email.includes("@") || password.length < 8)
-        throw httpError(422, "Correo inválido o contraseña de menos de 8 caracteres");
+      if (!email.includes("@") || email.length > 254)
+        throw httpError(422, "Escribe un correo válido (por ejemplo nombre@dominio.com)");
+      if (password.length < 8 || password.length > 128)
+        throw httpError(422, "La contraseña debe tener entre 8 y 128 caracteres");
+      if (String(b.name ?? "").trim().length > 80)
+        throw httpError(422, "El nombre no puede superar 80 caracteres");
       if (repos.users.byEmail(email)) throw httpError(409, "Ese correo ya está registrado");
       const id = uid("USR");
       repos.users.create({
@@ -285,7 +291,10 @@ export async function handle(request: Request): Promise<Response> {
         status: "requested",
         requested_at: Date.now(),
       };
-      repos.reservations.create(r);
+      atomically(() => {
+        repos.reservations.create(r);
+        repos.vehicles.setStatus(v.id, "reserved");
+      });
       return ok({ reservation: r, prepayCop: BASE_PREPAY_COP }, { status: 201 });
     }
 
@@ -312,41 +321,46 @@ export async function handle(request: Request): Promise<Response> {
     if (method === "POST" && endMatch?.[1]) {
       const u = requireUser(request);
       const r = repos.reservations.byId(endMatch[1]) as ReservationRow | undefined;
-      if (!r || r.user_id !== u.id || r.status !== "active")
+      if (!r || r.user_id !== u.id || r.status !== "active" || inFlight.has(r.id))
         throw httpError(404, "No hay un viaje activo que cerrar");
-      const v = repos.vehicles.byId(r.vehicle_id) as VehicleRow | undefined;
-      if (!v) throw httpError(404, "Vehículo no encontrado");
-      const minutes = Math.max(1, (Date.now() - Number(r.started_at)) / 60_000);
-      const total = rentalCost(minutes, v.rate_per_min_cop ?? 500);
-      const result = await getGateway().charge({ amountCop: total, method: "card" });
-      repos.payments.create({
-        id: uid("PAY"),
-        owner_type: "reservation",
-        owner_id: r.id,
-        kind: "cargo_viaje",
-        amount_cop: total,
-        reference: result.reference ?? null,
-        status: result.status,
-        reason: result.reason ?? null,
-        created_at: Date.now(),
-      });
-      if (result.status === "rejected")
-        throw httpError(
-          402,
-          `El cobro del viaje fue rechazado (${result.reason ?? "?"}). Intenta de nuevo.`,
-        );
-      atomically(() => {
-        repos.reservations.setStatus(r.id, "completed", {
-          ended_at: Date.now(),
-          total_cost_cop: total,
+      inFlight.add(r.id);
+      try {
+        const v = repos.vehicles.byId(r.vehicle_id) as VehicleRow | undefined;
+        if (!v) throw httpError(404, "Vehículo no encontrado");
+        const minutes = Math.max(1, (Date.now() - Number(r.started_at)) / 60_000);
+        const total = rentalCost(minutes, v.rate_per_min_cop ?? 500);
+        const result = await getGateway().charge({ amountCop: total, method: "card" });
+        repos.payments.create({
+          id: uid("PAY"),
+          owner_type: "reservation",
+          owner_id: r.id,
+          kind: "cargo_viaje",
+          amount_cop: total,
+          reference: result.reference ?? null,
+          status: result.status,
+          reason: result.reason ?? null,
+          created_at: Date.now(),
         });
-        repos.vehicles.setStatus(r.vehicle_id, "available");
-      });
-      return ok({
-        reservation: repos.reservations.byId(r.id),
-        total,
-        reference: result.reference ?? null,
-      });
+        if (result.status === "rejected")
+          throw httpError(
+            402,
+            `El cobro del viaje fue rechazado (${result.reason ?? "?"}). Intenta de nuevo.`,
+          );
+        atomically(() => {
+          repos.reservations.setStatus(r.id, "completed", {
+            ended_at: Date.now(),
+            total_cost_cop: total,
+          });
+          repos.vehicles.setStatus(r.vehicle_id, "available");
+        });
+        return ok({
+          reservation: repos.reservations.byId(r.id),
+          total,
+          reference: result.reference ?? null,
+        });
+      } finally {
+        inFlight.delete(r.id);
+      }
     }
 
     // ---------- desbloqueo (UC08/UC09) ----------
@@ -357,7 +371,7 @@ export async function handle(request: Request): Promise<Response> {
       if (!r || r.user_id !== u.id || r.status !== "requested")
         throw httpError(
           409,
-          "Primero reserva este vehículo (y paga el valor base); luego podrás desbloquearlo",
+          "Primero reserva este vehículo y paga el prepago; luego podrás desbloquearlo",
         );
       const session = createUnlockSession(String(b.vehicleId ?? r.vehicle_id));
       repos.unlock.create({
@@ -585,7 +599,7 @@ export async function handle(request: Request): Promise<Response> {
       if (!r || r.modality !== "delivery")
         throw httpError(404, "Reserva de domicilio no encontrada");
       if (repos.deliveries.activeForReservation(r.id))
-        throw httpError(409, "Esta reserva ya tiene una entrega en curso (UC14 E1)");
+        throw httpError(409, "Esta reserva ya tiene una entrega en curso");
       const courier = getDb()
         .prepare("SELECT id, role FROM users WHERE id=?")
         .get(String(b.courierId)) as { id: string; role: string } | undefined;
@@ -637,8 +651,7 @@ export async function handle(request: Request): Promise<Response> {
       const b = await body<DeliveryPatchBody>(request);
       const d = repos.deliveries.byId(deliveryPatch[1]) as DeliveryRow | undefined;
       if (!d) throw httpError(404, "Entrega no encontrada");
-      if (u.role === "courier" && d.courier_id !== u.id)
-        throw httpError(403, "Solo tu entrega (UC16 E2)");
+      if (u.role === "courier" && d.courier_id !== u.id) throw httpError(403, "Solo tu entrega");
       const action = String(b.action ?? "");
       if (action === "start") {
         if (d.status !== "assigned")
@@ -648,7 +661,7 @@ export async function handle(request: Request): Promise<Response> {
         if (d.status !== "in_progress" && d.status !== "late")
           throw httpError(409, `No puedes entregar desde '${d.status}'`);
         if (d.status === "late" && !String(b.reason ?? "").trim() && u.role === "courier")
-          throw httpError(422, "Una entrega tardía se confirma con justificación (UC16 E3)");
+          throw httpError(422, "Una entrega tardía se confirma con justificación");
         // UC16: entrega, reserva y vehículo cambian juntos (todo o nada). El cliente ya tiene el
         // vehículo: la reserva queda activa (empieza a contar el tiempo) y se cierra cuando él
         // termina el viaje, igual que en la modalidad hub.
@@ -665,7 +678,7 @@ export async function handle(request: Request): Promise<Response> {
         if (d.status === "delivered") throw httpError(409, "Entrega ya completada");
         if (d.status === "late") throw httpError(409, "La entrega ya está marcada como tardía");
         const reason = String(b.reason ?? "").trim();
-        if (!reason) throw httpError(422, "Escribe la causa del retraso (UC17)");
+        if (!reason) throw httpError(422, "Escribe la causa del retraso");
         markLate(d.id, reason);
       } else {
         throw httpError(422, "action debe ser start|deliver|late");
@@ -683,8 +696,10 @@ export async function handle(request: Request): Promise<Response> {
       { status: 404 },
     );
   } catch (error) {
-    const e = error as { status?: number; message?: string };
-    const status = e.status ?? 500;
+    const e = error as { status?: number; message?: string; name?: string };
+    const status =
+      e.status ??
+      (e.name === "InvalidTransitionError" || e.name === "UnlockOrderError" ? 409 : 500);
     const code =
       status === 401
         ? "unauthorized"
@@ -726,7 +741,20 @@ function tokenFor(u: { id: string; name: string; email: string; role: string }) 
 async function payPurchase(u: { id: string }, purchaseId: string): Promise<Response> {
   const p = repos.purchases.byId(purchaseId) as PurchaseRow | undefined;
   if (!p || p.user_id !== u.id) throw httpError(404, "Compra no encontrada");
-  if (p.status !== "pending") throw httpError(409, "Esta compra ya fue procesada");
+  if (p.status !== "pending" || inFlight.has(p.id))
+    throw httpError(409, "Esta compra ya fue procesada");
+  const unit = repos.vehicles.byId(p.vehicle_id) as VehicleRow | undefined;
+  if (!unit || unit.status !== "available")
+    throw httpError(409, "Ese vehículo ya no está disponible para la venta");
+  inFlight.add(p.id);
+  try {
+    return await chargePurchase(p);
+  } finally {
+    inFlight.delete(p.id);
+  }
+}
+
+async function chargePurchase(p: PurchaseRow): Promise<Response> {
   const result = await getGateway().charge({ amountCop: p.price_cop, method: "card" });
   repos.payments.create({
     id: uid("PAY"),
@@ -756,7 +784,17 @@ async function payPurchase(u: { id: string }, purchaseId: string): Promise<Respo
 async function payReservation(u: { id: string }, reservationId: string): Promise<Response> {
   const r = repos.reservations.byId(reservationId) as ReservationRow | undefined;
   if (!r || r.user_id !== u.id) throw httpError(404, "Reserva no encontrada");
-  if (r.status !== "requested") throw httpError(409, "La reserva ya está pagada o cerrada");
+  if (r.status !== "requested" || inFlight.has(r.id))
+    throw httpError(409, "La reserva ya está pagada o cerrada");
+  inFlight.add(r.id);
+  try {
+    return await chargeReservation(r);
+  } finally {
+    inFlight.delete(r.id);
+  }
+}
+
+async function chargeReservation(r: ReservationRow): Promise<Response> {
   const result = await getGateway().charge({ amountCop: BASE_PREPAY_COP, method: "card" });
   repos.payments.create({
     id: uid("PAY"),

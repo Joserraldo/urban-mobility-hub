@@ -531,7 +531,7 @@ export function Landing({
               <div className="space-y-3 p-5">
                 <p className="text-sm font-semibold">Cómo se ve una entrega por dentro</p>
                 <p className="text-xs text-muted-foreground">
-                  Estados reales de la tabla deliveries, como los ve el domiciliario.
+                  Estados reales de una entrega, como los ve el domiciliario.
                 </p>
                 <ul className="space-y-3 pt-1">
                   {(

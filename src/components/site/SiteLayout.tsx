@@ -30,7 +30,7 @@ function AccountLink() {
   }
   return me ? (
     <Link to="/mis-reservas" data-testid="nav-account">
-      <Button variant="ghost" size="sm">
+      <Button variant="ghost" size="sm" className="max-w-28 truncate">
         {me.name.split(" ")[0]}
       </Button>
     </Link>
@@ -171,7 +171,7 @@ export function SiteFooter() {
           <ul className="space-y-1.5 text-muted-foreground">
             {links.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className="hover:text-foreground">
+                <Link to={l.to} className="inline-block py-1.5 hover:text-foreground">
                   {l.label}
                 </Link>
               </li>
@@ -182,19 +182,29 @@ export function SiteFooter() {
           <p className="font-semibold">Plataforma</p>
           <ul className="space-y-1.5 text-muted-foreground">
             <li>
-              <Link to="/app" className="hover:text-foreground">
+              <Link to="/app" className="inline-block py-1.5 hover:text-foreground">
                 Aplicación de mapa
               </Link>
             </li>
             <li>
-              <Link to="/admin" className="hover:text-foreground">
+              <Link to="/admin" className="inline-block py-1.5 hover:text-foreground">
                 Panel del operador
               </Link>
             </li>
             <li>
-              <a href="/llms.txt" className="hover:text-foreground">
-                llms.txt
-              </a>
+              <Link to="/terminos" className="inline-block py-1.5 hover:text-foreground">
+                Términos y condiciones
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacidad" className="inline-block py-1.5 hover:text-foreground">
+                Política de privacidad
+              </Link>
+            </li>
+            <li>
+              <Link to="/contacto" className="inline-block py-1.5 hover:text-foreground">
+                Contacto
+              </Link>
             </li>
           </ul>
         </nav>
