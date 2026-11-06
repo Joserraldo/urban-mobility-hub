@@ -6,6 +6,10 @@
 > build de producción ahora monta `/api/*` y SSE en `src/server.ts` (`/api/health`
 > responde 200). Guía en `deploy/README.md`. El plan Cloudflare/D1 queda como opción
 > de escalado, no como requisito para esta entrega.
+>
+> **Aviso al equipo:** los pendientes reales (biometría, Brevo, D-11/D-14/D-15, E2E de
+> producción y UC13) están en [`PENDIENTES.md`](PENDIENTES.md). Vitest quedó en 97/97 y
+> Lighthouse de producción en `/` 92/100/100/100 y `/catalogo` 100/100/100/100.
 
 ## Verde ahora mismo (todo ejecutado y confirmado)
 
