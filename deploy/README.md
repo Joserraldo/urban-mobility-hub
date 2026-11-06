@@ -115,6 +115,8 @@ Cuentas demo: `cliente@demo.co`, `operador@demo.co`, `domi1@demo.co` — contras
 
 - La llave SSH (`*.pem`) está en `.gitignore` y **no** se versiona.
 - Secretos de sesión/datos generados en la VM, no en el repo.
+- En producción el proceso **no arranca** si faltan `UMH_SESSION_SECRET` o `UMH_DATA_KEY`
+  (fail-fast), y la cookie de sesión se emite con `Secure` (solo HTTPS).
 - El servicio corre como usuario de sistema `umh` con `ProtectSystem=strict`,
   `ProtectHome=true` y escritura limitada a `/var/lib/umh`.
-- HTTP redirige a HTTPS; HSTS lo añade Certbot en el bloque TLS.
+- HTTP redirige a HTTPS y el dominio envía HSTS (`Strict-Transport-Security`).

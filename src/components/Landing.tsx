@@ -552,7 +552,7 @@ export function Landing({
                         <span
                           className={
                             status === "tardía"
-                              ? "rounded-full border border-destructive/40 bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive"
+                              ? "rounded-full border border-destructive/40 px-2.5 py-0.5 text-xs font-semibold text-destructive"
                               : status === "entregada"
                                 ? "rounded-full border border-success/40 bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success"
                                 : "rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary-glow"
@@ -578,26 +578,31 @@ export function Landing({
               Cómo funciona: 3 pasos
             </h2>
           </Reveal>
-          <ol className="relative mt-8 grid gap-6 md:grid-cols-3">
+          <div className="relative mt-8">
             <div
               className="pointer-events-none absolute left-0 right-0 top-9 hidden h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent md:block"
               aria-hidden
             />
-            {steps.map((s, i) => (
-              <Reveal key={s.title} delay={i * 0.1}>
-                <li className="group relative rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/60">
-                  <span className="flex items-center gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-gradient-primary font-bold text-primary-foreground shadow-glow transition-transform group-hover:scale-105">
-                      {i + 1}
+            <ol className="grid gap-6 md:grid-cols-3">
+              {steps.map((s, i) => (
+                <li
+                  key={s.title}
+                  className="group relative rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/60"
+                >
+                  <Reveal delay={i * 0.1}>
+                    <span className="flex items-center gap-3">
+                      <span className="flex size-9 items-center justify-center rounded-full bg-gradient-primary font-bold text-primary-foreground shadow-glow transition-transform group-hover:scale-105">
+                        {i + 1}
+                      </span>
+                      <s.icon className="size-5 text-primary-glow" aria-hidden />
                     </span>
-                    <s.icon className="size-5 text-primary-glow" aria-hidden />
-                  </span>
-                  <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
+                    <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
+                  </Reveal>
                 </li>
-              </Reveal>
-            ))}
-          </ol>
+              ))}
+            </ol>
+          </div>
         </div>
       </section>
 
@@ -704,15 +709,17 @@ export function Landing({
                 ["Batería crítica", "por debajo del 15 % se programa la recolección", Cpu],
               ] as const
             ).map(([t, d, Icon], i) => (
-              <Reveal key={t} delay={i * 0.07}>
-                <div className="group h-full rounded-2xl border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-glow">
-                  <Icon
-                    className="size-5 text-primary-glow transition-transform group-hover:scale-110"
-                    aria-hidden
-                  />
-                  <dt className="mt-3 font-semibold">{t}</dt>
-                  <dd className="mt-1 text-sm text-muted-foreground">{d}</dd>
-                </div>
+              <Reveal
+                key={t}
+                delay={i * 0.07}
+                className="group h-full rounded-2xl border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-glow"
+              >
+                <Icon
+                  className="size-5 text-primary-glow transition-transform group-hover:scale-110"
+                  aria-hidden
+                />
+                <dt className="mt-3 font-semibold">{t}</dt>
+                <dd className="mt-1 text-sm text-muted-foreground">{d}</dd>
               </Reveal>
             ))}
           </dl>

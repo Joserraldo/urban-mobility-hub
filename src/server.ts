@@ -3,6 +3,18 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
+// F-C01 (revisión de código): no arrancar en producción con secretos demo.
+if (process.env["NODE_ENV"] === "production") {
+  const missing = ["UMH_SESSION_SECRET", "UMH_DATA_KEY"].filter((key) => !process.env[key]);
+  if (missing.length) {
+    throw new Error(`Faltan secretos obligatorios en producción: ${missing.join(", ")}`);
+  }
+  // systemd envía SIGTERM: cerrar sin esperar a los intervalos del simulador.
+  for (const signal of ["SIGTERM", "SIGINT"] as const) {
+    process.on(signal, () => process.exit(0));
+  }
+}
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
