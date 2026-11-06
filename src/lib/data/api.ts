@@ -28,8 +28,11 @@ import {
  */
 function url(path: string): string {
   if (typeof window !== "undefined") return path;
+  const runtimeBase = typeof process !== "undefined" ? process.env["UMH_INTERNAL_URL"] : undefined;
   const base =
-    (import.meta.env["VITE_SSR_API_BASE"] as string | undefined) ?? "http://localhost:8080";
+    runtimeBase ??
+    (import.meta.env["VITE_SSR_API_BASE"] as string | undefined) ??
+    "http://localhost:8080";
   return `${base.replace(/\/$/, "")}${path}`;
 }
 

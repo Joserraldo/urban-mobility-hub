@@ -10,6 +10,8 @@ Plataforma multimodal de micromovilidad, logística y venta de vehículos urbano
 
 Este repositorio corresponde al **segundo avance**: portal web funcional con **backend real** (SQLite en desarrollo vía `npm run dev:api`; el plan de producción usa D1), roles de **cliente, operador y domiciliario**, pago con comprobante, entrega a domicilio con aviso de retraso por correo (Brevo) y flota **simulada mediante gemelos digitales** (a futuro, hardware IoT real con placas Raspberry Pi). No opera con vehículos físicos todavía.
 
+**Desplegado:** <https://urbanmobility.duckdns.org> — VM Ubuntu 24.04 + Nginx + HTTPS + Node 24 + SQLite. Guía de operación y actualizaciones en [`deploy/README.md`](deploy/README.md). El build de producción sirve la interfaz **y** el API `/api/*` en el mismo proceso.
+
 ## Funcionalidades
 
 ### Landing page (`/`)

@@ -1,5 +1,12 @@
 # ESTADO FINAL del ciclo de mejora (actualizado 8-oct-2026, madrugada)
 
+> **Actualización 5-nov-2026 — desplegado en VM.** La app corre en
+> <https://urbanmobility.duckdns.org> (Ubuntu 24.04, Node 24, Nginx + Let's Encrypt,
+> SQLite en `/var/lib/umh/umh.db`). Se cerró el bloqueador P0-3 de la auditoría: el
+> build de producción ahora monta `/api/*` y SSE en `src/server.ts` (`/api/health`
+> responde 200). Guía en `deploy/README.md`. El plan Cloudflare/D1 queda como opción
+> de escalado, no como requisito para esta entrega.
+
 ## Verde ahora mismo (todo ejecutado y confirmado)
 
 - `tsc --noEmit` 0 · `eslint src` 0 errores (7 warnings shadcn preexistentes)
