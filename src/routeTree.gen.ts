@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as EntregasRouteImport } from './routes/entregas'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MisReservasRouteImport } from './routes/mis-reservas'
+import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoSlugRouteImport } from './routes/catalogo.$slug'
 import { Route as GuiasIndexRouteImport } from './routes/guias.index'
@@ -39,6 +42,11 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EntregasRoute = EntregasRouteImport.update({
   id: '/entregas',
   path: '/entregas',
@@ -59,9 +67,19 @@ const MisReservasRoute = MisReservasRouteImport.update({
   path: '/mis-reservas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacidadRoute = PrivacidadRouteImport.update({
+  id: '/privacidad',
+  path: '/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminosRoute = TerminosRouteImport.update({
+  id: '/terminos',
+  path: '/terminos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
@@ -99,11 +117,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/contacto': typeof ContactoRoute
   '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
+  '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/terminos': typeof TerminosRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -115,11 +136,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/contacto': typeof ContactoRoute
   '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
+  '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/terminos': typeof TerminosRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -132,11 +156,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/app': typeof AppRoute
+  '/contacto': typeof ContactoRoute
   '/entregas': typeof EntregasRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/mis-reservas': typeof MisReservasRoute
+  '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/terminos': typeof TerminosRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -150,11 +177,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/contacto'
     | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
+    | '/privacidad'
     | '/registro'
+    | '/terminos'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -166,11 +196,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/contacto'
     | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
+    | '/privacidad'
     | '/registro'
+    | '/terminos'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -182,11 +215,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/contacto'
     | '/entregas'
     | '/faq'
     | '/login'
     | '/mis-reservas'
+    | '/privacidad'
     | '/registro'
+    | '/terminos'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -199,11 +235,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AppRoute: typeof AppRoute
+  ContactoRoute: typeof ContactoRoute
   EntregasRoute: typeof EntregasRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   MisReservasRoute: typeof MisReservasRoute
+  PrivacidadRoute: typeof PrivacidadRoute
   RegistroRoute: typeof RegistroRoute
+  TerminosRoute: typeof TerminosRoute
   CatalogoSlugRoute: typeof CatalogoSlugRoute
   GuiasSlugRoute: typeof GuiasSlugRoute
   HubsHubIdRoute: typeof HubsHubIdRoute
@@ -235,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/entregas': {
       id: '/entregas'
       path: '/entregas'
@@ -263,11 +309,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MisReservasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacidad': {
+      id: '/privacidad'
+      path: '/privacidad'
+      fullPath: '/privacidad'
+      preLoaderRoute: typeof PrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/registro': {
       id: '/registro'
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminos': {
+      id: '/terminos'
+      path: '/terminos'
+      fullPath: '/terminos'
+      preLoaderRoute: typeof TerminosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo/': {
@@ -319,11 +379,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AppRoute: AppRoute,
+  ContactoRoute: ContactoRoute,
   EntregasRoute: EntregasRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   MisReservasRoute: MisReservasRoute,
+  PrivacidadRoute: PrivacidadRoute,
   RegistroRoute: RegistroRoute,
+  TerminosRoute: TerminosRoute,
   CatalogoSlugRoute: CatalogoSlugRoute,
   GuiasSlugRoute: GuiasSlugRoute,
   HubsHubIdRoute: HubsHubIdRoute,

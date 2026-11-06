@@ -57,7 +57,13 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = (data as { error?: { message?: string } | string } | null)?.error;
-    throw new Error(typeof err === "string" ? err : (err?.message ?? `Error ${res.status}`));
+    throw new Error(
+      typeof err === "string"
+        ? err
+        : (err?.message ??
+            (data as { reason?: string } | null)?.reason ??
+            `No se pudo completar la acción (código ${res.status}). Intenta de nuevo.`),
+    );
   }
   return data as T;
 }

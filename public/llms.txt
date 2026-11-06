@@ -3,17 +3,17 @@
 > Plataforma de micromovilidad en Bucaramanga (Colombia): alquiler por minuto y venta de patinetas eléctricas, bicicletas eléctricas y drones de carga, con hubs, desbloqueo por QR + verificación de casco, entrega a domicilio por domiciliarios y alertas IoT. Proyecto académico (UNAB, Ingeniería de Software II) en fase de simulación.
 
 ## Páginas principales
-- [Inicio](https://urban-mobility-hub.pages.dev/): qué es y cómo funciona
-- [Catálogo de venta](https://urban-mobility-hub.pages.dev/catalogo): vehículos con precio en COP, condición y ficha técnica
-- [Hubs](https://urban-mobility-hub.pages.dev/hubs): puntos de recogida, devolución y carga
-- [Preguntas frecuentes](https://urban-mobility-hub.pages.dev/faq): respuestas directas
-- [Guías](https://urban-mobility-hub.pages.dev/guias): contenido explicativo
+- [Inicio](https://urbanmobility.duckdns.org/): qué es y cómo funciona
+- [Catálogo de venta](https://urbanmobility.duckdns.org/catalogo): vehículos con precio en COP, condición y ficha técnica
+- [Hubs](https://urbanmobility.duckdns.org/hubs): puntos de recogida, devolución y carga
+- [Preguntas frecuentes](https://urbanmobility.duckdns.org/faq): respuestas directas
+- [Guías](https://urbanmobility.duckdns.org/guias): contenido explicativo
 
 ## Datos clave
 - Tarifas de alquiler: patineta 450-520 COP/min, bicicleta eléctrica 380 COP/min, dron 1.200 COP/min; prepago de 10.000 COP al reservar y cobro final por minuto (redondeo hacia arriba).
-- Venta de vehículos: desde 4.200.000 COP (bicicleta) hasta 9.800.000 COP (dron de carga); cada pago deja un comprobante con referencia de pasarela.
+- Venta de vehículos: desde 2.890.000 COP hasta 9.800.000 COP (dron de carga); cada pago deja un comprobante con referencia de pasarela.
 - Entrega a domicilio: el operador asigna la reserva a un domiciliario con hora límite; si la entrega se retrasa, cliente y operador reciben aviso por correo.
 - Desbloqueo en 3 pasos: QR, verificación de casco por cámara, iniciar viaje. Alterno: reconocimiento facial con consentimiento expreso.
 - Seguridad IoT: 4 alertas supervisadas por gemelos digitales (sin casco, caída ≥ 3 G, pérdida de GPS > 10 s, batería < 15 %); alerta visible en el panel en menos de 1 s y bitácora auditable.
 - Posición del mapa actualizada en menos de 5 s; panel del operador y mapa leen del mismo gemelo digital.
-- Datos biométricos cifrados y con consentimiento (Ley 1581 de 2012); se puede revocar y eliminar la plantilla.
+- Reconocimiento facial opcional y con consentimiento expreso (Ley 1581 de 2012). En esta versión de demostración la comparación se hace en el dispositivo del usuario; ver /privacidad.

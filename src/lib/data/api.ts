@@ -45,7 +45,12 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = (data as { error?: { code?: string; message?: string } | string } | null)?.error;
-    const message = typeof err === "string" ? err : (err?.message ?? `Error ${res.status}`);
+    const message =
+      typeof err === "string"
+        ? err
+        : (err?.message ??
+          (data as { reason?: string } | null)?.reason ??
+          `No se pudo completar la acción (código ${res.status}). Intenta de nuevo.`);
     const code =
       (typeof err === "object" && err?.code) ||
       (res.status === 401
@@ -324,7 +329,7 @@ export function createApiDataSource(): DataSource {
       } else if (event === "finish") {
         await req(`/api/trips/${id}/end`, { method: "POST" });
       } else {
-        throw new DataError("El viaje inicia desbloqueando el vehículo (UC08)", "conflict");
+        throw new DataError("El viaje inicia desbloqueando el vehículo", "conflict");
       }
       const rows = await req<ReservationRow[]>("/api/reservations");
       const found = rows.find((r) => r.id === id);

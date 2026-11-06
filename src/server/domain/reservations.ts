@@ -3,6 +3,13 @@
 export type ReservationStatus = "requested" | "active" | "completed" | "cancelled";
 export type ReservationEvent = "start" | "finish" | "cancel";
 
+const ESTADO_ES: Record<string, string> = {
+  requested: "solicitada",
+  active: "en curso",
+  completed: "completada",
+  cancelled: "cancelada",
+};
+
 export class InvalidTransitionError extends Error {
   constructor(message = "Transición de reserva no permitida") {
     super(message);
@@ -28,7 +35,7 @@ export function transition<T extends { status: ReservationStatus }>(
   const next = TRANSITIONS[reservation.status][event];
   if (!next) {
     throw new InvalidTransitionError(
-      `No se puede ${event} una reserva en estado ${reservation.status}`,
+      `Esta reserva ya no admite esa acción (estado actual: ${ESTADO_ES[reservation.status] ?? reservation.status}).`,
     );
   }
   return { ...reservation, status: next };

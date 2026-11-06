@@ -32,7 +32,7 @@ export function DeliveriesPanel() {
     return (
       <section className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
         Entregas a domicilio: activa el backend (<code>npm run dev:api</code>) para asignar
-        domiciliarios reales (UC14-UC19).
+        domiciliarios reales.
       </section>
     );
 
@@ -57,7 +57,7 @@ export function DeliveriesPanel() {
   return (
     <section className="space-y-6" data-testid="deliveries-panel" aria-labelledby="deliv-t">
       <h2 id="deliv-t" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-        <Truck className="size-5 text-primary-glow" aria-hidden /> Entregas a domicilio (UC14)
+        <Truck className="size-5 text-primary-glow" aria-hidden /> Entregas a domicilio
       </h2>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -153,7 +153,7 @@ export function DeliveriesPanel() {
 
       <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
-          <Mail className="size-4" aria-hidden /> Bitácora de correos Brevo (UC19)
+          <Mail className="size-4" aria-hidden /> Bitácora de correos Brevo
         </h3>
         {notifications.length === 0 && (
           <p className="text-xs text-muted-foreground">

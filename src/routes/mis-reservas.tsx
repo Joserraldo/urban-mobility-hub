@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarDays, LogOut } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -48,13 +49,18 @@ function MyReservations() {
   const { logout } = useAuthActions();
   const qc = useQueryClient();
 
+  const [acting, setActing] = useState(false);
   const act = async (id: string, event: "start" | "finish" | "cancel") => {
+    if (acting) return;
+    setActing(true);
     try {
       await getDataSource().transitionReservation(id, event);
       void qc.invalidateQueries({ queryKey: keys.reservations });
       toast.success(transitionMessage[event]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo actualizar la reserva");
+    } finally {
+      setActing(false);
     }
   };
 
@@ -119,12 +125,20 @@ function MyReservations() {
                         <div className="flex items-center gap-2">
                           <Badge variant={statusVariant[r.status]}>{statusLabel[r.status]}</Badge>
                           {r.status === "requested" && (
-                            <Button size="sm" onClick={() => void act(r.id, "start")}>
+                            <Button
+                              size="sm"
+                              disabled={acting}
+                              onClick={() => void act(r.id, "start")}
+                            >
                               Iniciar
                             </Button>
                           )}
                           {r.status === "active" && (
-                            <Button size="sm" onClick={() => void act(r.id, "finish")}>
+                            <Button
+                              size="sm"
+                              disabled={acting}
+                              onClick={() => void act(r.id, "finish")}
+                            >
                               Finalizar
                             </Button>
                           )}
@@ -132,6 +146,7 @@ function MyReservations() {
                             <Button
                               size="sm"
                               variant="ghost"
+                              disabled={acting}
                               onClick={() => void act(r.id, "cancel")}
                             >
                               Cancelar

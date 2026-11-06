@@ -118,7 +118,7 @@ export function BuyDialog({
             </p>
             {done.paymentRef && (
               <p className="text-xs text-muted-foreground" data-testid="payment-ref">
-                Pago aprobado · comprobante {done.paymentRef} (tabla payments)
+                Pago aprobado · número de comprobante {done.paymentRef}
               </p>
             )}
             <Link to="/mis-reservas">
@@ -238,7 +238,7 @@ export function ReserveDialog({
             </p>
             {done.paymentRef && (
               <p className="text-xs text-muted-foreground" data-testid="payment-ref">
-                Prepago aprobado · comprobante {done.paymentRef} (tabla payments)
+                Prepago aprobado · número de comprobante {done.paymentRef}
               </p>
             )}
           </div>
@@ -300,6 +300,14 @@ export function ReserveDialog({
                 {error}
               </p>
             )}
+            <p className="text-xs text-muted-foreground" data-testid="prepay-notice">
+              Al confirmar se cobra un prepago de $ 10.000 COP, que se descuenta del cobro final por
+              minuto. Es una simulación: no se mueve dinero real. Ver{" "}
+              <Link to="/terminos" target="_blank" className="underline">
+                términos
+              </Link>
+              .
+            </p>
             <Button
               className="w-full"
               disabled={!me || busy || (modality === "delivery" && !address.trim())}

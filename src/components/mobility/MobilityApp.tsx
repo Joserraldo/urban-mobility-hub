@@ -66,7 +66,7 @@ const BATTERY_FILTERS: [number, string][] = [
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Te mostramos el mapa en 1 minuto",
-    body: "Son seis pasos cortos sobre los controles reales. Puedes saltarlo y volver a verlo con el botón de ayuda.",
+    body: "Son siete pasos cortos sobre los controles reales. Puedes saltarlo y volver a verlo con el botón de ayuda.",
   },
   {
     target: '[data-tour="mode"]',
@@ -156,9 +156,10 @@ export function MobilityApp() {
   const avgBattery = rentals.length
     ? Math.round(rentals.reduce((sum, v) => sum + v.battery, 0) / rentals.length)
     : 0;
+  const n = visibleRentals.filter((v) => v.alert === "ok" && v.status === "available").length;
   const tickerMessages = [
     {
-      text: `${visibleRentals.filter((v) => v.alert === "ok").length} vehículos listos para alquilar`,
+      text: `${n} ${n === 1 ? "vehículo listo" : "vehículos listos"} para alquilar`,
     },
     { text: `${activeHubs} hubs activos en la ciudad` },
     { text: `Batería media de la flota: ${avgBattery} %` },
@@ -221,7 +222,7 @@ export function MobilityApp() {
 
   const findNearest = () => {
     if (mode !== "rent") setMode("rent");
-    const candidates = visibleRentals.filter((v) => v.alert === "ok");
+    const candidates = visibleRentals.filter((v) => v.alert === "ok" && v.status === "available");
     const best = nearest(origin, candidates);
     if (!best) {
       playSound("error");
@@ -547,6 +548,7 @@ export function MobilityApp() {
         <Button
           type="button"
           onClick={findNearest}
+          disabled={loading}
           className="rounded-full bg-gradient-primary px-4 shadow-glow"
           data-testid="btn-nearest"
         >
@@ -570,7 +572,7 @@ export function MobilityApp() {
               className={`relative inline-flex size-2 rounded-full ${live ? "bg-success" : "bg-muted-foreground"}`}
             />
           </span>
-          {visibleRentals.length} vehículos para alquilar
+          {n} {n === 1 ? "vehículo disponible" : "vehículos disponibles"} para alquilar
           {alerts > 0 && <span className="text-destructive">· {alerts} con alerta</span>}
         </p>
         <ul className="mt-3 space-y-1.5 text-muted-foreground">

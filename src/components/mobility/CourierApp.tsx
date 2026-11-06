@@ -178,7 +178,7 @@ export function CourierApp() {
 
       {active.length === 0 && !isLoading && (
         <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          No tienes entregas activas. El operador asigna reservas de domicilio desde /admin (UC14).
+          No tienes entregas activas. El operador asigna reservas de domicilio desde /admin.
         </p>
       )}
 

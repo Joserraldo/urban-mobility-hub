@@ -50,7 +50,7 @@ export function readSessionUser(request: Request): SessionUser | null {
 
 export function requireUser(request: Request): SessionUser {
   const user = readSessionUser(request);
-  if (!user) throw httpError(401, "Inicia sesión para continuar (UC02)");
+  if (!user) throw httpError(401, "Inicia sesión para continuar");
   return user;
 }
 
