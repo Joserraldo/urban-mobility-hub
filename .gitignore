@@ -46,6 +46,13 @@ test-results/
 .env.*
 !.env.example
 
+# Llaves SSH y certificados (nunca al repositorio)
+*.pem
+*.key
+*.ppk
+id_rsa*
+id_ed25519*
+
 /data/
 !.env.api
 

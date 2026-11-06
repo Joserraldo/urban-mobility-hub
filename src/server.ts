@@ -8,6 +8,25 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+let apiHandlerPromise: Promise<(typeof import("./server/api/handlers"))["handle"]> | undefined;
+
+/**
+ * Backend REST en el build de producción (Node/VM). En desarrollo lo monta el
+ * plugin de Vite; aquí interceptamos `/api/*` ANTES del SSR para que el mismo
+ * `handle()` (SQLite + SSE) funcione también con `node .output/server/index.mjs`.
+ */
+async function getApiHandler(): Promise<(typeof import("./server/api/handlers"))["handle"]> {
+  if (!apiHandlerPromise) {
+    apiHandlerPromise = Promise.all([
+      import("./server/api/handlers"),
+      import("./server/services/fleet-sim"),
+    ]).then(([api, sim]) => {
+      sim.startSimulator();
+      return api.handle;
+    });
+  }
+  return apiHandlerPromise;
+}
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -47,6 +66,11 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const { pathname } = new URL(request.url);
+      if (pathname.startsWith("/api/")) {
+        const api = await getApiHandler();
+        return await api(request);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

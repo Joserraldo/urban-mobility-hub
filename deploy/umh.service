@@ -1,0 +1,22 @@
+[Unit]
+Description=Urban Mobility Hub (TanStack Start + API SQLite)
+After=network.target
+
+[Service]
+Type=simple
+User=umh
+Group=umh
+WorkingDirectory=/opt/umh
+EnvironmentFile=/etc/umh/umh.env
+ExecStart=/usr/bin/node /opt/umh/.output/server/index.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/umh
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
