@@ -14,3 +14,10 @@ No modifica la app de producción: solo lee su SQLite en modo lectura.
 Respaldos previos al despliegue: `/opt/umh-backup-<fecha>/` (output, datos, nginx, env).
 
 Revertir el parche: copiar `output/server/_ssr/handlers-*.mjs` del respaldo a `/opt/umh/.output/server/_ssr/` y `systemctl restart umh`.
+
+## WebSocket de la cámara
+
+`wss://<servidor>/api/camera/ws` (nginx `location = /api/camera/ws` con Upgrade; cabeceras `x-ingest-key` y `x-device-id`).
+Mensaje binario = JPEG; el servidor responde texto `{"h","c","n"}` al terminar cada análisis y cuando cambia el ritmo
+(60 ms durante un desbloqueo, 1500 ms en reposo). El `POST /api/camera/frame` sigue disponible como respaldo.
+El bundle se compila con `--external:bufferutil --external:utf-8-validate` además de onnxruntime-node y sharp.
