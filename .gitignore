@@ -60,3 +60,6 @@ id_ed25519*
 entregables/_tools/plantuml.jar
 entregables/diagramas/plantuml.jar
 .lighthouseci/
+
+# Grafo local de graphify (regenerable con: graphify update .)
+graphify-out/
