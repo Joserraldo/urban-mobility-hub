@@ -3,6 +3,8 @@
 # Uso: powershell -File entregables\diagramas\generar.ps1
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
-java -jar plantuml.jar -tpng -o ../img fuentes/*.puml
-java -jar plantuml.jar -tsvg -o ../img fuentes/*.puml
+$jar = if (Test-Path plantuml.jar) { "plantuml.jar" } else { "../_tools/plantuml.jar" }
+$layout = if (Get-Command dot -ErrorAction SilentlyContinue) { @() } else { @("-Playout=smetana") }
+java -jar $jar @layout -tpng -o ../img fuentes/*.puml
+java -jar $jar @layout -tsvg -o ../img fuentes/*.puml
 Write-Host "Listo: imagenes en $PSScriptRoot\img"
