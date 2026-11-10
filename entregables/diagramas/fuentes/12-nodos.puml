@@ -1,57 +1,89 @@
 @startuml 12-nodos
 !include estilo.iuml
-title Diagrama de nodos — Dónde corre cada parte
+title Diagrama de nodos — Dispositivos, servidores y cómo se comunican
 left to right direction
+skinparam packageStyle folder
 skinparam node {
   BackgroundColor #F7F9FC
   BorderColor #1B2A41
 }
 
-node "Celular o computador del usuario" <<dispositivo>> #E8F1FB {
-  node "Navegador" {
-    artifact "App web (pantallas)" as pwa
-    artifact "Modelo de IA de casco" as onnx
+' ================= DISPOSITIVOS =================
+node "Celular del usuario" <<dispositivo>> as celU #E8F1FB {
+  node "Navegador móvil" as navU {
+    artifact "App web (landing, mapa,\nreservas, pago)" as appU
+    artifact "Modelo de IA de casco\n+ cámara" as onnx
+  }
+}
+node "Computador del usuario" <<dispositivo>> as pcU #E8F1FB {
+  node "Navegador de escritorio" as navPc {
+    artifact "App web" as appPc
+  }
+}
+node "Celular del domiciliario" <<dispositivo>> as celD #E8F1FB {
+  node "Navegador móvil " as navD {
+    artifact "App de entregas\n(/entregas)" as appD
+  }
+}
+node "Computador del operador" <<dispositivo>> as pcO #E8F1FB {
+  node "Navegador de escritorio " as navO {
+    artifact "Panel de administración\n(/admin)" as appO
+  }
+}
+node "Vehículo alquilado (patineta, bici, dron)" <<dispositivo>> as veh #FDEBD0 {
+  node "Dispositivo IoT (uno por vehículo)" <<dispositivo>> as iot {
+    artifact "GPS + batería + sensor de caída\n+ lector de casco + candado\n(simulado por ahora)" as sensores
   }
 }
 
-node "Computador del equipo (hoy)" <<dispositivo>> #E9F7EC {
-  node "Servidor local (puerto 8080)" {
-    artifact "Peticiones + eventos en vivo\n+ simulador de flota" as devapi
-    artifact "Base de datos (umh.db)" as devdb
+' ================= SERVIDOR (VM) =================
+node "Máquina virtual Azure (Ubuntu 24.04)" <<servidor>> as vm #E9F7EC {
+  node "Nginx (HTTPS 443, Let's Encrypt)" as nginx {
+    artifact "Proxy inverso\n+ certificado" as proxy
   }
-}
-
-cloud "Nube Cloudflare (previsto, aun sin publicar)" #FFF4E0 {
-  node "Servidor en la nube" {
-    artifact "Pantallas + peticiones" as worker
+  node "Servicio umh (Node 24, puerto 8080)" as svc {
+    artifact "Pantallas (SSR) + API /api/*" as api
+    artifact "Eventos en vivo (SSE)\n+ simulador de flota" as sse
+    artifact "Cliente de pagos Bold\n+ receptor de webhook" as boldsvc
   }
-  node "Coordinador de eventos en vivo" as dofh
-  database "Base de datos en la nube" as d1
-  node "Entrega de archivos estaticos" as cdn
+  database "SQLite (umh.db)" as db
 }
 
-node "GitHub (automatizacion)" #EEEEEE {
-  artifact "Pruebas y publicacion automatica" as wf
-}
-
-node "Servicios de terceros" #F3E8FB {
-  node "Brevo (envio de correos)" as brevo
+' ================= TERCEROS =================
+node "Servicios de terceros" as terceros #F3E8FB {
+  cloud "Bold (pasarela de pagos)\nllaves de prueba" as bold #F3E8FB {
+    node "API de links de pago" as boldapi
+    node "Checkout de Bold" as checkout
+  }
+  node "Brevo (correo)" as brevo
   node "OpenStreetMap (mapas)" as osm
 }
+node "GitHub (CI/CD)" <<tercero>> as gh #EEEEEE
 
-pwa --> devapi : internet local (hoy)
-pwa ..> worker : internet (previsto)
-pwa --> osm : descarga mapas
-devapi --> devdb : guarda datos
-devapi --> brevo : envia correos
-worker --> d1 : guarda datos
-worker --> dofh : eventos en vivo
-worker --> brevo : envia correos
-cdn ..> pwa : entrega la app y el modelo
-wf ..> worker : publica (previsto)
+' ================= COMUNICACIÓN =================
+appU --> proxy : HTTPS\npáginas + REST
+appPc --> proxy : HTTPS
+appD --> proxy : HTTPS
+appO --> proxy : HTTPS
+proxy --> api : HTTP local\n127.0.0.1:8080
+api --> db : SQL (node:sqlite)
+sse ..> appU : SSE (eventos en vivo)
+sse ..> appO : SSE (alertas)
+sensores --> proxy : HTTPS\nPOST /api/ingest (telemetría)\nrecibe orden de desbloqueo
+onnx -[hidden]- appU
+
+boldsvc --> boldapi : HTTPS\nPOST /online/link/v1
+appU ..> checkout : redirección HTTPS\n(pagar)
+checkout ..> appU : vuelve a\n/pago/resultado
+checkout ..> proxy : webhook HTTPS firmado\nPOST /api/payments/bold/webhook
+api --> brevo : API HTTPS\n(avisos de retraso)
+appU --> osm : HTTPS\n(mosaicos de mapa)
+gh ..> vm : scp + systemctl\n(despliegue manual)
 
 legend right
-  Linea continua = ya funciona hoy.
-  Linea punteada = previsto.
+  Línea continua = comunicación directa.
+  Línea punteada = redirección, evento o aviso.
+  Los dispositivos nunca hablan con Bold ni con la base de datos:
+  todo pasa por el servicio umh. Bold solo avisa por el webhook firmado.
 endlegend
 @enduml
