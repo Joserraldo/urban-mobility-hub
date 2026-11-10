@@ -1,0 +1,135 @@
+@startuml 19-secuencia-integral
+!include ../../_tools/uml-style.iuml
+title Secuencia integral — del landing al control y a la tabla (boundary → control → entity)
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 220
+
+actor Cliente as C
+actor Operador as O
+boundary "Landing\n/ (Landing.tsx)" as LAND
+boundary "Portal /app\nAuthForm · MobilityApp · UnlockFlow" as APP
+boundary "Panel /admin" as ADM
+boundary "Simulador de flota\n(gemelo digital)" as SIM
+boundary "API REST\nhandlers.ts · handle()" as API
+control "SessionService\nsessions.ts" as SES
+control "ReservationRules\ndomain/reservations.ts" as RR
+control "PaymentController\n+ PasarelaPagos" as PAY
+control "UnlockService\ndomain/unlock.ts" as UL
+control "SecurityTrigger\ndomain/alerts.ts" as ST
+control "FleetService\nfleet-sim.ts" as FS
+control "StreamHub\n(SSE /api/stream)" as SSE
+entity "users\nconsents" as TU
+entity "vehicles\nhubs" as TV
+entity "reservations" as TR
+entity "purchases\npayments" as TP
+entity "unlock_sessions" as TUN
+entity "alert_log" as TA
+
+== 1. Landing: el cliente explora ==
+C -> LAND: abre "/"
+LAND -> API: GET /api/vehicles?mode=sale|rent · GET /api/hubs
+API -> TV: SELECT vehicles, hubs (+COUNT ocupados)
+TV --> LAND: catálogo y hubs
+C -> LAND: pulsa "Probar la app" / "Comprar"
+LAND -> APP: navega a /registro, /login o /app
+
+== 2. Registro e inicio de sesión (UC01/UC02) ==
+C -> APP: AuthForm: nombre, correo, clave, consentimiento
+APP -> API: POST /api/auth/register
+API -> TU: SELECT users (byEmail)
+API -> TU: INSERT users (password_hash) + INSERT consents (datos_personales)
+API -> SES: createSession(userId)
+SES --> APP: cookie umh_session (httpOnly, HMAC, 24 h)
+
+== 3. Compra (UC04 → UC18) ==
+C -> APP: BuyDialog: elige vehículo en venta
+APP -> API: POST /api/purchases {vehicleId}
+API -> SES: requireUser()
+API -> TV: SELECT vehicles (mode=sale, available)
+API -> TP: INSERT purchases (pending)
+APP -> API: POST /api/payments {purchaseId}
+API -> PAY: payPurchase() → charge()
+alt aprobado
+  PAY -> TP: INSERT payments (approved) · UPDATE purchases (paid)
+  PAY -> TV: UPDATE vehicles (sold)
+else rechazado
+  PAY -> TP: INSERT payments (rejected) · UPDATE purchases (failed)
+end
+
+== 4. Reserva de alquiler (UC05 → UC18) ==
+C -> APP: ReserveDialog: modalidad hub o domicilio
+APP -> API: POST /api/reservations {vehicleId, modality}
+API -> SES: requireUser()
+API -> TV: SELECT vehicles (mode=rent, available)
+API -> TR: INSERT reservations (requested)
+APP -> API: POST /api/payments {reservationId}
+API -> PAY: payReservation() → charge(base)
+PAY -> TP: INSERT payments (base, approved)
+PAY -> TV: UPDATE vehicles (reserved)
+
+== 5. Desbloqueo del vehículo (UC08/UC09) ==
+C -> APP: UnlockFlow: "Desbloquear"
+APP -> API: POST /api/unlock/sessions
+API -> UL: createUnlockSession()
+UL -> TR: SELECT reservations (requested)
+UL -> TUN: INSERT unlock_sessions (step=qr, expira 120 s)
+C -> APP: escanea QR
+APP -> API: POST /api/unlock/sessions/:id/qr
+API -> UL: scanQr(code)
+UL -> TUN: UPDATE step=helmet (o denied/expired)
+C -> APP: casco detectado en el navegador
+APP -> API: POST /api/unlock/sessions/:id/helmet {confidence}
+API -> UL: verifyHelmet()
+UL -> TUN: UPDATE step=ready (confidence ≥ 0.80) o denied
+opt rostro (RF-10)
+  APP -> API: POST /api/unlock/sessions/:id/face {score}
+  API -> UL: verifyFace()
+  UL -> TU: SELECT biometric_templates + consents vigentes
+end
+C -> APP: "Iniciar viaje"
+APP -> API: POST /api/unlock/sessions/:id/start
+API -> UL: canStartTrip()
+API -> TR: UPDATE reservations (active, started_at)
+API -> TV: UPDATE vehicles (in_use)
+
+== 6. Telemetría y alertas durante el viaje (UC20/UC12/UC11) ==
+SIM -> API: POST /api/ingest {lat, lng, battery, helmetOn, impactG, gpsFixAgeMs}
+API -> FS: applyTelemetry(t, origin)
+FS -> ST: evaluateTelemetry(t)
+ST --> FS: tipo (caída > sin casco > GPS > batería | ok)
+alt hay alerta (RNF-02 < 1 s)
+  FS -> TV: UPDATE vehicles (alert_state)
+  FS -> TA: INSERT alert_log (origin=telemetry)
+  FS -> SSE: emit alert
+else sin novedad (RNF-01 ≤ 5 s)
+  FS -> TV: UPDATE vehicles (lat, lng, battery)
+  FS -> SSE: emit position
+end
+SSE --> ADM: eventos en vivo (EventSource)
+O -> ADM: ve alerta roja; puede simular otra
+ADM -> API: POST /api/admin/simulate-alert
+API -> SES: requireRole(operator)
+API -> FS: applyTelemetry(t, simulator)
+
+== 7. Cierre de viaje y cobro por minuto (UC18) ==
+C -> APP: "Terminar viaje" (MisReservas)
+APP -> API: POST /api/trips/:id/end
+API -> SES: requireUser() (dueño)
+API -> TR: SELECT reservations (active)
+API -> RR: rentalCost(started_at, rate_per_min)
+API -> PAY: charge(total)
+PAY -> TP: INSERT payments (cargo_viaje)
+API -> TR: UPDATE reservations (completed, total_cost_cop)
+API -> TV: UPDATE vehicles (available)
+API --> APP: "Gracias. Total: $X COP"
+
+== 8. Entrega a domicilio y retraso (UC14–UC19) ==
+O -> ADM: asigna domiciliario a reserva delivery
+ADM -> API: POST /api/deliveries {reservationId, courierId, deadlineAt}
+API -> TR: SELECT reservations (delivery, requested)
+API -> TP: INSERT deliveries (assigned)
+note right of TP: tabla deliveries
+FS -> FS: checkLate() cada 20 s
+FS -> TP: UPDATE deliveries (late) si now > deadline_at
+FS -> TP: INSERT notifications (entrega_tardia, vía brevo.ts)
+@enduml

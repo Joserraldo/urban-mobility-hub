@@ -1,0 +1,253 @@
+classDiagram
+  direction LR
+
+  %% ---------- Enumeraciones (tipos del dominio, ver src/shared/types/domain.ts) ----------
+  class VehicleKind {
+    <<enumeration>>
+    scooter
+    bike
+    drone
+  }
+  class VehicleMode {
+    <<enumeration>>
+    rent
+    sale
+  }
+  class VehicleStatus {
+    <<enumeration>>
+    available
+    reserved
+    in-use
+    sold
+    offline
+  }
+  class AlertType {
+    <<enumeration>>
+    ok
+    no-helmet
+    crash
+    gps-lost
+    low-battery
+  }
+  class ActiveAlertType {
+    <<enumeration>>
+    no-helmet
+    crash
+    gps-lost
+    low-battery
+  }
+  class ReservationStatus {
+    <<enumeration>>
+    requested
+    active
+    completed
+    cancelled
+  }
+  class RentalModality {
+    <<enumeration>>
+    hub
+    delivery
+  }
+  class PaymentMethod {
+    <<enumeration>>
+    card
+    pse
+    cash
+  }
+  class UserRole {
+    <<enumeration>>
+    user
+    operator
+  }
+  class UnlockStep {
+    <<enumeration>>
+    qr
+    helmet
+    ready
+    denied
+    expired
+  }
+
+  %% ---------- Entidades (<<entity>>): información del dominio que persiste ----------
+  class User {
+    <<entity>>
+    +string id
+    +string email
+    +string passwordHash
+    +UserRole role
+    +register()
+    +login()
+  }
+  class Consent {
+    <<entity>>
+    +string userId
+    +string purpose
+    +Date acceptedAt
+    +bool revoked
+  }
+  class BiometricTemplate {
+    <<entity>>
+    +string userId
+    +bytes cipherText
+    +bytes iv
+    +encrypt()
+    +matches(probe) bool
+  }
+  class Vehicle {
+    <<entity>>
+    +string id
+    +VehicleKind kind
+    +VehicleMode mode
+    +VehicleStatus status
+    +int battery
+    +number lat
+    +number lng
+    +AlertType alert
+    +bool delivery
+    +updateTelemetry()
+  }
+  class Hub {
+    <<entity>>
+    +string id
+    +string name
+    +string zone
+    +number lat
+    +number lng
+    +int capacity
+    +int occupied
+    +int charging
+    +bool active
+  }
+  class Reservation {
+    <<entity>>
+    +string id
+    +string userId
+    +string vehicleId
+    +RentalModality modality
+    +ReservationStatus status
+    +string address
+    +number totalCost
+    +start()
+    +finish()
+    +cancel()
+  }
+  class Purchase {
+    <<entity>>
+    +string id
+    +string userId
+    +string vehicleId
+    +int price
+    +PaymentMethod paymentMethod
+    +Date createdAt
+  }
+  class AlertEvent {
+    <<entity>>
+    +string id
+    +string vehicleId
+    +ActiveAlertType type
+    +number lat
+    +number lng
+    +number ts
+  }
+  class UnlockSession {
+    <<entity>>
+    +string id
+    +string vehicleId
+    +UnlockStep step
+    +number expiresAt
+  }
+
+  %% ---------- Fronteras (<<boundary>>): puntos de contacto con el exterior ----------
+  class DataSource {
+    <<interface>>
+    +listVehicles(filter) Vehicle[]
+    +listHubs() Hub[]
+    +subscribeFleet(onEvent) Unsubscribe
+    +createReservation(input) Reservation
+    +createUnlockSession(vehicleId) UnlockSession
+    +triggerAlert(input) AlertEvent
+  }
+  class MockDataSource {
+    <<boundary>>
+  }
+  class ApiDataSource {
+    <<boundary>>
+  }
+  class RestApi {
+    <<boundary>>
+    +listVehicles()
+    +createReservation()
+    +createUnlockSession()
+  }
+  class FleetRepository {
+    <<interface>>
+    +listVehicles() Vehicle[]
+    +appendAlert(a) AlertEvent
+  }
+  class SqliteFleetRepository {
+    <<boundary>>
+  }
+  class PaymentGateway {
+    <<interface>>
+    +string name
+    +charge(input) ChargeResult
+  }
+  class SimulatedGateway {
+    <<boundary>>
+  }
+
+  %% ---------- Controladores (<<control>>): lógica que orquesta entidades y fronteras ----------
+  class SecurityTrigger {
+    <<interface>>
+    +evaluate(v) AlertType
+  }
+  class NoHelmetTrigger {
+    <<control>>
+  }
+  class FallTrigger {
+    <<control>>
+  }
+  class GpsLossTrigger {
+    <<control>>
+  }
+  class LowBatteryTrigger {
+    <<control>>
+  }
+  class UnlockService {
+    <<control>>
+    +scanQr(sessionId, code) UnlockSession
+    +verifyHelmet(sessionId, result) UnlockSession
+    +verifyFace(sessionId, result) UnlockSession
+    +startTrip(sessionId) Reservation
+  }
+
+  %% ---------- Relaciones de dominio ----------
+  User "1" --> "*" Reservation : reserva
+  User "1" --> "*" Purchase : compra
+  User "1" --> "*" Consent : otorga
+  User "1" --> "0..1" BiometricTemplate : tiene
+  Vehicle "1" --> "*" Reservation : se reserva en
+  Vehicle "1" --> "0..1" Purchase : se vende en
+  Vehicle "*" --> "0..1" Hub : asignado a
+  Vehicle "1" --> "*" AlertEvent : genera
+
+  %% ---------- Relaciones de interfaces y adaptadores ----------
+  DataSource <|.. MockDataSource
+  DataSource <|.. ApiDataSource
+  ApiDataSource ..> RestApi : "HTTP/REST"
+  RestApi ..> FleetRepository : usa
+  FleetRepository <|.. SqliteFleetRepository
+
+  %% ---------- Relaciones de pagos ----------
+  PaymentGateway <|.. SimulatedGateway
+  PaymentGateway ..> Purchase : "resultado del cobro"
+
+  %% ---------- Relaciones de seguridad y desbloqueo ----------
+  SecurityTrigger <|.. NoHelmetTrigger
+  SecurityTrigger <|.. FallTrigger
+  SecurityTrigger <|.. GpsLossTrigger
+  SecurityTrigger <|.. LowBatteryTrigger
+  SecurityTrigger ..> AlertEvent : produce
+  UnlockService ..> UnlockSession : avanza
+  UnlockService ..> FleetRepository : usa
+  UnlockService ..> BiometricTemplate : usa
