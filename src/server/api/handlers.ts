@@ -35,6 +35,7 @@ import { getGateway } from "../services/pasarela";
 import { applyTelemetry, markLate } from "../services/fleet-sim";
 import { stream } from "../services/stream";
 import { cameraRequired, cameraStream, cameraVerdict } from "../services/camera";
+import { vehicleQrPayload, vehicleQrSvg } from "../services/qr";
 
 const ALERT_OUT: Record<string, string> = {
   ok: "ok",
@@ -229,6 +230,18 @@ export async function handle(request: Request): Promise<Response> {
     if (method === "GET" && path === "/api/vehicles") {
       const mode = url.searchParams.get("mode");
       return ok(repos.vehicles.list(mode ? { mode } : undefined).map(toClientVehicle));
+    }
+    // QR imprimible del vehículo (se pega en el manubrio). Su contenido no es secreto: es UMH:<id>.
+    const qrMatch = path.match(/^\/api\/vehicles\/([^/]+)\/qr\.svg$/);
+    if (method === "GET" && qrMatch?.[1]) {
+      const v = repos.vehicles.byId(decodeURIComponent(qrMatch[1]));
+      if (!v) throw httpError(404, "Vehículo no encontrado");
+      return new Response(await vehicleQrSvg(v.qr_code || vehicleQrPayload(v.id)), {
+        headers: {
+          "content-type": "image/svg+xml; charset=utf-8",
+          "cache-control": "public, max-age=3600",
+        },
+      });
     }
     const vehicleMatch = path.match(/^\/api\/vehicles\/([^/]+)$/);
     if (method === "GET" && vehicleMatch?.[1]) {
@@ -449,7 +462,7 @@ export async function handle(request: Request): Promise<Response> {
       let helmetSource: "camera" | "client" | undefined;
       if (action === "qr") {
         const b = await body<QrBody>(request);
-        updated = scanQr(session, String(b.code ?? ""), now);
+        updated = scanQr(session, String(b.code ?? "").trim(), now);
       } else if (action === "helmet") {
         const b = await body<HelmetBody>(request);
         // Cámara del vehículo (ESP32-CAM + umh-vision): si hay fotograma reciente, su veredicto manda y lo que

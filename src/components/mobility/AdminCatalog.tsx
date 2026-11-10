@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, QrCode, Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -328,6 +328,15 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
                   >
                     <Pencil className="size-4" />
                   </Button>
+                  <a
+                    href={`/api/vehicles/${encodeURIComponent(v.id)}/qr.svg`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Ver QR imprimible de ${v.id}`}
+                    className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+                  >
+                    <QrCode className="size-4" aria-hidden />
+                  </a>
                   {v.status !== "sold" && (
                     <select
                       aria-label={`Estado de ${v.id}`}

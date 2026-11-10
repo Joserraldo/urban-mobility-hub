@@ -88,7 +88,10 @@ declare global {
   }
 }
 
-/** Lee códigos QR de la cámara con la API nativa BarcodeDetector (si el navegador la ofrece). */
+/**
+ * Lee códigos QR de la cámara. Usa BarcodeDetector (nativo, rápido) si el navegador lo ofrece y, si no
+ * (Chrome de escritorio, Firefox, Safari), decodifica los fotogramas con jsQR: el escaneo funciona en todos.
+ */
 export function useQrScanner(
   video: React.RefObject<HTMLVideoElement | null>,
   active: boolean,
@@ -96,23 +99,51 @@ export function useQrScanner(
 ) {
   const cb = useRef(onCode);
   cb.current = onCode;
-  const supported = typeof window !== "undefined" && "BarcodeDetector" in window;
+  const native = typeof window !== "undefined" && "BarcodeDetector" in window;
   useEffect(() => {
-    if (!active || !supported || !window.BarcodeDetector) return;
-    const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+    if (!active || typeof window === "undefined") return;
+    let alive = true;
+    const detector =
+      native && window.BarcodeDetector
+        ? new window.BarcodeDetector({ formats: ["qr_code"] })
+        : null;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let busy = false;
     const id = window.setInterval(async () => {
       const el = video.current;
-      if (!el || !el.videoWidth) return;
+      if (busy || !alive || !el || !el.videoWidth) return;
+      busy = true;
       try {
-        const [hit] = await detector.detect(el);
-        if (hit) cb.current(hit.rawValue);
+        if (detector) {
+          const [hit] = await detector.detect(el);
+          if (hit && alive) cb.current(hit.rawValue);
+        } else if (ctx) {
+          // jsQR: se reduce el fotograma a ≤640 px de ancho para que cada pasada sea rápida
+          const scale = Math.min(1, 640 / el.videoWidth);
+          canvas.width = Math.round(el.videoWidth * scale);
+          canvas.height = Math.round(el.videoHeight * scale);
+          ctx.drawImage(el, 0, 0, canvas.width, canvas.height);
+          const { decodeQr } = await import("./qr");
+          const text = decodeQr(
+            ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+            canvas.width,
+            canvas.height,
+          );
+          if (text && alive) cb.current(text);
+        }
       } catch {
         /* frame no legible: se reintenta */
+      } finally {
+        busy = false;
       }
-    }, 400);
-    return () => window.clearInterval(id);
-  }, [active, supported, video]);
-  return supported;
+    }, 300);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [active, native, video]);
+  return true; // siempre se puede leer QR con la cámara (nativo o jsQR)
 }
 
 /**
