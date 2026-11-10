@@ -13,7 +13,7 @@ export const TERMINOS: LegalSection[] = [
   {
     h: "2. Pagos y prepago",
     p: [
-      "El alquiler exige un prepago de $ 10.000 COP al reservar y un cobro final por minuto de uso. En esta fase todos los pagos son simulados y no generan cargo en ninguna tarjeta ni cuenta.",
+      "El alquiler exige un prepago de $ 10.000 COP al reservar y un cobro final por minuto de uso. En esta fase los pagos se procesan en modo de pruebas con la pasarela Bold (o de forma simulada) y no generan cargo real en ninguna tarjeta ni cuenta.",
       "Si un servicio comercial real llegara a operar, el prepago se descontaría del cobro final y se informaría antes de confirmar cada reserva.",
     ],
   },
@@ -21,7 +21,7 @@ export const TERMINOS: LegalSection[] = [
     h: "3. Cancelaciones",
     p: [
       "Puedes cancelar una reserva desde «Mis reservas» mientras no hayas iniciado el viaje. La reserva solicitada vence si no se desbloquea el vehículo a tiempo.",
-      "Como los pagos son simulados, no hay reembolsos monetarios en esta fase.",
+      "Como los pagos son de prueba, no hay reembolsos monetarios en esta fase.",
     ],
   },
   {
@@ -48,7 +48,7 @@ export const PRIVACIDAD: LegalSection[] = [
   {
     h: "2. Datos que tratamos y para qué",
     p: [
-      "Nombre, correo y contraseña (almacenada con hash) para crear tu cuenta; historial de reservas, pagos simulados y viajes para prestar el servicio; telemetría del vehículo (posición, batería) durante el viaje.",
+      "Nombre, correo y contraseña (almacenada con hash) para crear tu cuenta; historial de reservas, pagos de prueba y viajes para prestar el servicio; telemetría del vehículo (posición, batería) durante el viaje.",
       "Tratamos tus datos conforme a la Ley 1581 de 2012 de Colombia. No los vendemos ni los compartimos con terceros distintos al servicio de correo que envía avisos de entrega.",
     ],
   },
