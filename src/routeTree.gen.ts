@@ -26,6 +26,7 @@ import { Route as GuiasIndexRouteImport } from './routes/guias.index'
 import { Route as GuiasSlugRouteImport } from './routes/guias.$slug'
 import { Route as HubsIndexRouteImport } from './routes/hubs.index'
 import { Route as HubsHubIdRouteImport } from './routes/hubs.$hubId'
+import { Route as PagoResultadoRouteImport } from './routes/pago.resultado'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,11 @@ const HubsHubIdRoute = HubsHubIdRouteImport.update({
   path: '/hubs/$hubId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PagoResultadoRoute = PagoResultadoRouteImport.update({
+  id: '/pago/resultado',
+  path: '/pago/resultado',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
+  '/pago/resultado': typeof PagoResultadoRoute
   '/catalogo/': typeof CatalogoIndexRoute
   '/guias/': typeof GuiasIndexRoute
   '/hubs/': typeof HubsIndexRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
+  '/pago/resultado': typeof PagoResultadoRoute
   '/catalogo': typeof CatalogoIndexRoute
   '/guias': typeof GuiasIndexRoute
   '/hubs': typeof HubsIndexRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
+  '/pago/resultado': typeof PagoResultadoRoute
   '/catalogo/': typeof CatalogoIndexRoute
   '/guias/': typeof GuiasIndexRoute
   '/hubs/': typeof HubsIndexRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
+    | '/pago/resultado'
     | '/catalogo/'
     | '/guias/'
     | '/hubs/'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
+    | '/pago/resultado'
     | '/catalogo'
     | '/guias'
     | '/hubs'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
+    | '/pago/resultado'
     | '/catalogo/'
     | '/guias/'
     | '/hubs/'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   CatalogoSlugRoute: typeof CatalogoSlugRoute
   GuiasSlugRoute: typeof GuiasSlugRoute
   HubsHubIdRoute: typeof HubsHubIdRoute
+  PagoResultadoRoute: typeof PagoResultadoRoute
   CatalogoIndexRoute: typeof CatalogoIndexRoute
   GuiasIndexRoute: typeof GuiasIndexRoute
   HubsIndexRoute: typeof HubsIndexRoute
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HubsHubIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pago/resultado': {
+      id: '/pago/resultado'
+      path: '/pago/resultado'
+      fullPath: '/pago/resultado'
+      preLoaderRoute: typeof PagoResultadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -390,6 +410,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoSlugRoute: CatalogoSlugRoute,
   GuiasSlugRoute: GuiasSlugRoute,
   HubsHubIdRoute: HubsHubIdRoute,
+  PagoResultadoRoute: PagoResultadoRoute,
   CatalogoIndexRoute: CatalogoIndexRoute,
   GuiasIndexRoute: GuiasIndexRoute,
   HubsIndexRoute: HubsIndexRoute,
