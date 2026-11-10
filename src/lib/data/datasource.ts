@@ -66,8 +66,11 @@ export interface DataSource {
 
   // Gestión de catálogo y hubs por el operador (H7)
   saveVehicle(vehicle: Vehicle): Promise<Vehicle>;
-  /** Sin historial se elimina; con historial (reservas, compras, desbloqueos) se da de baja y conserva sus datos. */
-  deleteVehicle(id: string): Promise<{ retired: boolean }>;
+  /** El operador cambia el ESTADO de uso de un vehículo (no se borran). Liberarlo cancela sus reservas abiertas. */
+  setVehicleStatus(
+    id: string,
+    status: "available" | "reserved" | "in_use" | "offline",
+  ): Promise<{ vehicle: Vehicle; cancelled: number }>;
   saveHub(hub: Hub): Promise<Hub>;
   deleteHub(id: string): Promise<void>;
 }

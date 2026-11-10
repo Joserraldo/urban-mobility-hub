@@ -202,18 +202,7 @@ export const repos = {
     remove(id: string) {
       run("DELETE FROM vehicles WHERE id = ?", id);
     },
-    /** ¿Tiene reservas, compras, sesiones de desbloqueo o alertas? Con historial no se puede borrar (clave foránea). */
-    hasHistory(id: string): boolean {
-      return (
-        (row<{ n: number }>(
-          `SELECT (SELECT COUNT(*) FROM reservations WHERE vehicle_id = ?1)
-                + (SELECT COUNT(*) FROM purchases WHERE vehicle_id = ?1)
-                + (SELECT COUNT(*) FROM unlock_sessions WHERE vehicle_id = ?1)
-                + (SELECT COUNT(*) FROM alert_log WHERE vehicle_id = ?1) AS n`,
-          id,
-        )?.n ?? 0) > 0
-      );
-    },
+
     updateLive(id: string, lat: number, lng: number, battery: number, alertState: string) {
       run(
         "UPDATE vehicles SET lat=?, lng=?, battery=?, alert_state=? WHERE id=?",
@@ -373,6 +362,13 @@ export const repos = {
       return rows<ReservationRow>(
         "SELECT * FROM reservations WHERE user_id = ? ORDER BY requested_at DESC",
         userId,
+      );
+    },
+    /** Reservas abiertas (solicitada o en curso) de un vehículo. */
+    openByVehicle(vehicleId: string): ReservationRow[] {
+      return rows<ReservationRow>(
+        "SELECT * FROM reservations WHERE vehicle_id = ? AND status IN ('requested','active')",
+        vehicleId,
       );
     },
     pendingDeliveries() {

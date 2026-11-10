@@ -11,6 +11,14 @@ import { keys } from "@/lib/data/queries";
 import type { Hub, Vehicle, VehicleKind, VehicleMode } from "@/lib/data/types";
 import { formatCOP, kindLabel } from "@/lib/format";
 
+type VehicleStatusChoice = "available" | "reserved" | "in_use" | "offline";
+const STATUS_CHOICES: Record<VehicleStatusChoice, string> = {
+  available: "Disponible",
+  reserved: "Reservado",
+  in_use: "En uso",
+  offline: "Fuera de servicio",
+};
+
 // Gestión de catálogo y hubs por el operador (UC13 / RF-23, RF-24): crear, editar y retirar.
 // RNF-08: agregar no exige cambios de modelo.
 
@@ -109,15 +117,25 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
     }
   };
 
-  const remove = async (kind: "vehicle" | "hub", id: string) => {
+  const remove = async (id: string) => {
     try {
-      const { retired } =
-        kind === "vehicle"
-          ? await ds.deleteVehicle(id)
-          : (await ds.deleteHub(id), { retired: false });
+      await ds.deleteHub(id);
+      await refresh();
+      toast.success(`${id} eliminado`);
+    } catch (err) {
+      fail(err);
+    }
+  };
+
+  // Los vehículos no se borran: el operador cambia su estado de uso (liberar cancela sus reservas abiertas).
+  const changeStatus = async (id: string, status: VehicleStatusChoice) => {
+    try {
+      const { cancelled } = await ds.setVehicleStatus(id, status);
       await refresh();
       toast.success(
-        retired ? `${id} dado de baja (conserva su historial de reservas)` : `${id} eliminado`,
+        cancelled > 0
+          ? `${id}: estado cambiado. Se cancelaron ${cancelled} reserva(s) abierta(s)`
+          : `${id}: estado cambiado`,
       );
     } catch (err) {
       fail(err);
@@ -310,14 +328,23 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
                   >
                     <Pencil className="size-4" />
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Eliminar ${v.id}`}
-                    onClick={() => void remove("vehicle", v.id)}
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
+                  {v.status !== "sold" && (
+                    <select
+                      aria-label={`Estado de ${v.id}`}
+                      data-testid={`vehicle-status-${v.id}`}
+                      className="ml-1 rounded-md border border-border bg-background px-1.5 py-1 text-xs"
+                      value={v.status ?? "available"}
+                      onChange={(e) =>
+                        void changeStatus(v.id, e.target.value as VehicleStatusChoice)
+                      }
+                    >
+                      {Object.entries(STATUS_CHOICES).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </span>
               </li>
             ))}
@@ -413,7 +440,7 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
                     size="icon"
                     variant="ghost"
                     aria-label={`Eliminar ${h.id}`}
-                    onClick={() => void remove("hub", h.id)}
+                    onClick={() => void remove(h.id)}
                   >
                     <Trash2 className="size-4 text-destructive" />
                   </Button>

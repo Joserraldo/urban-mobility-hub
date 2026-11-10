@@ -607,27 +607,48 @@ export async function handle(request: Request): Promise<Response> {
       if (!saved) throw httpError(500, "No se pudo guardar el vehículo");
       return ok(toClientVehicle(saved));
     }
-    const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
-    if (method === "DELETE" && adminVehicleDelete?.[1]) {
+    // Los vehículos NO se borran (conservan su historial, RNF-04): el operador cambia su ESTADO.
+    const adminVehicleStatus = path.match(/^\/api\/admin\/vehicles\/([^/]+)\/status$/);
+    if (method === "PATCH" && adminVehicleStatus?.[1]) {
       requireRole(request, "operator");
-      const id = decodeURIComponent(adminVehicleDelete[1]);
+      const id = decodeURIComponent(adminVehicleStatus[1]);
+      const status = String((await body<{ status?: string }>(request)).status ?? "").replace(
+        "-",
+        "_",
+      );
+      if (!["available", "reserved", "in_use", "offline"].includes(status))
+        throw httpError(
+          422,
+          "El estado debe ser: disponible, reservado, en uso o fuera de servicio",
+        );
       const v = repos.vehicles.byId(id);
       if (!v) throw httpError(404, "Vehículo no encontrado");
-      if (v.status === "reserved" || v.status === "in_use")
-        throw httpError(
-          409,
-          "No puedes retirar un vehículo con una reserva o un viaje en curso. Finaliza o cancela primero esa reserva",
-        );
-      // Con historial (reservas, compras, desbloqueos, alertas) borrar rompería la trazabilidad (RNF-04):
-      // se da de baja (offline) y conserva sus datos. Sin historial se elimina del todo.
-      if (repos.vehicles.hasHistory(id)) {
-        repos.vehicles.setStatus(id, "offline");
-        stream.emit("vehicle", { vehicleId: id, status: "offline" });
-        return ok({ ok: true, retired: true });
-      }
-      repos.vehicles.remove(id);
-      return ok({ ok: true, retired: false });
+      if (v.status === "sold") throw httpError(409, "Un vehículo vendido ya no cambia de estado");
+      // Liberar el vehículo (disponible / fuera de servicio) cancela sus reservas abiertas, todo o nada,
+      // para que no queden reservas colgando de un vehículo que ya no está en uso.
+      const open = ["available", "offline"].includes(status)
+        ? repos.reservations.openByVehicle(id)
+        : [];
+      const now = Date.now();
+      atomically(() => {
+        for (const r of open) {
+          const next = transition({ status: r.status as never }, "cancel");
+          repos.reservations.setStatus(r.id, next.status, { ended_at: now });
+        }
+        repos.vehicles.setStatus(id, status);
+      });
+      stream.emit("vehicle", { vehicleId: id, status });
+      return ok({
+        vehicle: toClientVehicle(repos.vehicles.byId(id) as VehicleRow),
+        cancelled: open.length,
+      });
     }
+    const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
+    if (method === "DELETE" && adminVehicleDelete?.[1])
+      throw httpError(
+        405,
+        "Los vehículos no se borran: cambia su estado (disponible, en uso, fuera de servicio)",
+      );
     if (method === "POST" && path === "/api/admin/hubs") {
       requireRole(request, "operator");
       const b = await body<HubBody>(request);

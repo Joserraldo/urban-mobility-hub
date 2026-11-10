@@ -580,11 +580,14 @@ export function createMockDataSource(): DataSource {
       emit({ type: "vehicle", vehicle: { ...vehicle } });
       return { ...vehicle };
     },
-    async deleteVehicle(id) {
+    async setVehicleStatus(id, status) {
       const operator = requireUser();
       if (operator.role !== "operator") throw new DataError("Solo operadores", "forbidden");
-      vehicles = vehicles.filter((v) => v.id !== id);
-      return { retired: false };
+      const v = vehicles.find((x) => x.id === id);
+      if (!v) throw new DataError("Vehículo no encontrado", "not_found");
+      v.status = status;
+      emit({ type: "vehicle", vehicle: { ...v } });
+      return { vehicle: { ...v }, cancelled: 0 };
     },
     async saveHub(hub) {
       const operator = requireUser();

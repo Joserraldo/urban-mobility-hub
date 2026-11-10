@@ -406,10 +406,11 @@ export function createApiDataSource(): DataSource {
       });
       return mapVehicle(saved);
     },
-    deleteVehicle: (id) =>
-      req<{ retired?: boolean }>(`/api/admin/vehicles/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }).then((r) => ({ retired: Boolean(r.retired) })),
+    setVehicleStatus: (id, status) =>
+      req<{ vehicle: VehicleRow; cancelled: number }>(
+        `/api/admin/vehicles/${encodeURIComponent(id)}/status`,
+        { method: "PATCH", body: JSON.stringify({ status }) },
+      ).then((r) => ({ vehicle: mapVehicle(r.vehicle), cancelled: Number(r.cancelled ?? 0) })),
     saveHub: async (hub) => {
       const saved = await req<HubRow>("/api/admin/hubs", {
         method: "POST",
