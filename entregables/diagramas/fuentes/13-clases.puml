@@ -1,8 +1,11 @@
 @startuml 13-clases
+!pragma layout elk
 !include estilo.iuml
 title Diagrama de clases — Las entidades principales y cómo se relacionan
 hide empty members
+set separator none
 skinparam packageStyle folder
+set separator none
 skinparam class {
   BackgroundColor #F7F9FC
   BorderColor #1B2A41
