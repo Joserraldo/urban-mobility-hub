@@ -36,6 +36,8 @@ import { getGateway } from "../services/pasarela";
 import {
   boldConfig,
   createPaymentLink,
+  embeddedCheckout,
+  getButtonStatus,
   getLinkStatus,
   parseWebhook,
   verifyWebhookSignature,
@@ -888,12 +890,28 @@ type CheckoutInput = {
 
 /** Un link de Bold vence a los 30 min; se reutiliza solo si aún le queda margen. */
 const ORDER_REUSE_MS = 25 * 60_000;
+/** Una orden embebida sin ningún intento de pago se da por vencida a los 30 min. */
+const ORDER_EXPIRE_MS = 30 * 60_000;
 
-function checkoutResponse(o: BoldOrderRow): Response {
-  return ok(
-    { status: "pending", orderId: o.id, checkoutUrl: o.checkout_url, amountCop: o.amount_cop },
-    { status: 202 },
-  );
+/** Las órdenes del checkout embebido no tienen link: `checkout_url` queda vacío. */
+const isEmbeddedOrder = (o: BoldOrderRow) => o.checkout_url === "";
+
+function checkoutResponse(cfg: BoldConfig, o: BoldOrderRow, c: CheckoutInput): Response {
+  const base = { status: "pending", orderId: o.id, amountCop: o.amount_cop };
+  if (isEmbeddedOrder(o))
+    return ok(
+      {
+        ...base,
+        embedded: embeddedCheckout(cfg, {
+          orderId: o.id,
+          amountCop: o.amount_cop,
+          description: c.description,
+          returnPath: `${c.returnPath}?order=${o.id}`,
+        }),
+      },
+      { status: 202 },
+    );
+  return ok({ ...base, checkoutUrl: o.checkout_url }, { status: 202 });
 }
 
 async function startBoldCheckout(
@@ -903,8 +921,23 @@ async function startBoldCheckout(
 ): Promise<Response> {
   const existing = repos.boldOrders.pendingFor(c.ownerType, c.ownerId, c.kind);
   if (existing && Date.now() - existing.created_at < ORDER_REUSE_MS)
-    return checkoutResponse(existing);
+    return checkoutResponse(cfg, existing, c);
   const id = uid("BLD");
+  if (cfg.embedded) {
+    // Checkout embebido: sin llamada a Bold; el navegador abre el pago dentro de la página.
+    repos.boldOrders.create({
+      id,
+      user_id: userId,
+      owner_type: c.ownerType,
+      owner_id: c.ownerId,
+      kind: c.kind,
+      amount_cop: c.amountCop,
+      link_id: id,
+      checkout_url: "",
+      created_at: Date.now(),
+    });
+    return checkoutResponse(cfg, repos.boldOrders.byId(id) as BoldOrderRow, c);
+  }
   let link;
   try {
     link = await createPaymentLink(cfg, {
@@ -928,7 +961,7 @@ async function startBoldCheckout(
     checkout_url: link.checkoutUrl,
     created_at: Date.now(),
   });
-  return checkoutResponse(repos.boldOrders.byId(id) as BoldOrderRow);
+  return checkoutResponse(cfg, repos.boldOrders.byId(id) as BoldOrderRow, c);
 }
 
 /**
@@ -1023,12 +1056,27 @@ async function boldOrderStatus(userId: string, orderId: string): Promise<Respons
   let o = repos.boldOrders.byId(orderId);
   if (!o || o.user_id !== userId) throw httpError(404, "Pago no encontrado");
   const cfg = boldConfig();
+  let lastAttempt: "rejected" | null = null;
   if (o.status === "pending" && cfg) {
     try {
-      const { status, transactionId } = await getLinkStatus(cfg, o.link_id);
-      if (status === "PAID") finalizeBoldOrder(o, "approved", null, transactionId);
-      else if (status === "EXPIRED" || status === "CANCELLED")
-        finalizeBoldOrder(o, "rejected", status === "EXPIRED" ? "link vencido" : "cancelado", null);
+      if (isEmbeddedOrder(o)) {
+        const { status, transactionId } = await getButtonStatus(cfg, o.id);
+        if (status === "APPROVED") finalizeBoldOrder(o, "approved", null, transactionId);
+        else if (status === "REJECTED" || status === "FAILED" || status === "VOIDED")
+          lastAttempt = "rejected"; // el usuario puede reintentar dentro del mismo checkout
+        else if (status === "NO_TRANSACTION_FOUND" && Date.now() - o.created_at > ORDER_EXPIRE_MS)
+          finalizeBoldOrder(o, "rejected", "pago vencido sin intentos", null);
+      } else {
+        const { status, transactionId } = await getLinkStatus(cfg, o.link_id);
+        if (status === "PAID") finalizeBoldOrder(o, "approved", null, transactionId);
+        else if (status === "EXPIRED" || status === "CANCELLED")
+          finalizeBoldOrder(
+            o,
+            "rejected",
+            status === "EXPIRED" ? "link vencido" : "cancelado",
+            null,
+          );
+      }
       o = repos.boldOrders.byId(orderId) as BoldOrderRow;
     } catch (e) {
       console.error("[bold] no se pudo consultar el link:", e instanceof Error ? e.message : e);
@@ -1042,7 +1090,18 @@ async function boldOrderStatus(userId: string, orderId: string): Promise<Respons
     kind: o.kind,
     amountCop: o.amount_cop,
     reason: o.reason,
-    checkoutUrl: o.status === "pending" ? o.checkout_url : null,
+    lastAttempt,
+    checkoutUrl: o.status === "pending" && !isEmbeddedOrder(o) ? o.checkout_url : null,
+    embedded:
+      o.status === "pending" && isEmbeddedOrder(o) && cfg
+        ? embeddedCheckout(cfg, {
+            orderId: o.id,
+            amountCop: o.amount_cop,
+            description:
+              o.kind === "cargo_viaje" ? "Cargo final del viaje" : "Pago en NODO Mobility",
+            returnPath: `/pago/resultado?order=${o.id}`,
+          })
+        : null,
   });
 }
 
