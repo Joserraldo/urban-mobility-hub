@@ -2,97 +2,154 @@
 !include estilo.iuml
 title Diagrama de clases — Las entidades principales y cómo se relacionan
 hide empty members
+skinparam packageStyle folder
 skinparam class {
   BackgroundColor #F7F9FC
   BorderColor #1B2A41
 }
 
-class Usuario {
-  nombre
-  correo
-  rol (cliente, operador, domiciliario)
-  registrarse()
-  iniciarSesion()
-}
-class Consentimiento {
-  propósito (datos personales, biometría)
-  fecha
-  revocado
-}
-class Hub {
-  nombre
-  zona
-  capacidad
-  puntos de carga
-}
-class Vehiculo {
-  tipo (patineta, bicicleta, dron)
-  modo (alquiler o venta)
-  estado
-  batería
-  ubicación
-  reportarPosicion()
-}
-class Reserva {
-  modalidad (hub o domicilio)
-  estado
-  dirección
-  iniciar()
-  terminar()
-  cancelar()
-}
-class Compra {
-  precio
-  estado
-}
-class Pago {
-  monto
-  referencia
-  aprobado o rechazado
-}
-class Entrega {
-  hora límite
-  estado
-  causa del retraso
-}
-class Alerta {
-  tipo (sin casco, caída,\nsin GPS, batería baja)
-  fecha
-}
-class SesionDesbloqueo {
-  paso (QR, casco, listo)
-  vence en 2 minutos
+package "0. Entrada (lo primero que ve el visitante)" #E8F1FB {
+  class Landing {
+    ruta "/"
+    mostrarTarifas()
+    irARegistro()
+    irALaApp()
+  }
 }
 
-interface FuenteDeDatos <<interfaz>> {
-  listarVehiculos()
-  reservar()
-  pagar()
+package "1. Personas" #F4F8FD {
+  class Usuario {
+    nombre
+    correo
+    rol (cliente, operador, domiciliario)
+    registrarse()
+    iniciarSesion()
+  }
+  class Consentimiento {
+    propósito (datos personales, biometría)
+    fecha
+    revocado
+  }
 }
-class DatosDePrueba
-class DatosDelServidor
 
-interface ReglaDeSeguridad <<interfaz>> {
-  evaluar(vehículo)
+package "2. Flota" #E9F7EC {
+  class Hub {
+    nombre
+    zona
+    capacidad
+    puntos de carga
+  }
+  class Vehiculo {
+    tipo (patineta, bicicleta, dron)
+    modo (alquiler o venta)
+    estado
+    batería
+    ubicación
+    reportarPosicion()
+  }
+  class DispositivoIoT {
+    uno en cada vehículo alquilado
+    GPS, batería, sensor de caída
+    lector de casco
+    enviarTelemetria()
+    recibirDesbloqueo()
+  }
+  class SesionDesbloqueo {
+    paso (QR, casco, listo)
+    vence en 2 minutos
+  }
 }
-class SinCasco
-class Caida
-class SinGPS
-class BateriaBaja
 
+package "3. Negocio" #FFF4E0 {
+  class Reserva {
+    modalidad (hub o domicilio)
+    estado
+    dirección
+    iniciar()
+    terminar()
+    cancelar()
+  }
+  class Compra {
+    precio
+    estado
+  }
+  class Entrega {
+    hora límite
+    estado
+    causa del retraso
+  }
+}
+
+package "4. Pagos (Bold)" #F3E8FB {
+  class Pago {
+    monto
+    referencia
+    aprobado o rechazado
+  }
+  class OrdenBold {
+    enlace de pago (LNK)
+    estado (pendiente, aprobada, rechazada)
+    vence en 30 minutos
+    confirmar()
+  }
+  interface PasarelaDePagos <<interfaz>> {
+    crearLinkDePago(monto)
+    consultarEstado()
+  }
+  class PasarelaBold
+  class PasarelaSimulada
+  class WebhookBold {
+    validarFirma()
+    confirmarPago()
+  }
+}
+
+package "5. Seguridad de flota" #FDEBEC {
+  class Alerta {
+    tipo (sin casco, caída,\nsin GPS, batería baja)
+    fecha
+  }
+  interface ReglaDeSeguridad <<interfaz>> {
+    evaluar(vehículo)
+  }
+  class SinCasco
+  class Caida
+  class SinGPS
+  class BateriaBaja
+}
+
+package "6. Acceso a datos" #EEEEEE {
+  interface FuenteDeDatos <<interfaz>> {
+    listarVehiculos()
+    reservar()
+    pagar()
+  }
+  class DatosDePrueba
+  class DatosDelServidor
+}
+
+Landing ..> Usuario : lleva a registro / login
 Usuario "1" --> "*" Consentimiento : otorga
 Usuario "1" --> "*" Reserva : hace
 Usuario "1" --> "*" Compra : hace
 Hub "1" o-- "*" Vehiculo : aloja
+Vehiculo "1" --> "0..1" DispositivoIoT : lleva
 Vehiculo "1" --> "*" Reserva : se reserva en
 Vehiculo "1" --> "0..1" Compra : se vende en
 Reserva "1" --> "*" Pago : genera
 Compra "1" --> "*" Pago : genera
+Reserva "1" --> "*" OrdenBold : se paga con
+Compra "1" --> "*" OrdenBold : se paga con
+OrdenBold "1" --> "*" Pago : al resolverse registra
 Reserva "1" --> "0..1" Entrega : si es a domicilio
 Usuario "1" --> "*" Entrega : la realiza (domiciliario)
 Reserva "1" --> "*" SesionDesbloqueo : abre
 Vehiculo "1" --> "*" Alerta : genera
 
+PasarelaDePagos <|.. PasarelaBold
+PasarelaDePagos <|.. PasarelaSimulada
+PasarelaBold ..> OrdenBold : crea
+WebhookBold ..> OrdenBold : confirma
 FuenteDeDatos <|.. DatosDePrueba
 FuenteDeDatos <|.. DatosDelServidor
 ReglaDeSeguridad <|.. SinCasco
@@ -100,6 +157,16 @@ ReglaDeSeguridad <|.. Caida
 ReglaDeSeguridad <|.. SinGPS
 ReglaDeSeguridad <|.. BateriaBaja
 ReglaDeSeguridad ..> Alerta : produce
+
+note right of Landing
+  El visitante cae primero en la Landing.
+  Solo después se registra, inicia sesión y usa la app.
+end note
+
+note bottom of PasarelaDePagos
+  Polimorfismo: con llaves de Bold se usa PasarelaBold;
+  sin llaves, PasarelaSimulada (pruebas y desarrollo).
+end note
 
 note bottom of FuenteDeDatos
   Polimorfismo: las pantallas usan la interfaz
