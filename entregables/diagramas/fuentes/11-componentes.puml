@@ -1,8 +1,9 @@
 @startuml 11-componentes
+!pragma layout elk
 !include estilo.iuml
 title Diagrama de componentes — Las piezas de la app y cómo se hablan
-left to right direction
 skinparam componentStyle uml2
+skinparam packageStyle folder
 skinparam component {
   BackgroundColor #F7F9FC
   BorderColor #1B2A41
@@ -10,18 +11,17 @@ skinparam component {
 }
 
 package "Lo que ve el usuario (navegador)" #E8F1FB {
+  component "Landing (/)\nprimera pantalla del visitante" as landing
   component "Pantallas de la app\nmapa, compras, entregas" as spa
-  interface "Pedir datos" as ids
+  component "Resultado del pago\n/pago/resultado" as result
   component "Conexion con datos\ndatos de prueba o servidor real" as ds
   component "Deteccion de casco\ncamara + IA local" as onnx
 }
 
-package "Servidor" {
+package "Servidor (VM)" {
   package "Puerta de entrada" #EEEEEE {
-    interface "Peticiones por internet" as irest
-  component "Servidor (API)" as rest
-    interface "Eventos en vivo" as isse
-  component "Eventos en vivo\n(telemetria y alertas)" as sse
+    component "Servidor (API)\n/api/*" as rest
+    component "Eventos en vivo\n(telemetria y alertas)" as sse
     component "Sesiones y seguridad" as ses
   }
   package "Reglas del negocio" #E9F7EC {
@@ -29,40 +29,45 @@ package "Servidor" {
     component "Simulador de flota" as sim
   }
   package "Servicios de apoyo" #FFF4E0 {
-    interface "Cobrar" as ipay
-    component "Pagos (simulados)" as pay
-    interface "Enviar correo" as iemail
+    component "Pagos con Bold\n(simulados sin llaves)" as pay
+    component "Webhook de Bold\nvalida la firma" as wh
     component "Correos (Brevo)" as brevo
   }
   package "Guardado de datos" #FDEBEC {
-    interface "Guardar y leer" as irepo
     component "Repositorios\n(unico acceso a la base)" as repo
     database "Base de datos\nSQLite" as db
   }
 }
 
+package "Fuera del servidor" #F3E8FB {
+  component "Dispositivo IoT\n(uno por vehiculo alquilado)" as iot
+  cloud "Bold\n(pasarela de pagos)" as bold
+}
 
-spa ..> ids : pide
-ds - ids
-spa ..> onnx : valida casco
-ds ..> irest : llama
-rest - irest
-sse - isse
-ds ..> isse : escucha
-rest ..> dom : aplica reglas
-rest ..> ses : verifica usuario
-rest ..> irepo
-rest ..> ipay : cobra
-rest ..> iemail : avisa
-sim ..> dom : mueve vehiculos
-sim ..> sse : emite eventos
-repo - irepo
-repo ..> db
-pay - ipay
-brevo - iemail
+landing --> spa : lleva a registro y app
+spa --> onnx : valida casco
+spa --> ds : pide datos
+result --> ds : consulta estado del pago
+ds --> rest : HTTPS /api
+ds --> sse : escucha (SSE)
+spa ..> bold : redirige a pagar
+bold ..> result : devuelve al usuario
 
-note bottom of spa
-  Circulo = servicio que ofrece la pieza.
-  Flecha punteada = servicio que la pieza necesita.
+rest --> ses : verifica usuario
+rest --> dom : aplica reglas
+rest --> repo : lee y guarda
+rest --> pay : cobra
+rest --> wh : /api/payments/bold/webhook
+rest --> brevo : avisa retrasos
+iot --> rest : POST /api/ingest
+sim --> dom : mueve vehiculos
+sim --> sse : emite eventos
+repo --> db
+pay --> bold : crea link de pago
+bold ..> wh : avisa resultado (firmado)
+
+note bottom of landing
+  Flecha continua = usa.  Flecha punteada = redireccion o aviso externo.
+  El visitante siempre cae primero en la Landing.
 end note
 @enduml
