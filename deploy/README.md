@@ -36,21 +36,22 @@ NITRO_PRESET=node_server VITE_SITE_URL=https://urbanmobility.duckdns.org \
 
 Van en `/etc/umh/umh.env` (root:umh, 640). **Nunca** se suben al repositorio.
 
-| Variable             | Valor / uso                                                       |
-| -------------------- | ----------------------------------------------------------------- |
-| `NODE_ENV`           | `production`                                                      |
-| `PORT`               | `8080`                                                            |
-| `HOST`               | `0.0.0.0`                                                         |
-| `UMH_INTERNAL_URL`   | `http://127.0.0.1:8080` (fetch del SSR contra el API)             |
-| `UMH_DB_PATH`        | `/var/lib/umh/umh.db`                                             |
-| `UMH_SESSION_SECRET` | secreto aleatorio de 32 bytes (HMAC de sesión)                    |
-| `UMH_DATA_KEY`       | secreto aleatorio de 32 bytes (datos sensibles)                   |
-| `BREVO_API_KEY`      | opcional; sin ella el correo queda en `simulated`                 |
-| `BREVO_SENDER`       | opcional; remitente verificado en Brevo                           |
-| `BOLD_IDENTITY_KEY`  | llave de identidad de Bold (pruebas); sin ella, pasarela simulada |
-| `BOLD_SECRET_KEY`    | llave secreta de Bold (firma del webhook); vacía en pruebas       |
-| `BOLD_ENV`           | `test` (sandbox) o `production`                                   |
-| `UMH_PUBLIC_URL`     | `https://urbanmobility.duckdns.org` (retorno del pago)            |
+| Variable             | Valor / uso                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`           | `production`                                                                                                                              |
+| `PORT`               | `8080`                                                                                                                                    |
+| `HOST`               | `0.0.0.0`                                                                                                                                 |
+| `UMH_INTERNAL_URL`   | `http://127.0.0.1:8080` (fetch del SSR contra el API)                                                                                     |
+| `UMH_DB_PATH`        | `/var/lib/umh/umh.db`                                                                                                                     |
+| `UMH_SESSION_SECRET` | secreto aleatorio de 32 bytes (HMAC de sesión)                                                                                            |
+| `UMH_DATA_KEY`       | secreto aleatorio de 32 bytes (datos sensibles)                                                                                           |
+| `BREVO_API_KEY`      | opcional; sin ella el correo queda en `simulated`                                                                                         |
+| `BREVO_SENDER`       | opcional; remitente verificado en Brevo                                                                                                   |
+| `BOLD_IDENTITY_KEY`  | llave de identidad de Bold (pruebas); sin ella, pasarela simulada                                                                         |
+| `BOLD_SECRET_KEY`    | llave secreta de Bold (la de PRUEBAS en sandbox); firma la orden del checkout embebido. Sin ella se usa el link de pago (redirige a Bold) |
+| `BOLD_EMBEDDED`      | opcional; `0` fuerza el link de pago aunque haya llave secreta                                                                            |
+| `BOLD_ENV`           | `test` (sandbox) o `production`                                                                                                           |
+| `UMH_PUBLIC_URL`     | `https://urbanmobility.duckdns.org` (retorno del pago)                                                                                    |
 
 ## Pagos con Bold (llaves de prueba)
 
@@ -58,10 +59,14 @@ Sin `BOLD_IDENTITY_KEY` la app usa la pasarela simulada. Para activar Bold en la
 
 ```bash
 ssh -i vmingsoftwareiijose_key.pem azureuser@57.156.68.204
-sudo nano /etc/umh/umh.env     # agregar las 4 líneas BOLD_* / UMH_PUBLIC_URL
+sudo nano /etc/umh/umh.env     # BOLD_IDENTITY_KEY, BOLD_SECRET_KEY (de pruebas), BOLD_ENV=test, UMH_PUBLIC_URL
 sudo chown root:umh /etc/umh/umh.env && sudo chmod 640 /etc/umh/umh.env
 sudo systemctl restart umh
 ```
+
+Con `BOLD_SECRET_KEY` el pago se abre **dentro de la página** (checkout embebido del Botón de
+pagos). Las dos llaves deben ser del mismo ambiente (ambas de pruebas o ambas de producción).
+En pruebas Bold no envía webhooks solos: la app consulta el estado de la orden a la API de Bold.
 
 En el panel de Bold (Integraciones) registra el webhook de pruebas:
 `https://urbanmobility.duckdns.org/api/payments/bold/webhook`.
