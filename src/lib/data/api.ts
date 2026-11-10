@@ -69,6 +69,15 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+/**
+ * Con Bold el pago ocurre en su checkout: se redirige y la promesa no resuelve (la pantalla
+ * queda en "procesando" mientras el navegador navega). Al volver, /pago/resultado muestra el estado.
+ */
+function goToCheckout(checkoutUrl: string): Promise<never> {
+  window.location.assign(checkoutUrl);
+  return new Promise<never>(() => undefined);
+}
+
 type VehicleRow = {
   id: string;
   kind: string;
@@ -311,14 +320,18 @@ export function createApiDataSource(): DataSource {
           body: JSON.stringify(input),
         },
       );
-      const pay = await req<{ reference?: string | undefined }>("/api/payments", {
-        method: "POST",
-        body: JSON.stringify({
-          ownerType: "reservation",
-          ownerId: created.reservation.id,
-          method: "card",
-        }),
-      });
+      const pay = await req<{ reference?: string | undefined; checkoutUrl?: string }>(
+        "/api/payments",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            ownerType: "reservation",
+            ownerId: created.reservation.id,
+            method: "card",
+          }),
+        },
+      );
+      if (pay.checkoutUrl) return goToCheckout(pay.checkoutUrl);
       return mapReservation({ ...created.reservation, paymentRef: pay.reference });
     },
     listReservations: () =>
@@ -327,7 +340,10 @@ export function createApiDataSource(): DataSource {
       if (event === "cancel") {
         await req(`/api/reservations/${id}/cancel`, { method: "POST" });
       } else if (event === "finish") {
-        await req(`/api/trips/${id}/end`, { method: "POST" });
+        const end = await req<{ checkoutUrl?: string }>(`/api/trips/${id}/end`, {
+          method: "POST",
+        });
+        if (end?.checkoutUrl) return goToCheckout(end.checkoutUrl);
       } else {
         throw new DataError("El viaje inicia desbloqueando el vehículo", "conflict");
       }
@@ -341,14 +357,18 @@ export function createApiDataSource(): DataSource {
         method: "POST",
         body: JSON.stringify({ vehicleId }),
       });
-      const pay = await req<{ reference?: string | undefined }>("/api/payments", {
-        method: "POST",
-        body: JSON.stringify({
-          ownerType: "purchase",
-          ownerId: created.purchase.id,
-          method: "card",
-        }),
-      });
+      const pay = await req<{ reference?: string | undefined; checkoutUrl?: string }>(
+        "/api/payments",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            ownerType: "purchase",
+            ownerId: created.purchase.id,
+            method: "card",
+          }),
+        },
+      );
+      if (pay.checkoutUrl) return goToCheckout(pay.checkoutUrl);
       return mapPurchase({ ...created.purchase, paymentRef: pay.reference });
     },
     listPurchases: () => req<PurchaseRow[]>("/api/purchases").then((rows) => rows.map(mapPurchase)),
