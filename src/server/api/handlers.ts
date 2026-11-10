@@ -13,6 +13,7 @@ import { hashPassword, uid, verifyPassword } from "../db/seed";
 import {
   repos,
   type AlertRow,
+  type BoldOrderRow,
   type DeliveryRow,
   type HubRow,
   type PurchaseRow,
@@ -32,6 +33,14 @@ import {
   type SessionUser,
 } from "../services/sessions";
 import { getGateway } from "../services/pasarela";
+import {
+  boldConfig,
+  createPaymentLink,
+  getLinkStatus,
+  parseWebhook,
+  verifyWebhookSignature,
+  type BoldConfig,
+} from "../services/bold";
 import { applyTelemetry, markLate } from "../services/fleet-sim";
 import { stream } from "../services/stream";
 
@@ -260,6 +269,17 @@ export async function handle(request: Request): Promise<Response> {
       return ok(repos.purchases.byUser(u.id));
     }
 
+    // Webhook de Bold: público (lo llama Bold, sin cookie); se autentica por la firma.
+    if (method === "POST" && path === "/api/payments/bold/webhook") {
+      return await boldWebhook(request);
+    }
+
+    const boldOrderMatch = path.match(/^\/api\/payments\/bold\/([^/]+)$/);
+    if (method === "GET" && boldOrderMatch?.[1]) {
+      const u = requireUser(request);
+      return await boldOrderStatus(u.id, boldOrderMatch[1]);
+    }
+
     if (method === "POST" && path === "/api/payments") {
       const u = requireUser(request);
       const b = await body<PaymentBody>(request);
@@ -329,6 +349,18 @@ export async function handle(request: Request): Promise<Response> {
         if (!v) throw httpError(404, "Vehículo no encontrado");
         const minutes = Math.max(1, (Date.now() - Number(r.started_at)) / 60_000);
         const total = rentalCost(minutes, v.rate_per_min_cop ?? 500);
+        const bold = boldConfig();
+        if (bold) {
+          // Con Bold el viaje se cierra cuando el webhook confirma el pago (finalizeOrder).
+          return await startBoldCheckout(bold, u.id, {
+            ownerType: "reservation",
+            ownerId: r.id,
+            kind: "cargo_viaje",
+            amountCop: total,
+            description: `Viaje ${v.model} (${Math.ceil(minutes)} min)`,
+            returnPath: "/pago/resultado",
+          });
+        }
         const result = await getGateway().charge({ amountCop: total, method: "card" });
         repos.payments.create({
           id: uid("PAY"),
@@ -373,6 +405,8 @@ export async function handle(request: Request): Promise<Response> {
           409,
           "Primero reserva este vehículo y paga el prepago; luego podrás desbloquearlo",
         );
+      if (boldConfig() && !repos.payments.hasApproved("reservation", r.id, "base"))
+        throw httpError(402, "Completa el pago del prepago en Bold para desbloquear el vehículo");
       const session = createUnlockSession(String(b.vehicleId ?? r.vehicle_id));
       repos.unlock.create({
         id: session.id,
@@ -748,6 +782,16 @@ async function payPurchase(u: { id: string }, purchaseId: string): Promise<Respo
     throw httpError(409, "Ese vehículo ya no está disponible para la venta");
   inFlight.add(p.id);
   try {
+    const bold = boldConfig();
+    if (bold)
+      return await startBoldCheckout(bold, u.id, {
+        ownerType: "purchase",
+        ownerId: p.id,
+        kind: "base",
+        amountCop: p.price_cop,
+        description: `Compra ${unit.model}`,
+        returnPath: "/pago/resultado",
+      });
     return await chargePurchase(p);
   } finally {
     inFlight.delete(p.id);
@@ -784,10 +828,24 @@ async function chargePurchase(p: PurchaseRow): Promise<Response> {
 async function payReservation(u: { id: string }, reservationId: string): Promise<Response> {
   const r = repos.reservations.byId(reservationId) as ReservationRow | undefined;
   if (!r || r.user_id !== u.id) throw httpError(404, "Reserva no encontrada");
-  if (r.status !== "requested" || inFlight.has(r.id))
+  if (
+    r.status !== "requested" ||
+    inFlight.has(r.id) ||
+    repos.payments.hasApproved("reservation", r.id, "base")
+  )
     throw httpError(409, "La reserva ya está pagada o cerrada");
   inFlight.add(r.id);
   try {
+    const bold = boldConfig();
+    if (bold)
+      return await startBoldCheckout(bold, u.id, {
+        ownerType: "reservation",
+        ownerId: r.id,
+        kind: "base",
+        amountCop: BASE_PREPAY_COP,
+        description: "Prepago de reserva",
+        returnPath: "/pago/resultado",
+      });
     return await chargeReservation(r);
   } finally {
     inFlight.delete(r.id);
@@ -816,6 +874,176 @@ async function chargeReservation(r: ReservationRow): Promise<Response> {
     );
   repos.vehicles.setStatus(r.vehicle_id, "reserved");
   return ok({ reservation: r, prepayCop: BASE_PREPAY_COP, reference: result.reference ?? null });
+}
+
+// ---------- Bold (pago en línea asíncrono) ----------
+type CheckoutInput = {
+  ownerType: "purchase" | "reservation";
+  ownerId: string;
+  kind: "base" | "cargo_viaje";
+  amountCop: number;
+  description: string;
+  returnPath: string;
+};
+
+/** Un link de Bold vence a los 30 min; se reutiliza solo si aún le queda margen. */
+const ORDER_REUSE_MS = 25 * 60_000;
+
+function checkoutResponse(o: BoldOrderRow): Response {
+  return ok(
+    { status: "pending", orderId: o.id, checkoutUrl: o.checkout_url, amountCop: o.amount_cop },
+    { status: 202 },
+  );
+}
+
+async function startBoldCheckout(
+  cfg: BoldConfig,
+  userId: string,
+  c: CheckoutInput,
+): Promise<Response> {
+  const existing = repos.boldOrders.pendingFor(c.ownerType, c.ownerId, c.kind);
+  if (existing && Date.now() - existing.created_at < ORDER_REUSE_MS)
+    return checkoutResponse(existing);
+  const id = uid("BLD");
+  let link;
+  try {
+    link = await createPaymentLink(cfg, {
+      reference: id,
+      amountCop: c.amountCop,
+      description: c.description,
+      returnPath: `${c.returnPath}?order=${id}`,
+    });
+  } catch (e) {
+    console.error("[bold] no se pudo crear el link de pago:", e instanceof Error ? e.message : e);
+    throw httpError(502, "No pudimos iniciar el pago con Bold. Intenta de nuevo en un momento.");
+  }
+  repos.boldOrders.create({
+    id,
+    user_id: userId,
+    owner_type: c.ownerType,
+    owner_id: c.ownerId,
+    kind: c.kind,
+    amount_cop: c.amountCop,
+    link_id: link.linkId,
+    checkout_url: link.checkoutUrl,
+    created_at: Date.now(),
+  });
+  return checkoutResponse(repos.boldOrders.byId(id) as BoldOrderRow);
+}
+
+/**
+ * Cierra una orden de Bold: registra el pago y aplica el efecto de negocio de forma atómica.
+ * Idempotente: si la orden ya no está pendiente no hace nada (Bold puede repetir webhooks).
+ */
+function finalizeBoldOrder(
+  o: BoldOrderRow,
+  result: "approved" | "rejected",
+  reason: string | null,
+  reference: string | null,
+): void {
+  atomically(() => {
+    if (!repos.boldOrders.resolve(o.id, result, reason)) return;
+    repos.payments.create({
+      id: uid("PAY"),
+      owner_type: o.owner_type,
+      owner_id: o.owner_id,
+      kind: o.kind,
+      amount_cop: o.amount_cop,
+      reference,
+      status: result,
+      reason,
+      created_at: Date.now(),
+    });
+    if (o.owner_type === "purchase") {
+      const p = repos.purchases.byId(o.owner_id) as PurchaseRow | undefined;
+      if (!p) return;
+      if (result === "approved") {
+        repos.purchases.setStatus(p.id, "paid", Date.now());
+        repos.vehicles.setStatus(p.vehicle_id, "sold");
+      } else {
+        repos.purchases.setStatus(p.id, "failed");
+      }
+      return;
+    }
+    const r = repos.reservations.byId(o.owner_id) as ReservationRow | undefined;
+    if (!r) return;
+    if (o.kind === "cargo_viaje") {
+      if (result === "approved" && r.status === "active") {
+        repos.reservations.setStatus(r.id, "completed", {
+          ended_at: Date.now(),
+          total_cost_cop: o.amount_cop,
+        });
+        repos.vehicles.setStatus(r.vehicle_id, "available");
+      }
+      return; // rechazado: el viaje sigue activo y se puede reintentar
+    }
+    // Prepago: aprobado => la reserva ya tiene el vehículo apartado; vencido => se libera.
+    if (result === "rejected" && r.status === "requested") {
+      repos.reservations.setStatus(r.id, "cancelled");
+      repos.vehicles.setStatus(r.vehicle_id, "available");
+    }
+  });
+}
+
+async function boldWebhook(request: Request): Promise<Response> {
+  const cfg = boldConfig();
+  if (!cfg) throw httpError(503, "Bold no está configurado");
+  const raw = await request.text();
+  const sig = request.headers.get("x-bold-signature");
+  // En modo pruebas Bold firma con llave vacía.
+  const valid =
+    verifyWebhookSignature(raw, sig, cfg.secretKey) ||
+    (cfg.sandbox && verifyWebhookSignature(raw, sig, ""));
+  if (!valid) throw httpError(401, "Firma inválida");
+  const evt = parseWebhook(raw);
+  const order = evt?.reference ? repos.boldOrders.byLink(evt.reference) : undefined;
+  // 200 siempre que la firma sea válida: Bold reintenta ante cualquier otro código.
+  if (!evt || !order) return ok({ received: true });
+  if (evt.type === "SALE_APPROVED") {
+    finalizeBoldOrder(order, "approved", null, evt.paymentId);
+  } else if (evt.type === "SALE_REJECTED") {
+    // El link sigue activo y el usuario puede reintentar: solo se deja constancia del intento.
+    repos.payments.create({
+      id: uid("PAY"),
+      owner_type: order.owner_type,
+      owner_id: order.owner_id,
+      kind: order.kind,
+      amount_cop: order.amount_cop,
+      reference: evt.paymentId,
+      status: "rejected",
+      reason: "pago rechazado por Bold",
+      created_at: Date.now(),
+    });
+  }
+  return ok({ received: true });
+}
+
+/** Estado de una orden; si sigue pendiente se concilia con Bold (por si el webhook se demora). */
+async function boldOrderStatus(userId: string, orderId: string): Promise<Response> {
+  let o = repos.boldOrders.byId(orderId);
+  if (!o || o.user_id !== userId) throw httpError(404, "Pago no encontrado");
+  const cfg = boldConfig();
+  if (o.status === "pending" && cfg) {
+    try {
+      const { status, transactionId } = await getLinkStatus(cfg, o.link_id);
+      if (status === "PAID") finalizeBoldOrder(o, "approved", null, transactionId);
+      else if (status === "EXPIRED" || status === "CANCELLED")
+        finalizeBoldOrder(o, "rejected", status === "EXPIRED" ? "link vencido" : "cancelado", null);
+      o = repos.boldOrders.byId(orderId) as BoldOrderRow;
+    } catch (e) {
+      console.error("[bold] no se pudo consultar el link:", e instanceof Error ? e.message : e);
+    }
+  }
+  return ok({
+    orderId: o.id,
+    status: o.status,
+    ownerType: o.owner_type,
+    ownerId: o.owner_id,
+    kind: o.kind,
+    amountCop: o.amount_cop,
+    reason: o.reason,
+    checkoutUrl: o.status === "pending" ? o.checkout_url : null,
+  });
 }
 
 function toClientVehicle(v: VehicleRow) {

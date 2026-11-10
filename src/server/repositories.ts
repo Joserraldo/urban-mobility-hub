@@ -60,6 +60,20 @@ export type PurchaseRow = {
   created_at: number;
   paid_at: number | null;
 };
+export type BoldOrderRow = {
+  id: string;
+  user_id: string;
+  owner_type: "purchase" | "reservation";
+  owner_id: string;
+  kind: "base" | "cargo_viaje";
+  amount_cop: number;
+  link_id: string;
+  checkout_url: string;
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+  created_at: number;
+  resolved_at: number | null;
+};
 export type DeliveryRow = {
   id: string;
   reservation_id: string;
@@ -467,6 +481,61 @@ export const repos = {
         ownerType,
         ownerId,
       );
+    },
+    hasApproved(ownerType: string, ownerId: string, kind: string): boolean {
+      return (
+        row<{ n: number }>(
+          "SELECT COUNT(*) AS n FROM payments WHERE owner_type=? AND owner_id=? AND kind=? AND status='approved'",
+          ownerType,
+          ownerId,
+          kind,
+        )?.n !== 0
+      );
+    },
+  },
+
+  boldOrders: {
+    create(o: Omit<BoldOrderRow, "status" | "reason" | "resolved_at">) {
+      run(
+        `INSERT INTO bold_orders (id, user_id, owner_type, owner_id, kind, amount_cop, link_id, checkout_url, status, created_at)
+         VALUES (?,?,?,?,?,?,?,?, 'pending', ?)`,
+        o.id,
+        o.user_id,
+        o.owner_type,
+        o.owner_id,
+        o.kind,
+        o.amount_cop,
+        o.link_id,
+        o.checkout_url,
+        o.created_at,
+      );
+    },
+    byId(id: string): BoldOrderRow | undefined {
+      return row<BoldOrderRow>("SELECT * FROM bold_orders WHERE id = ?", id);
+    },
+    byLink(linkId: string): BoldOrderRow | undefined {
+      return row<BoldOrderRow>("SELECT * FROM bold_orders WHERE link_id = ?", linkId);
+    },
+    pendingFor(ownerType: string, ownerId: string, kind: string): BoldOrderRow | undefined {
+      return row<BoldOrderRow>(
+        "SELECT * FROM bold_orders WHERE owner_type=? AND owner_id=? AND kind=? AND status='pending' ORDER BY created_at DESC",
+        ownerType,
+        ownerId,
+        kind,
+      );
+    },
+    /** Solo resuelve una orden que sigue pendiente (idempotencia ante webhooks repetidos). */
+    resolve(id: string, status: "approved" | "rejected", reason: string | null): boolean {
+      const before = row<{ status: string }>("SELECT status FROM bold_orders WHERE id = ?", id);
+      if (before?.status !== "pending") return false;
+      run(
+        "UPDATE bold_orders SET status=?, reason=?, resolved_at=? WHERE id=? AND status='pending'",
+        status,
+        reason,
+        Date.now(),
+        id,
+      );
+      return true;
     },
   },
 

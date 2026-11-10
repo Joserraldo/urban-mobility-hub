@@ -39,6 +39,7 @@ export function resetDb(): void {
   for (const t of [
     "notifications",
     "deliveries",
+    "bold_orders",
     "payments",
     "purchases",
     "reservations",
