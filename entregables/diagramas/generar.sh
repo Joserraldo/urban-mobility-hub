@@ -8,8 +8,9 @@
 cd "$(dirname "$0")"
 if command -v dot >/dev/null 2>&1; then LAYOUT=""; else
   echo "Aviso: no hay Graphviz; se usa el motor interno (Smetana)."; LAYOUT="-Playout=smetana"; fi
-java -jar plantuml.jar $LAYOUT -tpng -o ../img fuentes/*.puml || echo "FALLO png"
-java -jar plantuml.jar $LAYOUT -tsvg -o ../img fuentes/*.puml || echo "FALLO svg"
+JAR=plantuml.jar; [ -f "$JAR" ] || JAR=../_tools/plantuml.jar
+java -jar "$JAR" $LAYOUT -tpng -o ../img fuentes/*.puml || echo "FALLO png"
+java -jar "$JAR" $LAYOUT -tsvg -o ../img fuentes/*.puml || echo "FALLO svg"
 # 01 y 02 (Python + matplotlib) y 24 (Mermaid) se generan aparte:
 #   python fuentes/01-contexto-srs.py ; python fuentes/02-casos-de-uso-general.py
 #   npx -p @mermaid-js/mermaid-cli mmdc -i fuentes/24-matriz-riesgos.mmd -o img/24-matriz-riesgos.png -s 3 -b white
