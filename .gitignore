@@ -60,3 +60,10 @@ id_ed25519*
 entregables/_tools/plantuml.jar
 entregables/diagramas/plantuml.jar
 .lighthouseci/
+
+# Firmware ESP32-CAM y servicio de vision
+firmware/**/.pio/
+firmware/**/include/secrets.h
+vision-service/dist/
+models/*.onnx
+models/*.pt

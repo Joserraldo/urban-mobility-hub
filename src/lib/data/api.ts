@@ -10,6 +10,7 @@ import {
   type Reservation,
   type ReservationInput,
   type UnlockSession,
+  type VehicleCameraStatus,
   type Unsubscribe,
   type User,
   type Vehicle,
@@ -139,6 +140,7 @@ type UnlockRow = {
   step: string;
   expiresAt: number;
   reason?: string;
+  helmetSource?: "camera" | "client";
 };
 
 /** El dominio/SSE usa snake para las alertas; el cliente habla `no-helmet` (RF-11). */
@@ -231,6 +233,7 @@ const toUnlock = (s: UnlockRow): UnlockSession => ({
   step: s.step as UnlockSession["step"],
   reason: s.reason,
   expiresAt: Number(s.expiresAt),
+  helmetSource: s.helmetSource,
 });
 
 export function createApiDataSource(): DataSource {
@@ -373,6 +376,8 @@ export function createApiDataSource(): DataSource {
         method: "POST",
         body: JSON.stringify(result),
       }).then(toUnlock),
+    vehicleCamera: (vehicleId) =>
+      req<VehicleCameraStatus>(`/api/vehicles/${encodeURIComponent(vehicleId)}/camera`),
     verifyFace: (sessionId, result) =>
       req<UnlockRow>(`/api/unlock/sessions/${sessionId}/face`, {
         method: "POST",
@@ -402,7 +407,9 @@ export function createApiDataSource(): DataSource {
       return mapVehicle(saved);
     },
     deleteVehicle: (id) =>
-      req(`/api/admin/vehicles/${id}`, { method: "DELETE" }).then(() => undefined),
+      req<{ retired?: boolean }>(`/api/admin/vehicles/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).then((r) => ({ retired: Boolean(r.retired) })),
     saveHub: async (hub) => {
       const saved = await req<HubRow>("/api/admin/hubs", {
         method: "POST",

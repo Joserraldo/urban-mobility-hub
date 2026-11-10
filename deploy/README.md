@@ -120,3 +120,23 @@ Cuentas demo: `cliente@demo.co`, `operador@demo.co`, `domi1@demo.co` — contras
 - El servicio corre como usuario de sistema `umh` con `ProtectSystem=strict`,
   `ProtectHome=true` y escritura limitada a `/var/lib/umh`.
 - HTTP redirige a HTTPS y el dominio envía HSTS (`Strict-Transport-Security`).
+
+## Cámara de casco del vehículo (ESP32-CAM + `umh-vision`)
+
+El casco del desbloqueo (UC09) lo puede decidir la **cámara montada en el vehículo**, no solo el navegador:
+
+```
+ESP32-CAM ──JPEG por HTTPS──► Nginx /api/camera/frame ──► umh-vision (127.0.0.1:8090, modelo YOLOv8 ONNX)
+                                                              │ último veredicto por vehículo
+API (umh.service) ◄── GET 127.0.0.1:8090/api/camera/latest ───┘   (src/server/services/camera.ts)
+```
+
+- En `POST /api/unlock/sessions/:id/helmet`, si la cámara del vehículo mandó un fotograma en los últimos 5 s,
+  **su veredicto manda** y lo que declare el navegador se ignora (la respuesta trae `helmetSource: "camera"`).
+  Sin cámara se mantiene la IA del navegador (la demo no se rompe). `UMH_REQUIRE_CAMERA=1` obliga a usar la cámara.
+- `GET /api/vehicles/:id/camera` → `{ online, required }`; la pantalla de desbloqueo lo consulta cada 2 s.
+- Variables nuevas del API (opcionales): `UMH_VISION_URL` (por defecto `http://127.0.0.1:8090`) y `UMH_REQUIRE_CAMERA`.
+- Servicio `umh-vision`: código en `vision-service/`, unidad en `vision-service/deploy/umh-vision.service`,
+  entorno en `/etc/umh/vision.env` (`INGEST_KEY` ≥ 16 caracteres), modelo en `/opt/umh-vision/models/`
+  (ver `models/README.md`). Detalle y comandos en `vision-service/README.md`.
+- Firmware de la placa y configuración del Wi-Fi por Bluetooth (`/provision.html`): `firmware/esp32cam-helmet/README.md`.

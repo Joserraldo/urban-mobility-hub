@@ -111,10 +111,14 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
 
   const remove = async (kind: "vehicle" | "hub", id: string) => {
     try {
-      if (kind === "vehicle") await ds.deleteVehicle(id);
-      else await ds.deleteHub(id);
+      const { retired } =
+        kind === "vehicle"
+          ? await ds.deleteVehicle(id)
+          : (await ds.deleteHub(id), { retired: false });
       await refresh();
-      toast.success(`${id} eliminado`);
+      toast.success(
+        retired ? `${id} dado de baja (conserva su historial de reservas)` : `${id} eliminado`,
+      );
     } catch (err) {
       fail(err);
     }

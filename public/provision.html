@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Configurar cámara NODO</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#14181f; --muted:#5b6472; --line:#d9dde4; --brand:#0f766e; --brand-fg:#fff; --bad:#b42318; --ok:#067647; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1116; --card:#171b22; --fg:#e8ebf0; --muted:#9aa4b2; --line:#2a303a; --brand:#2dd4bf; --brand-fg:#06201c; --bad:#f97066; --ok:#47cd89; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:520px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:1.35rem; margin:8px 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .step { display:flex; gap:10px; align-items:center; font-weight:600; margin-bottom:10px; }
+  .step b { display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--brand); color:var(--brand-fg); font-size:.85rem; }
+  label { display:block; font-size:.9rem; color:var(--muted); margin:10px 0 4px; }
+  input[type=text], input[type=password], input[type=number] { width:100%; padding:12px; border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--fg); font:inherit; }
+  input:focus-visible, button:focus-visible, summary:focus-visible { outline:3px solid var(--brand); outline-offset:2px; }
+  button { width:100%; padding:13px; border:0; border-radius:10px; background:var(--brand); color:var(--brand-fg); font:inherit; font-weight:600; cursor:pointer; }
+  button[disabled] { opacity:.5; cursor:not-allowed; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .row { display:flex; gap:10px; } .row > * { flex:1; }
+  .pw { position:relative; } .pw button { position:absolute; right:6px; top:6px; width:auto; padding:6px 10px; font-size:.85rem; }
+  details { margin-top:12px; } summary { cursor:pointer; color:var(--muted); }
+  .chk { display:flex; gap:8px; align-items:center; margin-top:12px; color:var(--fg); }
+  #status { margin-top:12px; padding:12px; border-radius:10px; border:1px solid var(--line); min-height:46px; }
+  #status.ok { border-color:var(--ok); color:var(--ok); } #status.bad { border-color:var(--bad); color:var(--bad); }
+  .warn { color:var(--bad); font-size:.92rem; margin:0 0 12px; }
+  small { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Configurar cámara de casco</h1>
+  <p class="lead">Conecta la placa ESP32-CAM a tu Wi-Fi desde el celular, por Bluetooth.</p>
+
+  <p id="unsupported" class="warn" hidden></p>
+
+  <section class="card">
+    <div class="step"><b>1</b> Conecta con la cámara</div>
+    <small>Alimenta la placa sin Wi-Fi guardado (o si no logra conectar) y aparecerá como <code>NODO-CAM-XXXX</code>.</small>
+    <div style="height:10px"></div>
+    <button id="btnScan" type="button">Buscar cámara por Bluetooth</button>
+    <div id="status" role="status" aria-live="polite">Sin conectar.</div>
+  </section>
+
+  <section class="card">
+    <div class="step"><b>2</b> Datos de la red</div>
+    <label for="ssid">Nombre de la red Wi-Fi (SSID)</label>
+    <input id="ssid" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" />
+    <label for="pass">Contraseña</label>
+    <div class="pw">
+      <input id="pass" type="password" autocomplete="off" maxlength="63" />
+      <button id="btnPw" type="button" class="ghost" aria-label="Mostrar u ocultar contraseña">Ver</button>
+    </div>
+    <small>La red debe ser de 2,4 GHz (el ESP32 no usa 5 GHz).</small>
+
+    <details>
+      <summary>Servidor (opcional)</summary>
+      <label for="host">Servidor del backend (IP o dominio)</label>
+      <input id="host" type="text" autocapitalize="none" spellcheck="false" />
+      <div class="row">
+        <div><label for="port">Puerto</label><input id="port" type="number" min="1" max="65535" /></div>
+        <div><label for="dev">Id del vehículo</label><input id="dev" type="text" autocapitalize="characters" spellcheck="false" /></div>
+      </div>
+      <label for="key">Clave de dispositivo (INGEST_KEY)</label>
+      <input id="key" type="password" autocomplete="off" />
+      <label class="chk"><input id="tls" type="checkbox" /> Usar HTTPS</label>
+      <small>Si lo dejas vacío, la placa conserva lo que ya tenía.</small>
+    </details>
+  </section>
+
+  <section class="card">
+    <div class="step"><b>3</b> Enviar</div>
+    <button id="btnSend" type="button" disabled>Enviar a la cámara</button>
+  </section>
+</main>
+
+<script>
+(() => {
+  const SVC = "6e0d0001-b5a3-f393-e0a9-e50e24dcca9e";
+  const CFG = "6e0d0002-b5a3-f393-e0a9-e50e24dcca9e";
+  const STA = "6e0d0003-b5a3-f393-e0a9-e50e24dcca9e";
+  const $ = (id) => document.getElementById(id);
+  const q = new URLSearchParams(location.search);
+  const local = ["localhost", "127.0.0.1", ""].includes(location.hostname);
+
+  $("host").value = q.get("host") || (local ? "" : location.hostname);
+  $("port").value = q.get("port") || (local ? "" : location.port || (location.protocol === "https:" ? "443" : ""));
+  $("dev").value = q.get("dev") || "";
+  $("tls").checked = q.get("tls") ? q.get("tls") === "1" : location.protocol === "https:";
+
+  let device = null, cfgChr = null, connected = false;
+  const dec = new TextDecoder(), enc = new TextEncoder();
+
+  const setStatus = (text, kind = "") => { const s = $("status"); s.textContent = text; s.className = kind; };
+  const MSG = {
+    ready: ["Conectado. Escribe los datos de la red y pulsa Enviar.", ""],
+    connecting: ["La cámara está probando la conexión Wi-Fi… (hasta 20 s)", ""],
+    "fail:wifi": ["No pudo conectarse al Wi-Fi. Revisa el nombre y la contraseña (red de 2,4 GHz) e inténtalo de nuevo.", "bad"],
+    "fail:data": ["Los datos no son válidos (SSID de 1 a 32 caracteres, contraseña de hasta 63).", "bad"],
+  };
+  function onStatus(raw) {
+    if (MSG[raw]) return setStatus(...MSG[raw]);
+    if (raw.startsWith("ok:")) return setStatus("Listo. La cámara se conectó (IP " + raw.slice(3) + ") y se reiniciará para empezar a transmitir.", "ok");
+    if (raw.startsWith("ok-noserver:")) return setStatus("La cámara se conectó al Wi-Fi (IP " + raw.slice(12) + ") pero NO alcanza el servidor. Revisa la IP/puerto del servidor y el firewall. Los datos quedaron guardados.", "bad");
+    setStatus(raw);
+  }
+
+  if (!navigator.bluetooth) {
+    const w = $("unsupported");
+    w.hidden = false;
+    w.textContent = "Este navegador no permite Bluetooth web. Usa Chrome en Android (o Edge/Chrome en escritorio). En iPhone no está disponible: usa la app «nRF Connect» (ver README del firmware).";
+    $("btnScan").disabled = true;
+  } else if (!window.isSecureContext) {
+    const w = $("unsupported");
+    w.hidden = false;
+    w.textContent = "Bluetooth web exige HTTPS (o localhost). Abre esta página desde la versión publicada con HTTPS.";
+  }
+
+  $("btnPw").onclick = () => { const p = $("pass"); const show = p.type === "password"; p.type = show ? "text" : "password"; $("btnPw").textContent = show ? "Ocultar" : "Ver"; };
+
+  $("btnScan").onclick = async () => {
+    try {
+      setStatus("Buscando…");
+      device = await navigator.bluetooth.requestDevice({ filters: [{ services: [SVC] }] });
+      device.addEventListener("gattserverdisconnected", () => { connected = false; $("btnSend").disabled = true; setStatus("Bluetooth desconectado."); });
+      const server = await device.gatt.connect();
+      const svc = await server.getPrimaryService(SVC);
+      cfgChr = await svc.getCharacteristic(CFG);
+      const st = await svc.getCharacteristic(STA);
+      await st.startNotifications();
+      st.addEventListener("characteristicvaluechanged", (e) => onStatus(dec.decode(e.target.value)));
+      onStatus(dec.decode(await st.readValue()));
+      connected = true;
+      $("btnSend").disabled = false;
+    } catch (e) {
+      if (e && e.name === "NotFoundError") setStatus("No se eligió ninguna cámara.");
+      else setStatus("No se pudo conectar: " + (e && e.message || e), "bad");
+    }
+  };
+
+  $("btnSend").onclick = async () => {
+    const ssid = $("ssid").value.trim();
+    if (!ssid) return setStatus("Escribe el nombre de la red Wi-Fi.", "bad");
+    const e = encodeURIComponent;
+    let text = "ssid=" + e(ssid) + "\npass=" + e($("pass").value) + "\n";
+    const host = $("host").value.trim(), port = $("port").value.trim(), dev = $("dev").value.trim(), key = $("key").value;
+    if (host) text += "host=" + e(host) + "\n";
+    if (port) text += "port=" + e(port) + "\n";
+    if (dev) text += "dev=" + e(dev) + "\n";
+    if (key) text += "key=" + e(key) + "\n";
+    if (host) text += "tls=" + ($("tls").checked ? "1" : "0") + "\n";
+    text += "\n"; // línea vacía = fin
+    const bytes = enc.encode(text);
+    try {
+      $("btnSend").disabled = true;
+      setStatus("Enviando…");
+      for (let i = 0; i < bytes.length; i += 100) await cfgChr.writeValueWithResponse(bytes.slice(i, i + 100));
+    } catch (err) {
+      setStatus("Error al enviar: " + (err && err.message || err), "bad");
+    } finally {
+      $("btnSend").disabled = !connected;
+    }
+  };
+})();
+</script>
+</body>
+</html>

@@ -34,6 +34,7 @@ import {
 import { getGateway } from "../services/pasarela";
 import { applyTelemetry, markLate } from "../services/fleet-sim";
 import { stream } from "../services/stream";
+import { cameraRequired, cameraStream, cameraVerdict } from "../services/camera";
 
 const ALERT_OUT: Record<string, string> = {
   ok: "ok",
@@ -48,6 +49,14 @@ const BASE_PREPAY_COP = 10_000;
 const inFlight = new Set<string>();
 /** UC14-E2: un domiciliario no recibe más de este número de entregas abiertas a la vez. */
 export const MAX_ACTIVE_DELIVERIES = 5;
+
+/** Solo ve la cámara de un vehículo quien lo tiene reservado (por desbloquear o en viaje) o el operador. */
+function canViewVehicleCamera(u: SessionUser, vehicleId: string): boolean {
+  if (u.role === "operator") return true;
+  return (repos.reservations.byUser(u.id) as ReservationRow[]).some(
+    (r) => r.vehicle_id === vehicleId && (r.status === "requested" || r.status === "active"),
+  );
+}
 
 /** Ejecuta varias escrituras como una sola: si una falla, no queda ninguna (todo o nada). */
 function atomically<T>(fn: () => T): T {
@@ -227,6 +236,39 @@ export async function handle(request: Request): Promise<Response> {
       if (!v) throw httpError(404, "Vehículo no encontrado");
       return ok(toClientVehicle(v));
     }
+    // ¿La cámara del vehículo está enviando imagen? La pantalla de desbloqueo lo consulta cada 2 s.
+    const camMatch = path.match(/^\/api\/vehicles\/([^/]+)\/camera$/);
+    if (method === "GET" && camMatch?.[1]) {
+      const u = requireUser(request);
+      const id = decodeURIComponent(camMatch[1]);
+      if (!canViewVehicleCamera(u, id))
+        throw httpError(403, "No tienes un desbloqueo en curso para este vehículo");
+      const cam = await cameraVerdict(id);
+      return ok({
+        online: cam !== null,
+        required: cameraRequired(),
+        ...(cam ? { helmetDetected: cam.helmetDetected, confidence: cam.confidence } : {}),
+      });
+    }
+
+    // Video en vivo del vehículo (MJPEG): solo para quien está desbloqueándolo (o el operador).
+    const camStreamMatch = path.match(/^\/api\/vehicles\/([^/]+)\/camera\/stream$/);
+    if (method === "GET" && camStreamMatch?.[1]) {
+      const u = requireUser(request);
+      const id = decodeURIComponent(camStreamMatch[1]);
+      if (!canViewVehicleCamera(u, id))
+        throw httpError(403, "No tienes un desbloqueo en curso para este vehículo");
+      const upstream = await cameraStream(id, request.signal);
+      if (!upstream) throw httpError(503, "La cámara del vehículo no está disponible");
+      return new Response(upstream.body, {
+        headers: {
+          "content-type":
+            upstream.headers.get("content-type") ?? "multipart/x-mixed-replace; boundary=frame",
+          "cache-control": "no-store",
+        },
+      });
+    }
+
     if (method === "GET" && path === "/api/hubs") return ok(repos.hubs.list().map(toClientHub));
     const hubMatch = path.match(/^\/api\/hubs\/([^/]+)$/);
     if (method === "GET" && hubMatch?.[1]) {
@@ -404,14 +446,27 @@ export async function handle(request: Request): Promise<Response> {
       };
 
       let updated: DomainSession;
+      let helmetSource: "camera" | "client" | undefined;
       if (action === "qr") {
         const b = await body<QrBody>(request);
         updated = scanQr(session, String(b.code ?? ""), now);
       } else if (action === "helmet") {
         const b = await body<HelmetBody>(request);
+        // Cámara del vehículo (ESP32-CAM + umh-vision): si hay fotograma reciente, su veredicto manda y lo que
+        // declare el navegador se ignora. Sin cámara: IA del navegador (demo), salvo UMH_REQUIRE_CAMERA=1.
+        const cam = await cameraVerdict(session.vehicleId);
+        if (!cam && cameraRequired())
+          throw httpError(
+            409,
+            "La cámara del vehículo no está enviando imagen. Acércate a ella e inténtalo de nuevo",
+          );
+        helmetSource = cam ? "camera" : "client";
         updated = verifyHelmet(
           session,
-          { helmetDetected: Boolean(b.helmetDetected), confidence: Number(b.confidence ?? 0) },
+          cam ?? {
+            helmetDetected: Boolean(b.helmetDetected),
+            confidence: Number(b.confidence ?? 0),
+          },
           now,
         );
       } else if (action === "face") {
@@ -441,9 +496,9 @@ export async function handle(request: Request): Promise<Response> {
       }
 
       repos.unlock.setStep(sid, updated.step, updated.reason);
-      if (updated.step === "denied" || updated.step === "expired")
-        return ok(updated, { status: 400 });
-      return ok(updated);
+      const out = helmetSource ? { ...updated, helmetSource } : updated;
+      if (updated.step === "denied" || updated.step === "expired") return ok(out, { status: 400 });
+      return ok(out);
     }
 
     // ---------- telemetría y alertas (UC20/UC11/UC12) ----------
@@ -555,8 +610,23 @@ export async function handle(request: Request): Promise<Response> {
     const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
     if (method === "DELETE" && adminVehicleDelete?.[1]) {
       requireRole(request, "operator");
-      repos.vehicles.remove(adminVehicleDelete[1]);
-      return ok({ ok: true });
+      const id = decodeURIComponent(adminVehicleDelete[1]);
+      const v = repos.vehicles.byId(id);
+      if (!v) throw httpError(404, "Vehículo no encontrado");
+      if (v.status === "reserved" || v.status === "in_use")
+        throw httpError(
+          409,
+          "No puedes retirar un vehículo con una reserva o un viaje en curso. Finaliza o cancela primero esa reserva",
+        );
+      // Con historial (reservas, compras, desbloqueos, alertas) borrar rompería la trazabilidad (RNF-04):
+      // se da de baja (offline) y conserva sus datos. Sin historial se elimina del todo.
+      if (repos.vehicles.hasHistory(id)) {
+        repos.vehicles.setStatus(id, "offline");
+        stream.emit("vehicle", { vehicleId: id, status: "offline" });
+        return ok({ ok: true, retired: true });
+      }
+      repos.vehicles.remove(id);
+      return ok({ ok: true, retired: false });
     }
     if (method === "POST" && path === "/api/admin/hubs") {
       requireRole(request, "operator");

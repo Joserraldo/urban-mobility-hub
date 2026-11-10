@@ -530,6 +530,9 @@ export function createMockDataSource(): DataSource {
       }
       return { ...s };
     },
+    async vehicleCamera() {
+      return { online: false, required: false }; // el modo demostración no tiene cámaras de vehículo
+    },
     async verifyFace(sessionId, { score }) {
       const me = requireUser();
       const s = this_session(sessions, sessionId);
@@ -581,6 +584,7 @@ export function createMockDataSource(): DataSource {
       const operator = requireUser();
       if (operator.role !== "operator") throw new DataError("Solo operadores", "forbidden");
       vehicles = vehicles.filter((v) => v.id !== id);
+      return { retired: false };
     },
     async saveHub(hub) {
       const operator = requireUser();

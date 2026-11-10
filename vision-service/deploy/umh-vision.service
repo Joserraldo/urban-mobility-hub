@@ -1,0 +1,25 @@
+[Unit]
+Description=Urban Mobility Hub - deteccion de cascos (camara ESP32-CAM)
+After=network.target
+
+[Service]
+Type=simple
+User=umh
+Group=umh
+WorkingDirectory=/opt/umh-vision
+EnvironmentFile=/etc/umh/vision.env
+ExecStart=/usr/bin/node --no-warnings /opt/umh-vision/server.mjs
+Restart=always
+RestartSec=3
+# La VM tiene <1 GB: el modelo no debe poder tumbar la app principal
+MemoryHigh=480M
+MemoryMax=560M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# solo lectura de la BD de la app (SQLite en modo WAL necesita poder abrir -shm)
+ReadWritePaths=/var/lib/umh
+
+[Install]
+WantedBy=multi-user.target
