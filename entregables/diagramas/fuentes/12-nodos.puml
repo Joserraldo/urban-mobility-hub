@@ -1,4 +1,5 @@
 @startuml 12-nodos
+!pragma layout elk
 !include estilo.iuml
 title Diagrama de nodos — Dispositivos, servidores y cómo se comunican
 left to right direction
