@@ -100,6 +100,25 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 CREATE INDEX IF NOT EXISTS idx_payments_owner ON payments(owner_type, owner_id);
 
+-- Órdenes de pago en línea (Bold): el cobro es asíncrono (link de pago + webhook), por eso
+-- existe un estado `pending` que `payments` (solo resultados finales) no admite.
+CREATE TABLE IF NOT EXISTS bold_orders (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  owner_type TEXT NOT NULL CHECK (owner_type IN ('purchase','reservation')),
+  owner_id TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'base' CHECK (kind IN ('base','cargo_viaje')),
+  amount_cop INTEGER NOT NULL,
+  link_id TEXT NOT NULL,
+  checkout_url TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  resolved_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_bold_orders_owner ON bold_orders(owner_type, owner_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bold_orders_link ON bold_orders(link_id);
+
 CREATE TABLE IF NOT EXISTS deliveries (
   id TEXT PRIMARY KEY,
   reservation_id TEXT NOT NULL REFERENCES reservations(id),
