@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 /**
  * Cliente de la pasarela Bold (API de link de pagos). Documentación:
@@ -10,6 +10,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 
 const BOLD_API = "https://integrations.api.bold.co";
+/** API de consulta del Botón de pagos (checkout embebido). */
+const BOLD_PAYMENTS_API = "https://payments.api.bold.co";
 
 export type BoldLinkStatus =
   "ACTIVE" | "PROCESSING" | "PAID" | "REJECTED" | "CANCELLED" | "EXPIRED";
@@ -17,22 +19,65 @@ export type BoldLinkStatus =
 export type BoldConfig = {
   /** Llave de identidad (cabecera `Authorization: x-api-key`). */
   identityKey: string;
-  /** Llave secreta (firma del webhook). Vacía en sandbox. */
+  /** Llave secreta: firma de integridad del checkout embebido (la de PRUEBAS en sandbox). */
   secretKey: string;
   /** URL pública del sitio, para `callback_url`. */
   publicUrl: string;
   sandbox: boolean;
+  /**
+   * Checkout embebido (el pago se abre dentro de la página). Requiere la llave secreta para firmar
+   * la orden; sin ella, o con `BOLD_EMBEDDED=0`, se usa el link de pago (redirige a Bold).
+   */
+  embedded: boolean;
 };
 
 /** Devuelve la configuración si hay llave de identidad; si no, la app usa la pasarela simulada. */
 export function boldConfig(env: NodeJS.ProcessEnv = process.env): BoldConfig | undefined {
   const identityKey = env["BOLD_IDENTITY_KEY"]?.trim();
   if (!identityKey) return undefined;
+  const secretKey = env["BOLD_SECRET_KEY"]?.trim() ?? "";
   return {
     identityKey,
-    secretKey: env["BOLD_SECRET_KEY"] ?? "",
+    secretKey,
     publicUrl: (env["UMH_PUBLIC_URL"] ?? "http://localhost:8080").replace(/\/+$/, ""),
     sandbox: (env["BOLD_ENV"] ?? "test") !== "production",
+    embedded: secretKey !== "" && env["BOLD_EMBEDDED"] !== "0",
+  };
+}
+
+/** Datos que el navegador necesita para abrir el checkout embebido de Bold. */
+export type EmbeddedCheckout = {
+  apiKey: string;
+  orderId: string;
+  amount: number;
+  currency: "COP";
+  description: string;
+  integritySignature: string;
+  redirectionUrl: string;
+};
+
+/** Firma de integridad: SHA-256 hex de `{orderId}{monto}{divisa}{llaveSecreta}`. */
+export function integritySignature(
+  orderId: string,
+  amount: number,
+  currency: string,
+  secretKey: string,
+): string {
+  return createHash("sha256").update(`${orderId}${amount}${currency}${secretKey}`).digest("hex");
+}
+
+export function embeddedCheckout(
+  cfg: BoldConfig,
+  o: { orderId: string; amountCop: number; description: string; returnPath: string },
+): EmbeddedCheckout {
+  return {
+    apiKey: cfg.identityKey,
+    orderId: o.orderId,
+    amount: o.amountCop,
+    currency: "COP",
+    description: o.description.slice(0, 100),
+    integritySignature: integritySignature(o.orderId, o.amountCop, "COP", cfg.secretKey),
+    redirectionUrl: `${cfg.publicUrl}${o.returnPath}`,
   };
 }
 
@@ -54,8 +99,9 @@ async function boldFetch(
   path: string,
   init: RequestInit,
   fetchFn: FetchFn,
+  base: string = BOLD_API,
 ): Promise<unknown> {
-  const res = await fetchFn(`${BOLD_API}${path}`, {
+  const res = await fetchFn(`${base}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -117,6 +163,28 @@ export async function getLinkStatus(
     fetchFn,
   )) as { status?: BoldLinkStatus; transaction_id?: string | null };
   return { status: json.status ?? "ACTIVE", transactionId: json.transaction_id ?? null };
+}
+
+export type BoldButtonStatus =
+  "NO_TRANSACTION_FOUND" | "PROCESSING" | "PENDING" | "APPROVED" | "REJECTED" | "FAILED" | "VOIDED";
+
+/** Estado de una venta del Botón de pagos (checkout embebido) por el identificador de la orden. */
+export async function getButtonStatus(
+  cfg: BoldConfig,
+  orderId: string,
+  fetchFn: FetchFn = fetch,
+): Promise<{ status: BoldButtonStatus; transactionId: string | null }> {
+  const json = (await boldFetch(
+    cfg,
+    `/v2/payment-voucher/${encodeURIComponent(orderId)}`,
+    { method: "GET" },
+    fetchFn,
+    BOLD_PAYMENTS_API,
+  )) as { payment_status?: BoldButtonStatus; transaction_id?: string | null };
+  return {
+    status: json.payment_status ?? "NO_TRANSACTION_FOUND",
+    transactionId: json.transaction_id ?? null,
+  };
 }
 
 /**

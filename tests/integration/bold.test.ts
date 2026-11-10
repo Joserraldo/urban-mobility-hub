@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 /**
@@ -14,8 +15,8 @@ const { getDb } = await import("../../src/server/db");
 const { repos } = await import("../../src/server/repositories");
 const { uid } = await import("../../src/server/db/seed");
 const { handle } = await import("../../src/server/api/handlers");
-const { signBoldBody, verifyWebhookSignature, createPaymentLink, boldConfig } =
-  await import("../../src/server/services/bold");
+const bold = await import("../../src/server/services/bold");
+const { signBoldBody, verifyWebhookSignature, createPaymentLink, boldConfig } = bold;
 
 const BASE = "http://localhost";
 let linkSeq = 0;
@@ -292,5 +293,117 @@ describe("prepago de reserva con Bold", () => {
     };
     expect(b.orderId).toBe(a.orderId);
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe("checkout embebido (con llave secreta)", () => {
+  const { integritySignature } = bold;
+
+  function conLlaveSecreta<T>(fn: () => Promise<T>): Promise<T> {
+    process.env["BOLD_SECRET_KEY"] = "secreta-de-prueba";
+    return fn().finally(() => {
+      process.env["BOLD_SECRET_KEY"] = "";
+    });
+  }
+
+  /** Simula la API de consulta del botón: devuelve el estado indicado. */
+  function mockEstado(payment_status: string) {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(url);
+        return new Response(
+          JSON.stringify({ payment_status, transaction_id: "TX-1", reference_id: "x" }),
+          { status: 200 },
+        );
+      }),
+    );
+    return calls;
+  }
+
+  it("firma SHA-256 de {orden}{monto}{divisa}{llave}", () => {
+    expect(integritySignature("inv0334", 39400, "COP", "kgfq2nN0o52XqnuXZWIN2F")).toBe(
+      createHash("sha256").update("inv033439400COPkgfq2nN0o52XqnuXZWIN2F").digest("hex"),
+    );
+  });
+
+  it("devuelve los datos para abrir el pago dentro de la página, sin llamar a Bold", async () => {
+    const fetchSpy = mockBold();
+    await conLlaveSecreta(async () => {
+      const vehicleId = ventaDisponible();
+      const created = await call(cliente, "POST", "/api/purchases", { vehicleId });
+      const { purchase } = (await created.json()) as { purchase: { id: string } };
+      const pay = await call(cliente, "POST", "/api/payments", {
+        ownerType: "purchase",
+        ownerId: purchase.id,
+      });
+      expect(pay.status).toBe(202);
+      const out = (await pay.json()) as {
+        orderId: string;
+        checkoutUrl?: string;
+        embedded: {
+          apiKey: string;
+          amount: number;
+          integritySignature: string;
+          redirectionUrl: string;
+        };
+      };
+      expect(out.checkoutUrl).toBeUndefined();
+      expect(out.embedded.apiKey).toBe("llave-identidad-prueba");
+      expect(out.embedded.amount).toBe(1_500_000);
+      expect(out.embedded.integritySignature).toBe(
+        integritySignature(out.orderId, 1_500_000, "COP", "secreta-de-prueba"),
+      );
+      expect(out.embedded.redirectionUrl).toBe(
+        `https://sitio.test/pago/resultado?order=${out.orderId}`,
+      );
+      expect(fetchSpy).toHaveLength(0);
+    });
+  });
+
+  it("aprueba la compra al consultar el estado y no cobra por un intento rechazado", async () => {
+    await conLlaveSecreta(async () => {
+      const vehicleId = ventaDisponible();
+      const created = await call(cliente, "POST", "/api/purchases", { vehicleId });
+      const { purchase } = (await created.json()) as { purchase: { id: string } };
+      const pay = await call(cliente, "POST", "/api/payments", {
+        ownerType: "purchase",
+        ownerId: purchase.id,
+      });
+      const { orderId } = (await pay.json()) as { orderId: string };
+
+      mockEstado("REJECTED");
+      const rejected = (await (
+        await call(cliente, "GET", `/api/payments/bold/${orderId}`)
+      ).json()) as { status: string; lastAttempt: string | null; embedded: unknown };
+      expect(rejected.status).toBe("pending");
+      expect(rejected.lastAttempt).toBe("rejected");
+      expect(rejected.embedded).not.toBeNull();
+      expect(repos.purchases.byId(purchase.id)?.status).toBe("pending");
+
+      const calls = mockEstado("APPROVED");
+      const approved = (await (
+        await call(cliente, "GET", `/api/payments/bold/${orderId}`)
+      ).json()) as { status: string };
+      expect(approved.status).toBe("approved");
+      expect(calls[0]).toBe(`https://payments.api.bold.co/v2/payment-voucher/${orderId}`);
+      expect(repos.purchases.byId(purchase.id)?.status).toBe("paid");
+      expect(repos.vehicles.byId(vehicleId)?.status).toBe("sold");
+    });
+  });
+
+  it("reutiliza la misma orden embebida al reintentar", async () => {
+    await conLlaveSecreta(async () => {
+      const resId = reservaPendiente();
+      const body = { ownerType: "reservation", ownerId: resId };
+      const a = (await (await call(cliente, "POST", "/api/payments", body)).json()) as {
+        orderId: string;
+      };
+      const b = (await (await call(cliente, "POST", "/api/payments", body)).json()) as {
+        orderId: string;
+      };
+      expect(b.orderId).toBe(a.orderId);
+    });
   });
 });
