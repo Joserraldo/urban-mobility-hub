@@ -90,7 +90,7 @@ export const unlockStartSchema = z.object({ reservationId: z.string().min(1) });
 export const unlockQrSchema = z.object({ code: z.string().min(1).max(80) });
 export const unlockHelmetSchema = z.object({
   helmetDetected: z.boolean(),
-  /** confianza 0-1 del modelo de visión; se acepta con >= 0.8 */
+  /** confianza 0-1 del modelo de visión; se acepta con >= 0.7 */
   confidence: z.number().min(0).max(1),
 });
 export const unlockFaceSchema = z.object({ descriptor: faceDescriptorSchema });

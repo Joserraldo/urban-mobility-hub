@@ -9,6 +9,7 @@
  */
 import { createServer } from "node:http";
 import { DatabaseSync } from "node:sqlite";
+import { WebSocketServer, type WebSocket } from "ws";
 import { OnnxHelmetDetector } from "../src/server/adapters/vision/onnx-helmet";
 import type { HelmetDetector, HelmetVerdict } from "../src/server/ports/vision";
 
@@ -23,6 +24,9 @@ const THREADS = Number(env["VISION_THREADS"] ?? 2);
 const FRESH_MS = Number(env["CAMERA_FRESH_MS"] ?? 5000);
 const FAST_MS = 300;
 const IDLE_MS = 2000;
+// Por WebSocket no hay ida y vuelta por fotograma: la placa manda en cuanto puede y `n` es solo el mínimo entre fotos.
+const WS_FAST_MS = 60;
+const WS_IDLE_MS = 1500;
 const MAX_JPEG = 262_144;
 
 if (!INGEST_KEY || INGEST_KEY.length < 16) {
@@ -97,12 +101,40 @@ async function analyzeLatest(id: string): Promise<void> {
   try {
     const v = await detector.detect(f.jpeg);
     latest.set(id, { ...v, ts: Date.now() });
+    pushVerdict(id); // la placa se entera al instante por su WebSocket
   } catch {
     /* imagen corrupta: se ignora, llegará otra */
   } finally {
     analyzing = false;
   }
 }
+
+// ---- WebSocket de las placas: /api/camera/ws (binario = JPEG; el servidor responde texto {h,c,n}) ----
+const sockets = new Map<string, Set<WebSocket>>();
+const lastHint = new Map<string, number>();
+const hintFor = (id: string) => (waitingForHelmet(id) ? WS_FAST_MS : WS_IDLE_MS);
+
+function pushVerdict(id: string, force = true): void {
+  const set = sockets.get(id);
+  if (!set || set.size === 0) return;
+  const n = hintFor(id);
+  if (!force && lastHint.get(id) === n) return;
+  lastHint.set(id, n);
+  const l = latest.get(id);
+  const msg = JSON.stringify({
+    h: l?.helmetDetected ? 1 : 0,
+    c: Math.round((l?.confidence ?? 0) * 100),
+    n,
+  });
+  for (const ws of set) if (ws.readyState === ws.OPEN) ws.send(msg);
+}
+
+// Cambio de ritmo al instante cuando alguien empieza o termina un desbloqueo (sin esperar a la próxima foto).
+setInterval(() => {
+  for (const id of sockets.keys()) pushVerdict(id, false);
+}, 500);
+
+const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_JPEG });
 
 function readBody(req: import("node:http").IncomingMessage): Promise<Buffer | null> {
   return new Promise((resolve) => {
@@ -220,6 +252,37 @@ const server = createServer(async (req, res) => {
     console.error("[vision] error", e);
     if (!res.headersSent) err(res, 500, "INTERNAL_ERROR", "Error interno");
   }
+});
+
+server.on("upgrade", (req, socket, head) => {
+  const url = new URL(req.url ?? "/", "http://x");
+  const reject = (code: string) => {
+    socket.write(`HTTP/1.1 ${code}\r\nConnection: close\r\n\r\n`);
+    socket.destroy();
+  };
+  if (url.pathname !== "/api/camera/ws") return reject("404 Not Found");
+  if (!keyOk(req.headers["x-ingest-key"] as string | undefined)) return reject("401 Unauthorized");
+  const id = String(req.headers["x-device-id"] ?? "");
+  if (!id || id.length > 40) return reject("400 Bad Request");
+  if (!vehicleKnown(id)) return reject("404 Not Found");
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    let set = sockets.get(id);
+    if (!set) sockets.set(id, (set = new Set()));
+    set.add(ws);
+    pushVerdict(id);
+    ws.on("message", (data, isBinary) => {
+      if (!isBinary) return;
+      const jpeg = data as Buffer;
+      if (jpeg.length < 4 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return; // no es JPEG: se ignora
+      frames.set(id, { jpeg, seq: ++seqCounter });
+      void analyzeLatest(id);
+    });
+    const drop = () => {
+      sockets.get(id)?.delete(ws);
+    };
+    ws.on("close", drop);
+    ws.on("error", drop);
+  });
 });
 
 server.keepAliveTimeout = 65_000; // la placa reutiliza la conexión; no cerrarla en reposo (2 s)

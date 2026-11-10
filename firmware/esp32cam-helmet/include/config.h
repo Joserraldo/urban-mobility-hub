@@ -10,10 +10,14 @@
 #define CAM_FRAME_SIZE FRAMESIZE_VGA
 // 0-63, menor = más calidad y más bytes. 12 ≈ 25-35 KB en VGA: buen punto entre detalle y ancho de banda.
 #define CAM_JPEG_QUALITY 12
+// Sensores SIN JPEG por hardware (el JPEG lo hace el ESP32): resolución preferida y calidad (0-100, mayor = mejor).
+// HVGA 480x320 comprime ~2x más rápido que VGA y el modelo sigue viendo bien un casco a 1-2 m. QVGA = más fps.
+#define CAM_SOFT_FRAME_SIZE FRAMESIZE_HVGA
+#define CAM_SOFT_JPEG_QUALITY 55
 
 // ---- Ritmo de envío --------------------------------------------------------
 // El servidor manda `n` (ms hasta el próximo fotograma). Estos son los límites de seguridad.
-#define MIN_INTERVAL_MS 80
+#define MIN_INTERVAL_MS 30
 #define MAX_INTERVAL_MS 5000
 #define DEFAULT_INTERVAL_MS 1000
 

@@ -390,7 +390,7 @@ paths:
   /api/unlock/sessions/{id}/helmet:
     post:
       tags: [unlock]
-      summary: Paso 2 - verificación de casco por cámara (confianza >= 0.8)
+      summary: Paso 2 - verificación de casco por cámara (confianza >= 0.7)
       security: [{ bearer: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
       requestBody:

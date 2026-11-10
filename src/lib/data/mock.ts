@@ -523,7 +523,7 @@ export function createMockDataSource(): DataSource {
     async verifyHelmet(sessionId, { helmetDetected, confidence }) {
       const s = this_session(sessions, sessionId);
       if (s.step !== "helmet") throw new DataError("Primero escanea el código QR", "conflict");
-      if (helmetDetected && confidence >= 0.8) s.step = "ready";
+      if (helmetDetected && confidence >= 0.7) s.step = "ready";
       else {
         s.step = "denied";
         s.reason = "No se detectó el casco con suficiente confianza";

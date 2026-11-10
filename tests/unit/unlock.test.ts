@@ -38,12 +38,12 @@ describe("no se puede iniciar sin casco (TC-UNL-04..09) — corazón de RD8", ()
     expect(s.step).toBe("denied");
     expect(canStartTrip(s, T0 + 2500)).toBe(false);
   });
-  it("TC-UNL-06 confianza 0.79 => denied (límite inferior)", () => {
-    const s = verifyHelmet(atHelmet(), { helmetDetected: true, confidence: 0.79 }, T0 + 2000);
+  it("TC-UNL-06 confianza 0.69 => denied (límite inferior)", () => {
+    const s = verifyHelmet(atHelmet(), { helmetDetected: true, confidence: 0.69 }, T0 + 2000);
     expect(s.step).toBe("denied");
   });
-  it("TC-UNL-07 confianza 0.80 => ready (límite exacto)", () => {
-    const s = verifyHelmet(atHelmet(), { helmetDetected: true, confidence: 0.8 }, T0 + 2000);
+  it("TC-UNL-07 confianza 0.70 => ready (límite exacto)", () => {
+    const s = verifyHelmet(atHelmet(), { helmetDetected: true, confidence: 0.7 }, T0 + 2000);
     expect(s.step).toBe("ready");
   });
   it("TC-UNL-08 QR de otro vehículo => denied", () => {

@@ -1,20 +1,21 @@
 /*
  * NODO / Urban Mobility Hub — cámara de casco (ESP32-CAM AI-Thinker)
  *
- * Esta placa NO detecta nada: captura JPEG y los manda al backend (POST /api/camera/frame), que ejecuta el
- * modelo de cascos y decide. Diseño para el menor coste de red y CPU:
- *   - Una sola conexión TCP keep-alive reutilizada (sin handshake por fotograma, sin TLS salvo USE_TLS=1).
- *   - Cuerpo = JPEG crudo (sin base64 ni multipart) y cabecera construida de una sola vez.
- *   - Doble buffer en PSRAM + CAMERA_GRAB_LATEST: el driver captura por DMA mientras se transmite el anterior,
- *     y siempre se envía el fotograma MÁS RECIENTE (nunca uno viejo en cola).
- *   - El buffer se devuelve al driver en cuanto termina la escritura, antes de leer la respuesta.
- *   - El servidor responde {"ok":1,"h":0|1,"c":0-100,"n":ms}: `n` es el intervalo hasta el próximo fotograma
- *     (rápido solo mientras un usuario espera el casco; lento en reposo). La placa lo obedece.
- *   - Wi-Fi sin ahorro de energía (latencia mínima) y vigilante que reconecta o reinicia si se atasca.
+ * Esta placa NO detecta nada: captura JPEG y los manda al backend, que ejecuta el modelo de cascos y decide.
+ * Diseño para la menor latencia posible:
+ *   - WebSocket permanente (wss://…/api/camera/ws): sin handshake ni cabeceras por fotograma y SIN esperar
+ *     respuesta entre fotos; el servidor empuja el veredicto {"h","c","n"} cuando lo tiene. Si el WebSocket no
+ *     conecta, cae solo al POST /api/camera/frame (HTTP keep-alive).
+ *   - Dos núcleos en paralelo: el núcleo 0 captura y comprime a JPEG el siguiente fotograma mientras el
+ *     núcleo 1 transmite el anterior (el sensor no trae JPEG por hardware, comprimir cuesta ~100-200 ms).
+ *   - Solo se prepara un fotograma cuando se acerca su hora de envío → siempre llega el MÁS RECIENTE.
+ *   - `n` lo manda el servidor: casi continuo mientras alguien desbloquea; lento en reposo.
+ *   - Wi-Fi sin ahorro de energía y vigilante que reconecta o reinicia si se atasca.
  */
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <WebSocketsClient.h>
 #include <esp_camera.h>
 
 #include "config.h"
@@ -105,7 +106,7 @@ static bool initCamera() {
     esp_camera_deinit();
     c.pixel_format = PIXFORMAT_RGB565;
     c.xclk_freq_hz = 10000000;  // sin comprimir el bus va justo: reloj más lento evita perder líneas (EV-EOF-OVF)
-    framesize_t tries[] = {CAM_FRAME_SIZE, FRAMESIZE_QVGA};
+    framesize_t tries[] = {CAM_SOFT_FRAME_SIZE, FRAMESIZE_QVGA, FRAMESIZE_VGA};
     for (framesize_t fs : tries) {
       c.frame_size = fs;
       err = esp_camera_init(&c);
@@ -246,6 +247,109 @@ static bool writeFrame(const uint8_t* buf, size_t len) {
   return writeAll((const uint8_t*)head, hl) && writeAll(buf, len);
 }
 
+// ---- WebSocket (canal principal) --------------------------------------------------------------
+static WebSocketsClient ws;
+static String wsHeaders;  // la librería guarda el puntero: tiene que vivir siempre
+static volatile bool wsUp = false;
+static uint32_t wsDownSince = 0;
+static volatile uint32_t wsNextMs = DEFAULT_INTERVAL_MS;  // `n` que manda el servidor
+static volatile int wsHelmet = 0, wsConf = 0;
+
+static void onWs(WStype_t type, uint8_t* payload, size_t len) {
+  switch (type) {
+    case WStype_CONNECTED:
+      wsUp = true;
+      Serial.println("[ws] conectado");
+      break;
+    case WStype_DISCONNECTED:
+      if (wsUp) Serial.println("[ws] desconectado");
+      wsUp = false;
+      wsDownSince = millis();
+      break;
+    case WStype_TEXT: {
+      char b[96];
+      size_t n = min(len, sizeof(b) - 1);
+      memcpy(b, payload, n);
+      b[n] = 0;
+      long h = jsonInt(b, "h"), c = jsonInt(b, "c"), nn = jsonInt(b, "n");
+      if (h >= 0) {
+        wsHelmet = (int)h;
+        wsConf = (int)max(c, 0L);
+        if (nn > 0) wsNextMs = constrain((uint32_t)nn, MIN_INTERVAL_MS, MAX_INTERVAL_MS);
+        lastAckAt = millis();
+        digitalWrite(PIN_STATUS_LED, h ? LOW : HIGH);
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+// ---- Productor de fotogramas (núcleo 0) --------------------------------------------------------
+// Captura y comprime el siguiente fotograma mientras el bucle principal (núcleo 1) transmite el anterior.
+static SemaphoreHandle_t slotMutex;
+static uint8_t* pendBuf = nullptr;
+static size_t pendLen = 0;
+static volatile uint32_t compressMs = 150;
+
+static void capTask(void*) {
+  for (;;) {
+    bool havePending;
+    xSemaphoreTake(slotMutex, portMAX_DELAY);
+    havePending = pendBuf != nullptr;
+    xSemaphoreGive(slotMutex);
+    // Preparar solo cuando ya hay que enviar (menos el tiempo que cuesta comprimir): el fotograma sale fresco.
+    if (havePending || (int32_t)(nextSendAt - millis()) > (int32_t)(compressMs + 30)) {
+      vTaskDelay(pdMS_TO_TICKS(4));
+      continue;
+    }
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+      if (++camFailures >= 50) ESP.restart();
+      vTaskDelay(pdMS_TO_TICKS(20));
+      continue;
+    }
+    camFailures = 0;
+    uint32_t t0 = millis();
+    uint8_t* out = nullptr;
+    size_t olen = 0;
+    if (softJpeg) {
+      bool ok = fmt2jpg(fb->buf, fb->len, fb->width, fb->height, fb->format, CAM_SOFT_JPEG_QUALITY, &out, &olen);
+      esp_camera_fb_return(fb);
+      if (!ok || !out) continue;
+    } else {
+      out = (uint8_t*)ps_malloc(fb->len);
+      if (out) {
+        memcpy(out, fb->buf, fb->len);
+        olen = fb->len;
+      }
+      esp_camera_fb_return(fb);
+      if (!out) continue;
+    }
+    compressMs = (compressMs * 3 + (millis() - t0)) / 4;  // media móvil
+    xSemaphoreTake(slotMutex, portMAX_DELAY);
+    if (pendBuf) free(pendBuf);  // (no debería ocurrir) nunca se acumulan fotogramas viejos
+    pendBuf = out;
+    pendLen = olen;
+    xSemaphoreGive(slotMutex);
+  }
+}
+
+// Toma (y vacía) el fotograma listo. El llamador debe liberar `buf` con free().
+static bool takePending(uint8_t** buf, size_t* len) {
+  bool ok = false;
+  xSemaphoreTake(slotMutex, portMAX_DELAY);
+  if (pendBuf) {
+    *buf = pendBuf;
+    *len = pendLen;
+    pendBuf = nullptr;
+    ok = true;
+  }
+  xSemaphoreGive(slotMutex);
+  return ok;
+}
+
 // ---- Arranque / bucle -------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
@@ -270,6 +374,19 @@ void setup() {
   }
   lastAckAt = millis();
   stSince = millis();
+  wsDownSince = millis();
+
+  wsHeaders = String("x-ingest-key: ") + cfg.key + "\r\nx-device-id: " + cfg.dev;
+  ws.setExtraHeaders(wsHeaders.c_str());
+  if (cfg.tls) ws.beginSSL(cfg.host.c_str(), cfg.port, "/api/camera/ws");
+  else ws.begin(cfg.host.c_str(), cfg.port, "/api/camera/ws");
+  ws.onEvent(onWs);
+  ws.setReconnectInterval(3000);
+  ws.enableHeartbeat(15000, 4000, 2);
+
+  slotMutex = xSemaphoreCreateMutex();
+  nextSendAt = millis();
+  xTaskCreatePinnedToCore(capTask, "cap", 6144, nullptr, 1, nullptr, 0);  // núcleo 0, junto al Wi-Fi, prioridad baja
 }
 
 void loop() {
@@ -303,74 +420,58 @@ void loop() {
     }
   }
 
-  // Respetar el intervalo que pidió el servidor (medido de inicio a inicio de envío).
-  int32_t wait = (int32_t)(nextSendAt - now);
-  if (wait > 0) {
-    delay(wait > 50 ? 50 : wait);  // troceado para poder atender el vigilante
-    return;
-  }
+  ws.loop();
 
-  camera_fb_t* fb = esp_camera_fb_get();
-  if (!fb) {
-    if (++camFailures >= 10) ESP.restart();
-    delay(50);
-    return;
-  }
-  camFailures = 0;
-
-  const uint8_t* jbuf = fb->buf;
-  size_t frameLen = fb->len;
-  uint8_t* conv = nullptr;
-  if (softJpeg) {
-    // Comprimir a JPEG aquí (calidad 0-100) y devolver el buffer crudo al driver cuanto antes.
-    bool okc = fmt2jpg(fb->buf, fb->len, fb->width, fb->height, fb->format, 60, &conv, &frameLen);
-    esp_camera_fb_return(fb);
-    fb = nullptr;
-    if (!okc || !conv) {
-      delay(50);
-      return;
+  // Respetar el intervalo (de inicio a inicio de envío): lo manda el servidor por el WebSocket.
+  if ((int32_t)(millis() - nextSendAt) >= 0) {
+    uint8_t* buf = nullptr;
+    size_t len = 0;
+    if (takePending(&buf, &len)) {
+      uint32_t t0 = millis();
+      bool sent = false;
+      if (wsUp) {
+        sent = ws.sendBIN(buf, len);
+        nextSendAt = t0 + wsNextMs;
+      } else if (millis() - wsDownSince > 15000) {
+        // WebSocket caído más de 15 s: respaldo por HTTP (un POST por fotograma, con respuesta).
+        Ack ack;
+        bool wasOpen = net->connected();
+        bool wrote = openSocket() && writeFrame(buf, len);
+        if (!wrote && wasOpen) {
+          net->stop();
+          wrote = openSocket() && writeFrame(buf, len);
+        }
+        sent = wrote && readAck(ack);
+        if (sent && ack.valid) {
+          lastAckAt = millis();
+          wsHelmet = ack.helmet;
+          wsConf = ack.conf;
+          digitalWrite(PIN_STATUS_LED, ack.helmet ? LOW : HIGH);
+          nextSendAt = t0 + ack.nextMs;
+        } else {
+          net->stop();
+          nextSendAt = t0 + 1000;
+        }
+      } else {
+        nextSendAt = millis() + 200;  // esperando a que conecte el WebSocket
+      }
+      if (sent) {
+        stFrames++;
+        stBytes += len;
+      } else if (wsUp) {
+        stErrors++;
+      }
+      free(buf);
     }
-    jbuf = conv;
-  }
-
-  uint32_t t0 = millis();
-  Ack ack;
-  bool wasOpen = net->connected();
-  bool wrote = openSocket() && writeFrame(jbuf, frameLen);
-  if (!wrote && wasOpen) {
-    // La conexión keep-alive había caducado en el servidor: reabrir y reintentar UNA vez con el mismo fotograma.
-    net->stop();
-    wrote = openSocket() && writeFrame(jbuf, frameLen);
-  }
-  if (fb) esp_camera_fb_return(fb);  // el driver reutiliza el buffer mientras esperamos la respuesta
-  if (conv) free(conv);
-  bool ok = false;
-  if (wrote) {
-    stBytes += frameLen;
-    ok = readAck(ack);
-  }
-  if (!ok) {
-    net->stop();
-    stErrors++;
-  }
-
-  if (ok && ack.valid) {
-    uint32_t rtt = millis() - t0;
-    stFrames++;
-    stRttSum += rtt;
-    lastAckAt = millis();
-    digitalWrite(PIN_STATUS_LED, ack.helmet ? LOW : HIGH);
-    nextSendAt = t0 + ack.nextMs;
-  } else {
-    nextSendAt = t0 + (ok ? 3000 : 1000);  // error de servidor o de red: no martillear
   }
 
   if (millis() - stSince >= 5000) {
     float secs = (millis() - stSince) / 1000.0f;
-    Serial.printf("[stat] %.1f fps  %.0f kB/s  rtt %lu ms  err %lu  casco=%d (%d%%)  RSSI %d\n", stFrames / secs,
-                  stBytes / 1024.0f / secs, stFrames ? (unsigned long)(stRttSum / stFrames) : 0UL,
-                  (unsigned long)stErrors, ack.helmet, ack.conf, WiFi.RSSI());
-    stFrames = stBytes = stRttSum = stErrors = 0;
+    Serial.printf("[stat] %s %.1f fps  %.0f kB/s  jpeg %lu ms  err %lu  casco=%d (%d%%)  RSSI %d\n",
+                  wsUp ? "WS " : "HTTP", stFrames / secs, stBytes / 1024.0f / secs, (unsigned long)compressMs,
+                  (unsigned long)stErrors, (int)wsHelmet, (int)wsConf, WiFi.RSSI());
+    stFrames = stBytes = stErrors = 0;
     stSince = millis();
   }
+  delay(1);
 }

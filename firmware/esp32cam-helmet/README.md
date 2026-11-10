@@ -3,7 +3,18 @@
 La placa **solo captura y envía JPEG**. El backend (`POST /api/camera/frame`) ejecuta el modelo de cascos
 (`models/`) y decide; el desbloqueo usa ese veredicto con `POST /api/unlock/sessions/:id/helmet/camera`.
 
-## Cómo envía (rendimiento)
+## Transporte en tiempo real (WebSocket)
+
+Canal principal: `wss://<servidor>/api/camera/ws` (cabeceras `x-ingest-key` y `x-device-id`). La placa manda cada
+JPEG como mensaje binario **sin esperar respuesta**; el servidor empuja por el mismo canal `{"h","c","n"}` (casco,
+confianza, intervalo) cuando termina de analizar, y cambia `n` al instante cuando alguien empieza a desbloquear.
+Si el WebSocket no conecta en 15 s, cae solo al `POST /api/camera/frame` de abajo.
+
+- Núcleo 0: captura y comprime el siguiente fotograma; núcleo 1: transmite el anterior (en paralelo).
+- Sensor sin JPEG por hardware: `CAM_SOFT_FRAME_SIZE` (por defecto HVGA 480×320, ~3 fps al desbloquear). Con
+  `FRAMESIZE_QVGA` sube a ~6-8 fps pero el modelo ve menos detalle. `CAM_SOFT_JPEG_QUALITY` (0-100).
+
+## Cómo envía por HTTP (respaldo)
 
 | Decisión                                       | Efecto                                                                                             |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
