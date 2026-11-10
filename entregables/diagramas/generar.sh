@@ -1,16 +1,20 @@
 #!/bin/sh
 # Genera PNG + SVG de todos los diagramas PlantUML de esta carpeta.
-# Requisitos: Java, Graphviz (sudo apt install graphviz) y plantuml.jar en esta carpeta
-# (no se sube a git):
-#   curl -Lo plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2025.4/plantuml-1.2025.4.jar
-# Sin Graphviz usa el motor interno (Smetana): funciona, pero ordena peor los diagramas grandes.
+# Requisitos: Java y plantuml.jar (en esta carpeta o en ../_tools). Graphviz es opcional:
+#   sudo apt install graphviz
+# Los diagramas que declaran `!pragma layout elk` usan ELK (viene dentro del jar). Los demás usan
+# Graphviz si existe; si no, el motor interno Smetana (funciona, pero ordena peor los grandes).
 # Uso: sh entregables/diagramas/generar.sh
 cd "$(dirname "$0")"
-if command -v dot >/dev/null 2>&1; then LAYOUT=""; else
-  echo "Aviso: no hay Graphviz; se usa el motor interno (Smetana)."; LAYOUT="-Playout=smetana"; fi
 JAR=plantuml.jar; [ -f "$JAR" ] || JAR=../_tools/plantuml.jar
-java -jar "$JAR" $LAYOUT -tpng -o ../img fuentes/*.puml || echo "FALLO png"
-java -jar "$JAR" $LAYOUT -tsvg -o ../img fuentes/*.puml || echo "FALLO svg"
+if command -v dot >/dev/null 2>&1; then FALLBACK=""; else
+  echo "Aviso: no hay Graphviz; los diagramas sin ELK usan Smetana."; FALLBACK="-Playout=smetana"; fi
+for f in fuentes/*.puml; do
+  if grep -q '^!pragma layout' "$f"; then L=""; else L="$FALLBACK"; fi
+  for t in png svg; do
+    java -DPLANTUML_LIMIT_SIZE=8192 -jar "$JAR" $L -t$t -o ../img "$f" || echo "FALLO $t $f"
+  done
+done
 # 01 y 02 (Python + matplotlib) y 24 (Mermaid) se generan aparte:
 #   python fuentes/01-contexto-srs.py ; python fuentes/02-casos-de-uso-general.py
 #   npx -p @mermaid-js/mermaid-cli mmdc -i fuentes/24-matriz-riesgos.mmd -o img/24-matriz-riesgos.png -s 3 -b white
