@@ -4,51 +4,57 @@ title Diagrama de paquetes — Cómo se organiza el código por grupos
 top to bottom direction
 skinparam nodesep 25
 skinparam ranksep 40
-skinparam packageStyle rectangle
+skinparam packageStyle folder
 skinparam rectangle {
   BackgroundColor #F7F9FC
   FontSize 13
 }
 
 package "1. LO QUE VE EL USUARIO\n(carpetas src/routes, src/components, src/content)" as ux #E8F1FB {
-  rectangle "**Paginas del sitio**\nInicio, hubs, catalogo, guias, FAQ\n//src/routes//" as paginas
-  rectangle "**Mapa y desbloqueo**\nMapa de flota, desbloquear con casco, panel de telemetria\n//src/components/mobility//" as mapa
-  rectangle "**Cuenta de usuario**\nRegistro e inicio de sesion\n//src/components/auth//" as cuenta
-  rectangle "**Comprar y alquilar**\nVentanas de compra y alquiler\n//src/components/commerce//" as compra
-  rectangle "**Catalogo de vehiculos**\nFichas con foto y precio\n//src/components/catalog//" as catalogo
-  rectangle "**Entregas a domicilio**\nApp del repartidor y panel de entregas\n//src/components/mobility//" as entregas
-  rectangle "**Marco del sitio**\nMenus, SEO, textos de ayuda y FAQ\n//src/components/site, src/content//" as marco
+  folder "**Landing y paginas del sitio**\nLa landing (/) es la primera pantalla: de ahi\nse pasa a registro, login y la app\n//src/routes, src/components/Landing.tsx//" as paginas
+  folder "**Mapa y desbloqueo**\nMapa de flota, desbloquear con casco, panel de telemetria\n//src/components/mobility//" as mapa
+  folder "**Cuenta de usuario**\nRegistro e inicio de sesion\n//src/components/auth//" as cuenta
+  folder "**Comprar y alquilar**\nVentanas de compra y alquiler\n//src/components/commerce//" as compra
+  folder "**Catalogo de vehiculos**\nFichas con foto y precio\n//src/components/catalog//" as catalogo
+  folder "**Entregas a domicilio**\nApp del repartidor y panel de entregas\n//src/components/mobility//" as entregas
+  folder "**Resultado del pago**\nPagina de retorno desde Bold que\nconsulta el estado de la orden\n//src/routes/pago.resultado.tsx//" as resultado
+  folder "**Marco del sitio**\nMenus, SEO, textos de ayuda y FAQ\n//src/components/site, src/content//" as marco
 }
 
 package "2. SERVICIOS DE MOVILIDAD\n(carpeta src/server/domain)" as mov #E9F7EC {
-  rectangle "**Desbloqueo seguro**\nVerifica reserva, QR y casco" as desbloqueo
-  rectangle "**Reservas y alquileres**\nCrea, inicia y cierra reservas" as reservas
-  rectangle "**Seguimiento de entregas**\nAsigna repartidor y marca retrasos" as seguimiento
-  rectangle "**Alertas de flota**\nCaida, sin casco, sin GPS, bateria baja" as alertas
+  folder "**Desbloqueo seguro**\nVerifica reserva, QR y casco" as desbloqueo
+  folder "**Reservas y alquileres**\nCrea, inicia y cierra reservas" as reservas
+  folder "**Seguimiento de entregas**\nAsigna repartidor y marca retrasos" as seguimiento
+  folder "**Alertas de flota**\nCaida, sin casco, sin GPS, bateria baja" as alertas
 }
 
 package "3. SERVICIOS DE APOYO\n(carpeta src/server/services)" as apoyo #FFF4E0 {
-  rectangle "**Sesiones y seguridad**\nQuien eres y que puedes hacer" as sesiones
-  rectangle "**Pagos**\nPasarela simulada" as pagos
-  rectangle "**Correos**\nAvisos de retraso por Brevo" as correos
-  rectangle "**Flota en vivo**\nSimulador de vehiculos y envio de eventos" as vivo
+  folder "**Sesiones y seguridad**\nQuien eres y que puedes hacer" as sesiones
+  folder "**Pagos con Bold**\nLink de pago, webhook firmado y\nrespaldo simulado (sin llaves)\n//services/bold.ts, pasarela.ts//" as pagos
+  folder "**Correos**\nAvisos de retraso por Brevo" as correos
+  folder "**Flota en vivo**\nSimulador de vehiculos y envio de eventos" as vivo
 }
 
 package "4. INTELIGENCIA ARTIFICIAL\n(carpeta src/lib)" as ia #F3E8FB {
-  rectangle "**Deteccion de casco**\nCamara + modelo en el navegador" as casco
+  folder "**Deteccion de casco**\nCamara + modelo en el navegador" as casco
 }
 
 package "5. DATOS\n(carpetas src/lib/data, src/server/db)" as datos #FDEBEC {
-  rectangle "**Acceso a datos del cliente**\nElige datos de prueba o API real\n//src/lib/data//" as datcli
-  rectangle "**Guardado en base de datos**\nUnico lugar con SQL + datos de ejemplo\n//src/server/repositories.ts, db//" as guardado
+  folder "**Acceso a datos del cliente**\nElige datos de prueba o API real\n//src/lib/data//" as datcli
+  folder "**Guardado en base de datos**\nUnico lugar con SQL + datos de ejemplo\n//src/server/repositories.ts, db//" as guardado
 }
 
 package "6. PUERTA DE ENTRADA\n(carpeta src/server/api)" as puerta #EEEEEE {
-  rectangle "**Peticiones del sistema**\nRecibe lo que pide la pantalla y lo reparte" as api
+  folder "**Peticiones del sistema**\nRecibe lo que pide la pantalla y lo reparte" as api
+}
+
+package "8. EXTERNO\n(fuera del codigo)" as ext #F3E8FB {
+  folder "**Bold**\nPasarela de pagos (llaves de prueba)" as bold
+  folder "**Dispositivo IoT**\nUno en cada vehiculo alquilado: GPS,\nbateria, sensor de caida y lector de casco" as iot
 }
 
 package "7. COMPARTIDO\n(carpeta src/shared)" as comun #EEEEEE {
-  rectangle "**Vocabulario comun**\nDefiniciones de vehiculo, hub, reserva, alerta\n//src/shared/types//" as tipos
+  folder "**Vocabulario comun**\nDefiniciones de vehiculo, hub, reserva, alerta\n//src/shared/types//" as tipos
 }
 
 paginas -[hidden]right-> marco
@@ -71,6 +77,10 @@ sesiones -[hidden]right-> pagos
 sesiones -[hidden]down-> correos
 pagos -[hidden]down-> vivo
 mov -[hidden]down-> datos
+compra -[hidden]down-> resultado
+resultado ..> api : consulta estado del pago
+pagos ..> bold : crea link / recibe webhook
+iot --> api : telemetria (POST /api/ingest)
 mapa --> casco : valida casco
 paginas --> datcli : pide datos
 datcli --> api : por internet
