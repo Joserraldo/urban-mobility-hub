@@ -1,0 +1,127 @@
+@startuml 03-clases
+!include ../../diagramas/fuentes/estilo.iuml
+title Diagrama de clases (robustez) — Interfaz (boundary) · Control · Entidad (entity)
+
+skinparam nodesep 35
+skinparam ranksep 90
+skinparam boundaryBackgroundColor #DCE9FB
+skinparam boundaryBorderColor #1B2A41
+skinparam controlBackgroundColor #DDF3E8
+skinparam controlBorderColor #1B2A41
+skinparam entityBackgroundColor #FDEBD0
+skinparam entityBorderColor #1B2A41
+skinparam packageStyle folder
+skinparam rectangleBackgroundColor transparent
+skinparam rectangleBorderColor #6B7A90
+left to right direction
+
+package "INTERFACES (boundary)" as RB {
+  boundary "Landing\n/" as Landing
+  boundary "AuthForm\n/login · /registro" as AuthForm
+  boundary "MobilityApp\n/app" as MobilityApp
+  boundary "UnlockFlow" as UnlockFlow
+  boundary "MisReservas\n/mis-reservas" as MisReservas
+  boundary "AdminPanel\n/admin" as AdminPanel
+  boundary "CourierApp\n/entregas" as CourierApp
+  boundary "SimuladorFlota\n(gemelo digital)" as Sim
+  boundary "ApiHandlers\n/api/* (handlers.ts)" as Api
+}
+
+package "CONTROLES (control)" as RC {
+  control "SessionService" as SES
+  control "ReservationRules" as RR
+  control "PaymentController" as PAY
+  control "PasarelaBold\n(simulada sin llaves)" as PG
+  control "BoldWebhook" as BW
+  control "UnlockService" as UL
+  control "SecurityTrigger" as ST
+  control "FleetService" as FS
+  control "StreamHub (SSE)" as SSE
+  control "BrevoNotifier" as BR
+  control "Repositories" as REP
+}
+
+package "ENTIDADES (entity = tablas)" as RE {
+  entity "User" as User
+  entity "Consent" as Consent
+  entity "BiometricTemplate" as Bio
+  entity "Hub" as Hub
+  entity "Vehicle" as Vehicle
+  entity "Reservation" as Reservation
+  entity "Purchase" as Purchase
+  entity "Payment" as Payment
+  entity "UnlockSession" as Unlock
+  entity "AlertLog" as Alert
+  entity "Delivery" as Delivery
+  entity "Notification" as Notif
+}
+
+' ---- Interfaz -> API (vía DataSource HTTP) ----
+Landing --> Api : 1. listVehicles / listHubs
+AuthForm --> Api : 2. register / login
+MobilityApp --> Api : 3. comprar / reservar
+UnlockFlow --> Api : 4. qr / casco / rostro / start
+MisReservas --> Api : 5. cancelar / terminar viaje
+AdminPanel --> Api : 6. alertas / entregas / catálogo
+CourierApp --> Api : 7. iniciar / entregar / tardía
+Sim --> Api : 8. POST /api/ingest
+
+' ---- API -> Control ----
+Api --> SES : autentica
+Api --> RR : reservas y viajes
+Api --> PAY : /api/payments
+Api --> UL : /api/unlock/*
+Api --> FS : telemetría / entregas
+Api --> REP : lecturas y CRUD
+
+' ---- Control -> Control ----
+PAY --> PG : crearLink()
+Api --> BW : webhook de Bold
+FS --> ST : evaluateTelemetry()
+FS --> SSE : emit
+FS --> BR : notifyLateDelivery()
+UL --> REP
+PAY --> REP
+FS --> REP
+BR --> REP
+SES --> REP
+
+' ---- Control -> Entidad ----
+REP --> User
+REP --> Hub
+REP --> Vehicle
+REP --> Reservation
+REP --> Purchase
+REP --> Payment
+REP --> Unlock
+REP --> Alert
+REP --> Delivery
+REP --> Notif
+
+' ---- Entidad - Entidad ----
+User "1" -- "*" Consent
+User "1" -- "0..1" Bio
+User "1" -- "*" Reservation
+User "1" -- "*" Purchase
+Hub "1" -- "*" Vehicle
+Vehicle "1" -- "*" Reservation
+Vehicle "1" -- "*" Purchase
+Vehicle "1" -- "*" Alert
+Vehicle "1" -- "*" Unlock
+Reservation "1" -- "*" Unlock
+Reservation "1" -- "*" Delivery
+Delivery "1" -- "*" Notif
+Purchase "1" .. "*" Payment
+Reservation "1" .. "*" Payment
+
+note top of RB
+  El visitante cae primero en la Landing (/); despues va a login/registro y a la app.
+end note
+
+legend right
+  Interfaz (boundary) = lo que toca el usuario o un sistema externo
+  Control = lógica que orquesta
+  Entidad (entity) = dato persistente (tabla SQLite)
+  Regla: Interfaz → Control → Entidad; nunca al revés.
+end legend
+@enduml
