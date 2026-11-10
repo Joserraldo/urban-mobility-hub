@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LoadingState } from "@/components/common/states";
 import { PageHeading, SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
+import { openEmbeddedCheckout, type EmbeddedPayload } from "@/lib/data/bold-embedded";
 import { keys } from "@/lib/data/queries";
 import { formatCOP } from "@/lib/format";
 import { seo } from "@/lib/site";
@@ -30,6 +31,8 @@ type OrderStatus = {
   amountCop: number;
   reason: string | null;
   checkoutUrl: string | null;
+  embedded: EmbeddedPayload | null;
+  lastAttempt: "rejected" | null;
 };
 
 /** Cada cuánto se consulta y cuántas veces antes de decir "sigue en proceso" (~2 min). */
@@ -123,9 +126,22 @@ function PaymentResult() {
             icon={<Clock className="size-8 text-muted-foreground" aria-hidden />}
             title="Esperando la confirmación de Bold"
           >
-            {gaveUp
-              ? "Bold aún no confirma el pago. Si ya pagaste, revisa en unos minutos “Mis reservas”."
-              : "Esto toma solo unos segundos. No cierres esta página."}
+            {data.lastAttempt === "rejected"
+              ? "Tu último intento fue rechazado. Puedes volver a intentarlo."
+              : gaveUp
+                ? "Bold aún no confirma el pago. Si ya pagaste, revisa en unos minutos “Mis reservas”."
+                : "Esto toma solo unos segundos. No cierres esta página."}
+            {data.embedded ? (
+              <span className="mt-3 block">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void openEmbeddedCheckout(data.embedded as EmbeddedPayload)}
+                >
+                  Abrir el pago
+                </Button>
+              </span>
+            ) : null}
             {data.checkoutUrl ? (
               <span className="mt-3 block">
                 <Button asChild variant="outline" size="sm">

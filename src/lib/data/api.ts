@@ -1,4 +1,5 @@
 import type { DataSource } from "./datasource";
+import { payWithBold, type EmbeddedPayload } from "./bold-embedded";
 import {
   DataError,
   type AlertEvent,
@@ -76,6 +77,28 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 function goToCheckout(checkoutUrl: string): Promise<never> {
   window.location.assign(checkoutUrl);
   return new Promise<never>(() => undefined);
+}
+
+type BoldPay = {
+  reference?: string | undefined;
+  checkoutUrl?: string;
+  embedded?: EmbeddedPayload;
+  orderId?: string;
+};
+
+/**
+ * Bold embebido: el pago se abre DENTRO de la página y la promesa resuelve cuando el servidor
+ * confirma. Si el servidor solo entregó un link (sin llave secreta), se redirige como antes.
+ */
+async function settleBold(pay: BoldPay): Promise<void> {
+  if (pay.embedded && pay.orderId) {
+    const orderId = pay.orderId;
+    await payWithBold(pay.embedded, () =>
+      req<{ status: string; reason?: string | null }>(`/api/payments/bold/${orderId}`),
+    );
+    return;
+  }
+  if (pay.checkoutUrl) return goToCheckout(pay.checkoutUrl);
 }
 
 type VehicleRow = {
@@ -320,18 +343,15 @@ export function createApiDataSource(): DataSource {
           body: JSON.stringify(input),
         },
       );
-      const pay = await req<{ reference?: string | undefined; checkoutUrl?: string }>(
-        "/api/payments",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            ownerType: "reservation",
-            ownerId: created.reservation.id,
-            method: "card",
-          }),
-        },
-      );
-      if (pay.checkoutUrl) return goToCheckout(pay.checkoutUrl);
+      const pay = await req<BoldPay>("/api/payments", {
+        method: "POST",
+        body: JSON.stringify({
+          ownerType: "reservation",
+          ownerId: created.reservation.id,
+          method: "card",
+        }),
+      });
+      await settleBold(pay);
       return mapReservation({ ...created.reservation, paymentRef: pay.reference });
     },
     listReservations: () =>
@@ -340,10 +360,8 @@ export function createApiDataSource(): DataSource {
       if (event === "cancel") {
         await req(`/api/reservations/${id}/cancel`, { method: "POST" });
       } else if (event === "finish") {
-        const end = await req<{ checkoutUrl?: string }>(`/api/trips/${id}/end`, {
-          method: "POST",
-        });
-        if (end?.checkoutUrl) return goToCheckout(end.checkoutUrl);
+        const end = await req<BoldPay>(`/api/trips/${id}/end`, { method: "POST" });
+        await settleBold(end ?? {});
       } else {
         throw new DataError("El viaje inicia desbloqueando el vehículo", "conflict");
       }
@@ -357,18 +375,15 @@ export function createApiDataSource(): DataSource {
         method: "POST",
         body: JSON.stringify({ vehicleId }),
       });
-      const pay = await req<{ reference?: string | undefined; checkoutUrl?: string }>(
-        "/api/payments",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            ownerType: "purchase",
-            ownerId: created.purchase.id,
-            method: "card",
-          }),
-        },
-      );
-      if (pay.checkoutUrl) return goToCheckout(pay.checkoutUrl);
+      const pay = await req<BoldPay>("/api/payments", {
+        method: "POST",
+        body: JSON.stringify({
+          ownerType: "purchase",
+          ownerId: created.purchase.id,
+          method: "card",
+        }),
+      });
+      await settleBold(pay);
       return mapPurchase({ ...created.purchase, paymentRef: pay.reference });
     },
     listPurchases: () => req<PurchaseRow[]>("/api/purchases").then((rows) => rows.map(mapPurchase)),
