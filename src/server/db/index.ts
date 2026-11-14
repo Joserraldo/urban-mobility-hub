@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { seedIfEmpty } from "./seed";
+import { seedDemoData } from "./seed-demo";
 
 const DB_PATH = process.env["UMH_DB_PATH"] ?? "data/umh.db";
 // El config de Vite se empaqueta sin loader `?raw`: leemos la ruta canónica en runtime.
@@ -22,6 +23,7 @@ export function getDb(): DatabaseSync {
     db.exec("PRAGMA foreign_keys = ON;");
     db.exec(readFileSync(SCHEMA_PATH, "utf8"));
     seedIfEmpty(db);
+    if (process.env["UMH_SEED_DEMO"] === "1") seedDemoData(db);
   }
   return db;
 }

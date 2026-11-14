@@ -1,7 +1,7 @@
 # Despliegue en la VM (producción)
 
 Estado actual: **desplegado y funcionando** en `https://urbanmobility.duckdns.org`
-(IP `57.156.68.204`, Ubuntu 24.04, Node 24, Nginx + Let's Encrypt, SQLite local).
+(IP `20.221.192.0` desde 2026-11-13, tras migrar de una VM anterior que murió; Ubuntu 24.04, Node 24, Nginx + Let's Encrypt, SQLite local).
 
 ## Arquitectura
 
@@ -40,7 +40,7 @@ Van en `/etc/umh/umh.env` (root:umh, 640). **Nunca** se suben al repositorio.
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `NODE_ENV`           | `production`                                                                                                                              |
 | `PORT`               | `8080`                                                                                                                                    |
-| `HOST`               | `0.0.0.0`                                                                                                                                 |
+| `HOST`               | `127.0.0.1` (solo Nginx llega al app)                                                                                                     |
 | `UMH_INTERNAL_URL`   | `http://127.0.0.1:8080` (fetch del SSR contra el API)                                                                                     |
 | `UMH_DB_PATH`        | `/var/lib/umh/umh.db`                                                                                                                     |
 | `UMH_SESSION_SECRET` | secreto aleatorio de 32 bytes (HMAC de sesión)                                                                                            |
@@ -52,13 +52,14 @@ Van en `/etc/umh/umh.env` (root:umh, 640). **Nunca** se suben al repositorio.
 | `BOLD_EMBEDDED`      | opcional; `0` fuerza el link de pago aunque haya llave secreta                                                                            |
 | `BOLD_ENV`           | `test` (sandbox) o `production`                                                                                                           |
 | `UMH_PUBLIC_URL`     | `https://urbanmobility.duckdns.org` (retorno del pago)                                                                                    |
+| `UMH_SEED_DEMO`      | `1` carga el seeder de datos demo (ver `docs/SEEDER.md`); idempotente                                                                     |
 
 ## Pagos con Bold (llaves de prueba)
 
 Sin `BOLD_IDENTITY_KEY` la app usa la pasarela simulada. Para activar Bold en la VM:
 
 ```bash
-ssh -i vmingsoftwareiijose_key.pem azureuser@57.156.68.204
+ssh -i new_vmingsoftiijose_key.pem azureuser@20.221.192.0
 sudo nano /etc/umh/umh.env     # BOLD_IDENTITY_KEY, BOLD_SECRET_KEY (de pruebas), BOLD_ENV=test, UMH_PUBLIC_URL
 sudo chown root:umh /etc/umh/umh.env && sudo chmod 640 /etc/umh/umh.env
 sudo systemctl restart umh
@@ -80,8 +81,8 @@ NITRO_PRESET=node_server VITE_SITE_URL=https://urbanmobility.duckdns.org \
   npx vite build --mode api
 
 tar -czf /tmp/umh-release.tar.gz .output src/server/db/schema.sql
-scp -i vmingsoftwareiijose_key.pem /tmp/umh-release.tar.gz \
-  azureuser@57.156.68.204:/home/azureuser/
+scp -i new_vmingsoftiijose_key.pem /tmp/umh-release.tar.gz \
+  azureuser@20.221.192.0:/home/azureuser/
 ```
 
 En la VM:
@@ -143,3 +144,22 @@ Cuentas demo: `cliente@demo.co`, `operador@demo.co`, `domi1@demo.co` — contras
 - El servicio corre como usuario de sistema `umh` con `ProtectSystem=strict`,
   `ProtectHome=true` y escritura limitada a `/var/lib/umh`.
 - HTTP redirige a HTTPS y el dominio envía HSTS (`Strict-Transport-Security`).
+
+## Provisionar una VM desde cero (migración 2026-11-13)
+
+Pasos usados para levantar la VM nueva (Ubuntu 24.04 limpia, 4 GB RAM):
+
+1. **Azure NSG**: abrir TCP 22, 80 y 443 de entrada. Sin esto el dominio da _timeout_
+   aunque el firewall de la VM esté libre (las reglas no migran con la VM).
+2. **DuckDNS**: apuntar `urbanmobility.duckdns.org` a la IP nueva.
+3. En la VM: swap de 2 GB (`/swapfile` en `fstab`), Node 24 (NodeSource), `nginx`,
+   `certbot python3-certbot-nginx`, usuario de sistema `umh`, carpetas `/opt/umh`,
+   `/var/lib/umh`, `/etc/umh`.
+4. Subir el build (sección anterior), crear `/etc/umh/umh.env` (secretos aleatorios con
+   `openssl rand -hex 32`), instalar `umh.service` y `systemctl enable --now umh`.
+5. nginx: sitio HTTP que proxea a `127.0.0.1:8080`; luego
+   `sudo certbot --nginx -d urbanmobility.duckdns.org --redirect` genera el TLS.
+6. **Brevo**: autorizar la IP de la VM en <https://app.brevo.com/security/authorised_ips>
+   (si no, la API responde 401 `unrecognised IP address`). Ver `docs/INTEGRACIONES.md`.
+
+> `*.pem` está en `.gitignore`. Si pegaste llaves (Bold, Brevo) en un chat, rótalas.
