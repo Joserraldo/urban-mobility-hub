@@ -12,6 +12,8 @@ Este repositorio corresponde al **segundo avance**: portal web funcional con **b
 
 **Desplegado:** <https://urbanmobility.duckdns.org> — VM Ubuntu 24.04 + Nginx + HTTPS + Node 24 + SQLite. Guía de operación y actualizaciones en [`deploy/README.md`](deploy/README.md). El build de producción sirve la interfaz **y** el API `/api/*` en el mismo proceso.
 
+Datos demo: [`docs/SEEDER.md`](docs/SEEDER.md) · Bold y Brevo (con capturas y plantilla de correo): [`docs/INTEGRACIONES.md`](docs/INTEGRACIONES.md) · Capturas: [`docs/capturas/`](docs/capturas/README.md).
+
 ## Funcionalidades
 
 ### Landing page (`/`)

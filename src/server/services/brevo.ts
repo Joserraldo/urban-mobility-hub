@@ -83,12 +83,18 @@ function operatorId(): string | undefined {
   return repos.users.firstOperator()?.id as string | undefined;
 }
 
-function renderTemplate(n: LateNotice): string {
-  return `<div style="font-family:Segoe UI,sans-serif;max-width:520px;margin:auto">
-  <h2 style="color:#1B2A41">Urban Mobility Hub — entrega con retraso</h2>
-  <p>Hola ${n.customerName}, tu ${n.vehicleModel} con destino a <b>${n.address}</b>
-  va con <b>${n.minutesLate} min de retraso</b>. Tu domiciliario es ${n.courierName}.</p>
-  <p>Estamos encima. Puedes seguir el estado en la app o responder este correo.</p>
-  <p style="color:#6B7A90;font-size:12px">Copia enviada a Operación (${n.operatorEmail}).</p>
-</div>`;
+export function renderTemplate(n: LateNotice): string {
+  const esc = (v: string) => v.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+  return `<!doctype html><html lang="es"><body style="margin:0;background:#EEF2F7;padding:24px 12px;font-family:Segoe UI,Arial,sans-serif;color:#1B2A41">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #D9E1EC">
+<tr><td style="background:#1B2A41;padding:22px 28px"><span style="color:#fff;font-size:18px;font-weight:700">Urban Mobility Hub</span><br><span style="color:#9FB3CC;font-size:12px">Movilidad urbana · Bucaramanga</span></td></tr>
+<tr><td style="padding:28px">
+<h2 style="margin:0 0 12px;font-size:20px">Tu entrega va con retraso</h2>
+<p style="margin:0 0 18px;line-height:1.55">Hola ${esc(n.customerName)}, tu <b>${esc(n.vehicleModel)}</b> con destino a <b>${esc(n.address)}</b> lleva <b style="color:#C0392B">${n.minutesLate} min de retraso</b>.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F8FB;border-radius:10px"><tr><td style="padding:14px 16px;font-size:14px;line-height:1.7">
+<b>Domiciliario:</b> ${esc(n.courierName)}<br><b>Vehículo:</b> ${esc(n.vehicleModel)}<br><b>Dirección:</b> ${esc(n.address)}</td></tr></table>
+<p style="margin:18px 0 0;line-height:1.55">Estamos encima del tema. Puedes seguir el estado en la app o responder este correo.</p>
+</td></tr>
+<tr><td style="padding:14px 28px;background:#F6F8FB;color:#6B7A90;font-size:12px">Copia enviada a Operación (${esc(n.operatorEmail)}). Mensaje automático de Urban Mobility Hub.</td></tr>
+</table></body></html>`;
 }
