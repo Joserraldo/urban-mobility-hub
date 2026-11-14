@@ -135,6 +135,13 @@ jobs:
       - name: Build (preset node para poder previsualizarlo en el gate de Lighthouse)
         run: NITRO_PRESET=node_server npm run build
       - name: Lighthouse CI
+        # El build de producción no arranca sin secretos (fail-fast); en CI usamos valores
+        # de prueba y una base en memoria. No son secretos reales.
+        env:
+          NODE_ENV: production
+          UMH_SESSION_SECRET: ci-lighthouse-session-secret
+          UMH_DATA_KEY: ci-lighthouse-data-key
+          UMH_DB_PATH: ":memory:"
         run: npx lhci autorun --config=lighthouserc.json
       - uses: actions/upload-artifact@v4
         if: always()

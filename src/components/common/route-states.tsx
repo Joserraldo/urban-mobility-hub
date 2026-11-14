@@ -13,14 +13,16 @@ export function RoutePending() {
   );
 }
 
-export function RouteError({ error, reset }: { error: Error; reset: () => void }) {
+export function RouteError({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
   return (
     <SiteLayout>
       <div className="mx-auto max-w-xl px-4 py-16">
         <ErrorState
           testId="route-error"
-          message={error.message || "Algo salió mal al cargar esta página."}
+          message={
+            (error instanceof Error && error.message) || "Algo salió mal al cargar esta página."
+          }
           onRetry={() => {
             void router.invalidate();
             reset();
