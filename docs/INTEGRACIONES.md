@@ -34,19 +34,25 @@ no se tomó porque requiere completar el pago en el sandbox de Bold.
 
 ## Brevo — correo transaccional
 
-| Variable        | Valor                                                            |
-| --------------- | ---------------------------------------------------------------- |
-| `BREVO_API_KEY` | API key v3 (`xkeysib-…`)                                         |
-| `BREVO_SENDER`  | remitente **verificado** en Brevo (hoy `jtellez312@unab.edu.co`) |
+| Variable        | Valor                                                                  |
+| --------------- | ---------------------------------------------------------------------- |
+| `BREVO_API_KEY` | API key v3 (`xkeysib-…`)                                               |
+| `BREVO_SENDER`  | remitente **verificado** en Brevo (hoy `jtellez312@unab.edu.co`)       |
+| `BREVO_COPY_TO` | opcional; correo que recibe copia de cada reserva (si no, el operador) |
 
 Código: `src/server/services/brevo.ts` (REST con `fetch`, sin SDK). El correo de retraso
 (UC19 / RF-27) se envía **una vez por entrega** al cliente y a Operación; si Brevo falla queda
 `failed` en `notifications` y la operación no se rompe.
 
+**Confirmación de reserva:** cada `POST /api/reservations` envía un correo al cliente (asunto
+"Reserva confirmada…") y una copia a Operación (`BREVO_COPY_TO` o el operador). El envío es
+lateral: no bloquea la respuesta ni rompe la reserva. Plantilla compartida en `layout()` de
+`brevo.ts`. Prueba: `tests/unit/brevo.test.ts`.
+
 ### Requisito: IPs autorizadas
 
 Brevo rechaza llamadas desde IPs no autorizadas (`401 unrecognised IP address`). Agrega la IP de
-la VM (`20.221.192.0`) y, si pruebas desde tu PC, la tuya en
+la VM (`64.236.156.220`) y, si pruebas desde tu PC, la tuya en
 <https://app.brevo.com/security/authorised_ips>. **Si cambias de VM, repite este paso.**
 
 ### Cómo deben verse los correos

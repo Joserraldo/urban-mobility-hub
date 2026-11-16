@@ -670,7 +670,7 @@ export const repos = {
     /** Devuelve el id nuevo o null si ya existía (UNIQUE: una notificación por entrega+plantilla+usuario). */
     ensure(d: {
       userId: string;
-      deliveryId: string;
+      deliveryId?: string;
       template: string;
       toEmail: string;
     }): string | null {
@@ -681,7 +681,7 @@ export const repos = {
            VALUES (?,?,?,'email','brevo',?,?, 'queued', ?)`,
           id,
           d.userId,
-          d.deliveryId,
+          d.deliveryId ?? null,
           d.template,
           d.toEmail,
           Date.now(),

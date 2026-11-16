@@ -133,3 +133,76 @@ describe("brevo.ts — UC19 notificar retraso", () => {
     }
   });
 });
+
+describe("brevo.ts — confirmación de reserva", () => {
+  const base = {
+    customerEmail: "cliente@demo.co",
+    customerName: "Ana",
+    vehicleModel: "Volt S2",
+    vehicleId: "SC-1088",
+    modality: "hub",
+    hubName: "Hub Cabecera",
+    ratePerMinCop: 450,
+    prepayCop: 10000,
+    operatorEmail: "operador@demo.co",
+  };
+
+  function makeReservation() {
+    const res = {
+      id: uid("RES"),
+      user_id: "USRA-CLIENTE1",
+      vehicle_id: "SC-1088",
+      modality: "hub",
+      address: null,
+      status: "requested",
+      requested_at: Date.now(),
+    };
+    repos.reservations.create(res);
+    return res.id;
+  }
+
+  it("sin llave deja cliente y operador en `simulated` y la plantilla trae los datos", async () => {
+    const { notifyReservation, renderReservationTemplate } =
+      await import("../../src/server/services/brevo");
+    const reservationId = makeReservation();
+    await expect(notifyReservation({ ...base, reservationId })).resolves.toBeUndefined();
+    const notifs = repos.notifications
+      .list(300)
+      .filter((n) => n.template === "reserva_creada" && n.status === "simulated");
+    expect(notifs.length).toBeGreaterThanOrEqual(2);
+    const html = renderReservationTemplate({ ...base, reservationId });
+    expect(html).toContain(reservationId);
+    expect(html).toContain("Volt S2");
+    expect(html).toContain("Hub Cabecera");
+  });
+
+  it("escapa HTML en datos del usuario", async () => {
+    const { renderReservationTemplate } = await import("../../src/server/services/brevo");
+    const html = renderReservationTemplate({
+      ...base,
+      reservationId: "R1",
+      customerName: "<script>x</script>",
+    });
+    expect(html).not.toContain("<script>x");
+  });
+
+  it("con fetch 200 marca `sent` y usa el asunto de confirmación", async () => {
+    const { notifyReservation } = await import("../../src/server/services/brevo");
+    const fake = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ messageId: "MSG-R" }), { status: 200 })),
+      );
+    __setFetch(fake);
+    try {
+      process.env["BREVO_API_KEY"] = "xkey-test";
+      await notifyReservation({ ...base, reservationId: makeReservation() });
+      expect(fake).toHaveBeenCalledTimes(2);
+      const sent = JSON.parse((fake.mock.calls[0] as [string, RequestInit])[1].body as string);
+      expect(sent.subject).toContain("Reserva confirmada");
+    } finally {
+      delete process.env["BREVO_API_KEY"];
+      __setFetch(undefined);
+    }
+  });
+});

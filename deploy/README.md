@@ -1,7 +1,7 @@
 # Despliegue en la VM (producción)
 
 Estado actual: **desplegado y funcionando** en `https://urbanmobility.duckdns.org`
-(IP `20.221.192.0` desde 2026-11-13, tras migrar de una VM anterior que murió; Ubuntu 24.04, Node 24, Nginx + Let's Encrypt, SQLite local).
+(IP `64.236.156.220` desde 2026-11-16, tras migrar de una VM anterior que murió; Ubuntu 24.04, Node 24, Nginx + Let's Encrypt, SQLite local).
 
 ## Arquitectura
 
@@ -59,7 +59,7 @@ Van en `/etc/umh/umh.env` (root:umh, 640). **Nunca** se suben al repositorio.
 Sin `BOLD_IDENTITY_KEY` la app usa la pasarela simulada. Para activar Bold en la VM:
 
 ```bash
-ssh -i new_vmingsoftiijose_key.pem azureuser@20.221.192.0
+ssh -i ultima_ingsoftii_key.pem azureuser@64.236.156.220
 sudo nano /etc/umh/umh.env     # BOLD_IDENTITY_KEY, BOLD_SECRET_KEY (de pruebas), BOLD_ENV=test, UMH_PUBLIC_URL
 sudo chown root:umh /etc/umh/umh.env && sudo chmod 640 /etc/umh/umh.env
 sudo systemctl restart umh
@@ -81,8 +81,8 @@ NITRO_PRESET=node_server VITE_SITE_URL=https://urbanmobility.duckdns.org \
   npx vite build --mode api
 
 tar -czf /tmp/umh-release.tar.gz .output src/server/db/schema.sql
-scp -i new_vmingsoftiijose_key.pem /tmp/umh-release.tar.gz \
-  azureuser@20.221.192.0:/home/azureuser/
+scp -i ultima_ingsoftii_key.pem /tmp/umh-release.tar.gz \
+  azureuser@64.236.156.220:/home/azureuser/
 ```
 
 En la VM:

@@ -33,6 +33,7 @@ import {
   type SessionUser,
 } from "../services/sessions";
 import { getGateway } from "../services/pasarela";
+import { notifyReservation } from "../services/brevo";
 import {
   boldConfig,
   createPaymentLink,
@@ -317,6 +318,20 @@ export async function handle(request: Request): Promise<Response> {
         repos.reservations.create(r);
         repos.vehicles.setStatus(v.id, "reserved");
       });
+      // Correo de confirmación (Brevo): lateral, nunca bloquea ni rompe la reserva.
+      void notifyReservation({
+        reservationId: r.id,
+        customerEmail: u.email,
+        customerName: u.name,
+        vehicleModel: v.model,
+        vehicleId: v.id,
+        modality,
+        address: r.address,
+        hubName: (v.hub_id ? repos.hubs.byId(v.hub_id)?.name : null) ?? null,
+        ratePerMinCop: v.rate_per_min_cop,
+        prepayCop: BASE_PREPAY_COP,
+        operatorEmail: repos.users.firstOperator()?.email as string | undefined,
+      }).catch(() => undefined);
       return ok({ reservation: r, prepayCop: BASE_PREPAY_COP }, { status: 201 });
     }
 
