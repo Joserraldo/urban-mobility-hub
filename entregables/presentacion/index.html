@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Urban Mobility Hub · NODO Mobility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050b1c;--bg2:#0a1736;--ink:#e8f1ff;--mut:#8ea3c7;--cy:#22e5ff;--li:#b6ff3c;--ma:#ff5fb0;--line:#1b2e57;
+--jose:#22e5ff;--jaime:#b6ff3c;--santi:#ff5fb0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#02060f;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1920px;height:1080px;position:relative;flex:none;transform-origin:center center;background:var(--bg);overflow:hidden;box-shadow:0 0 120px rgba(34,229,255,.08)}
+.slide{position:absolute;inset:0;padding:90px 110px 80px;display:none;flex-direction:column;
+background:radial-gradient(900px 600px at 85% 0%,rgba(34,229,255,.13),transparent 60%),radial-gradient(800px 600px at 0% 100%,rgba(182,255,60,.07),transparent 60%),linear-gradient(var(--bg),var(--bg2))}
+.slide::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+background-image:linear-gradient(rgba(60,100,180,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(60,100,180,.12) 1px,transparent 1px);
+background-size:80px 80px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 85%);mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 85%)}
+.slide>*{position:relative}
+.route{position:absolute!important;right:-40px;bottom:-30px;width:900px;height:420px;opacity:.5;pointer-events:none}
+.route path{fill:none;stroke:var(--cy);stroke-width:3;stroke-dasharray:12 14;filter:drop-shadow(0 0 8px var(--cy))}
+.slide.active{display:flex}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.02}
+h2{font-size:78px;font-weight:700;margin-bottom:14px}
+h2 em{font-style:normal;color:var(--cy);text-shadow:0 0 30px rgba(34,229,255,.5)}
+h2 em.l{color:var(--li);text-shadow:0 0 30px rgba(182,255,60,.5)}
+h2 em.m{color:var(--ma);text-shadow:0 0 30px rgba(255,95,176,.5)}
+.kick{font-family:'JetBrains Mono',monospace;font-size:22px;letter-spacing:.2em;text-transform:uppercase;color:var(--li);margin-bottom:18px}
+.kick.m{color:var(--ma)}
+.sub{font-size:32px;color:var(--mut);max-width:1300px;line-height:1.35}
+.chip{position:absolute!important;top:34px;right:48px;font:700 22px 'Space Grotesk';padding:8px 20px 8px 14px;border-radius:99px;border:2px solid var(--c);color:var(--c);background:rgba(5,11,28,.8);display:flex;gap:10px;align-items:center;z-index:5;box-shadow:0 0 20px rgba(255,255,255,.08)}
+.chip::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.chip.jose{--c:var(--jose)}.chip.jaime{--c:var(--jaime)}.chip.santi{--c:var(--santi)}
+.row{display:flex;gap:28px}.col{display:flex;flex-direction:column;gap:22px}.grow{flex:1}.mt{margin-top:40px}.mt2{margin-top:24px}
+.tile{background:rgba(14,30,66,.7);border:1px solid var(--line);border-radius:22px;padding:28px 32px}
+.tile .n{font:700 76px 'Space Grotesk';color:var(--cy);line-height:1;text-shadow:0 0 24px rgba(34,229,255,.4)}
+.tile .n.l{color:var(--li);text-shadow:0 0 24px rgba(182,255,60,.35)}
+.tile .n.m{color:var(--ma)}
+.tile .t{font-size:26px;color:var(--mut);margin-top:10px;line-height:1.3}
+.tile h3{font-size:36px;margin-bottom:10px}
+.tile p{font-size:27px;line-height:1.4;color:#c9d8f3}
+ul.b{list-style:none;display:flex;flex-direction:column;gap:16px}
+ul.b li{font-size:31px;line-height:1.3;padding-left:38px;position:relative;color:#d5e2fb}
+ul.b li::before{content:"";position:absolute;left:0;top:.5em;width:14px;height:14px;border-radius:3px;background:var(--cy);box-shadow:0 0 12px var(--cy);transform:rotate(45deg)}
+ul.b.l li::before{background:var(--li);box-shadow:0 0 12px var(--li)}
+b{color:#fff}.cy{color:var(--cy)}.li{color:var(--li)}.ma{color:var(--ma)}
+code,.mono{font-family:'JetBrains Mono',monospace;font-size:.8em;color:var(--li);background:rgba(182,255,60,.08);padding:2px 8px;border-radius:6px}
+.shot,.dia{border-radius:16px;border:1px solid var(--line);background:#0b1633;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);display:block}
+.dia{background:#fff;object-fit:contain;cursor:zoom-in;transition:.25s}.dia:hover{box-shadow:0 0 0 3px var(--cy),0 0 50px rgba(34,229,255,.4)}
+.shot{object-fit:cover;object-position:top}
+.zoomhint{position:absolute!important;bottom:26px;right:48px;font:500 20px 'JetBrains Mono';color:var(--mut)}
+.cap{font-size:25px;color:var(--mut);margin-top:12px}
+.cap b{color:var(--ma)}
+.link{font:700 74px 'Space Grotesk';color:var(--cy);text-shadow:0 0 40px rgba(34,229,255,.55);border:2px solid var(--cy);border-radius:24px;padding:16px 44px;display:inline-block;background:rgba(34,229,255,.07);text-decoration:none}
+.tags{display:flex;flex-wrap:wrap;gap:12px}.tags span{font:500 24px 'Inter';padding:8px 18px;border-radius:99px;border:1px solid var(--line);background:rgba(14,30,66,.7);color:#d5e2fb}
+.tags.c span{border-color:rgba(34,229,255,.4)}.tags.l span{border-color:rgba(182,255,60,.4)}
+.flow{display:flex;align-items:stretch;gap:14px}
+.step{flex:1;background:rgba(14,30,66,.75);border:1px solid var(--line);border-radius:20px;padding:24px}
+.step .k{font:700 24px 'JetBrains Mono';color:var(--li)}.step h3{font-size:36px;margin:8px 0}.step p{font-size:24px;color:var(--mut);line-height:1.3}
+.arr{align-self:center;font-size:48px;color:var(--cy)}
+.slide.active .a{animation:in .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*110ms)}
+@keyframes in{from{opacity:0;transform:translateY(34px) scale(.98);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.slide.active .route path{animation:dash 30s linear infinite}@keyframes dash{to{stroke-dashoffset:-800}}
+.center{align-items:center;justify-content:center;text-align:center}
+aside.notes{display:none}
+#bar{position:fixed;left:0;top:0;height:5px;background:linear-gradient(90deg,var(--cy),var(--li));width:0;z-index:50;box-shadow:0 0 14px var(--cy);transition:width .4s}
+#ctr{position:fixed;left:18px;bottom:12px;font:500 15px 'JetBrains Mono';color:#7f93b8;z-index:50;background:rgba(2,6,15,.6);padding:4px 10px;border-radius:8px}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:46vh;overflow:auto;background:rgba(3,8,20,.96);border-top:2px solid var(--cy);z-index:60;padding:22px 5vw 28px;display:none;font-size:19px;line-height:1.55;box-shadow:0 -20px 60px rgba(0,0,0,.6)}
+#notes.on{display:block}
+#notes h4{font:700 22px 'Space Grotesk';display:flex;gap:14px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+#notes .who{padding:3px 14px;border-radius:99px;border:2px solid var(--c);color:var(--c)}
+#notes .tm{font:500 15px 'JetBrains Mono';color:var(--mut)}
+#notes p{max-width:1200px;color:#e3ecfb;margin-bottom:12px}
+#notes ul{margin:0 0 6px 24px;color:#b8cbea}#notes li{margin:3px 0}
+#notes .lbl{font:500 13px 'JetBrains Mono';letter-spacing:.15em;color:var(--li);text-transform:uppercase;margin:8px 0 4px}
+#grid{position:fixed;inset:0;background:rgba(2,6,15,.97);z-index:70;display:none;overflow:auto;padding:40px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;align-content:start}
+#grid.on{display:grid}
+.gc{border:1px solid var(--line);border-radius:14px;padding:16px;background:#0a1736;cursor:pointer;min-height:110px;display:flex;flex-direction:column;gap:8px;transition:.2s}
+.gc:hover,.gc.cur{border-color:var(--cy);box-shadow:0 0 22px rgba(34,229,255,.3)}
+.gc small{font:500 13px 'JetBrains Mono';color:var(--mut)}.gc b{font:700 19px 'Space Grotesk';line-height:1.2}
+.gc i{font-style:normal;font-size:13px;font-weight:700;color:var(--c)}
+#lb{position:fixed;inset:0;background:rgba(2,6,15,.96);z-index:80;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+#lb.on{display:flex}#lb img{max-width:96vw;max-height:94vh;background:#fff;border-radius:10px}
+</style>
+</head>
+<body>
+<div id="bar"></div><div id="ctr"></div>
+<div id="wrap"><div id="stage">
+
+<!-- 1 PORTADA -->
+<section class="slide center" data-title="Portada" data-who="jose">
+<svg class="route" viewBox="0 0 900 420"><path d="M0 380 C150 300 200 120 380 160 S600 330 720 200 S860 60 900 40"/></svg>
+<div class="chip jose">José</div>
+<img class="a" style="--i:0;width:150px;border-radius:34px;box-shadow:0 0 60px rgba(34,229,255,.5)" src="../../public/icon-512.png" alt="">
+<div class="kick a mt2" style="--i:1">NODO Mobility · Ingeniería de Software II · UNAB</div>
+<h1 class="a" style="--i:2;font-size:150px;font-weight:700">Urban <span class="cy" style="text-shadow:0 0 50px rgba(34,229,255,.6)">Mobility</span> Hub</h1>
+<p class="sub a mt2" style="--i:3">PWA de micromovilidad: patinetas, e-bikes y drones urbanos</p>
+<div class="a mt" style="--i:4"><a class="link" href="https://urbanmobility.duckdns.org">urbanmobility.duckdns.org</a></div>
+<div class="row a mt" style="--i:5;gap:60px;font:700 30px 'Space Grotesk'"><span style="color:var(--jose)">José Téllez</span><span style="color:var(--jaime)">Jaime</span><span style="color:var(--santi)">Santiago</span></div>
+<aside class="notes"><div class="tm">≈ 45 s</div>
+<p>Buenas. Somos el equipo de Urban Mobility Hub, que como marca llamamos NODO Mobility. Yo soy José Téllez y estoy con Jaime y Santiago. Esto es nuestro proyecto de Ingeniería de Software II en la UNAB: una aplicación web instalable, o sea una PWA, para micromovilidad. Y lo importante: no es una maqueta, está desplegada y funcionando en urbanmobility.duckdns.org, que pueden abrir desde el celular mientras hablamos.</p>
+<div class="lbl">Puntos clave</div><ul><li>Presentar al equipo y el reparto: José (producto e integraciones), Jaime (IoT/IA), Santiago (diagramas)</li><li>Link vivo en pantalla: urbanmobility.duckdns.org</li><li>Es una PWA desplegada, no una maqueta</li></ul></aside>
+</section>
+
+<!-- 2 PROBLEMA -->
+<section class="slide" data-title="El problema y qué es" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">El problema</div>
+<h2 class="a" style="--i:1">Vender, alquilar, entregar y <em>cuidar</em>… todo en un solo lugar</h2>
+<p class="sub a" style="--i:2">Una plataforma que centraliza <b>venta</b>, <b>alquiler</b>, <b>domicilio</b> y <b>seguridad</b> de patinetas eléctricas, e-bikes y drones urbanos.</p>
+<div class="row mt" style="flex:1">
+ <div class="tile grow a" style="--i:3"><div class="n">1</div><h3 class="mt2">Cliente</h3><p>Explora el mapa, reserva, desbloquea, viaja o compra y pide domicilio.</p></div>
+ <div class="tile grow a" style="--i:4"><div class="n l">2</div><h3 class="mt2">Operador / admin</h3><p>Ve la flota en vivo, atiende alertas, gestiona catálogo y entregas.</p></div>
+ <div class="tile grow a" style="--i:5"><div class="n m">3</div><h3 class="mt2">Domiciliario</h3><p>Recibe entregas asignadas y actualiza su estado hasta el cliente.</p></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>El problema es que hoy vender, alquilar, entregar y vigilar vehículos eléctricos suele vivir en herramientas separadas. Nosotros armamos una sola plataforma que centraliza la venta, el alquiler, el domicilio y la seguridad de patinetas eléctricas, e-bikes y drones urbanos. Tiene tres roles: el cliente, que viaja o compra; el operador o administrador, que controla la flota; y el domiciliario, que lleva lo comprado hasta la puerta.</p>
+<div class="lbl">Puntos clave</div><ul><li>Centraliza venta, alquiler, domicilio y seguridad</li><li>Vehículos: patinetas, e-bikes, drones urbanos</li><li>Tres roles: Cliente, Operador/admin, Domiciliario</li></ul></aside>
+</section>
+
+<!-- 3 RECORRIDO -->
+<section class="slide" data-title="Recorrido por la app" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Recorrido</div>
+<h2 class="a" style="--i:1">La app <em>por dentro</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:20px">
+ <div class="col a" style="--i:2;flex:1;min-width:0"><img class="shot" style="height:700px;width:100%" src="../../docs/capturas/01-inicio.png" alt=""><div class="cap"><b class="cy">Inicio</b></div></div>
+ <div class="col a" style="--i:3;flex:1;min-width:0"><img class="shot" style="height:700px;width:100%" src="../../docs/capturas/04-mapa-flota.png" alt=""><div class="cap"><b class="cy">Mapa de flota</b></div></div>
+ <div class="col a" style="--i:4;flex:1;min-width:0"><img class="shot" style="height:700px;width:100%" src="../../docs/capturas/03-catalogo.png" alt=""><div class="cap"><b class="cy">Catálogo</b></div></div>
+ <div class="col a" style="--i:5;flex:1;min-width:0"><img class="shot" style="height:700px;width:100%" src="../../docs/capturas/06-admin-panel.png" alt=""><div class="cap"><b class="li">Panel admin</b></div></div>
+ <div class="col a" style="--i:6;flex:1;min-width:0"><img class="shot" style="height:700px;width:100%" src="../../docs/capturas/07-entregas-domiciliario.png" alt=""><div class="cap"><b class="ma">Domiciliario</b></div></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>Rápido, así se ve. Empieza en el inicio; después el mapa de flota, donde el cliente ve los vehículos disponibles; el catálogo para comprar; el panel de administración con la flota y las alertas; y la vista del domiciliario con sus entregas. Todo es la misma app, cambia lo que ves según tu rol.</p>
+<div class="lbl">Puntos clave</div><ul><li>Cinco pantallas: inicio, mapa, catálogo, admin, domiciliario</li><li>Misma app, vistas por rol</li></ul></aside>
+</section>
+
+<!-- 4 LOGISTICA -->
+<section class="slide" data-title="Cómo funciona" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Cómo funciona</div>
+<h2 class="a" style="--i:1">Reserva, desbloqueo y <em>viaje por minuto</em></h2>
+<div class="flow mt2 a" style="--i:2">
+ <div class="step"><div class="k">01</div><h3>Reserva</h3><p>Prepago de <b class="li">$10.000 COP</b></p></div><div class="arr">→</div>
+ <div class="step"><div class="k">02</div><h3>Desbloqueo</h3><p>QR + casco (+ rostro)</p></div><div class="arr">→</div>
+ <div class="step"><div class="k">03</div><h3>Viaje</h3><p>Cobro por minuto, redondeo hacia arriba</p></div>
+</div>
+<div class="row mt2 a" style="--i:3">
+ <div class="tile grow"><div class="n" style="font-size:54px">$450</div><div class="t">Volt S2 / min</div></div>
+ <div class="tile grow"><div class="n" style="font-size:54px">$520</div><div class="t">Volt Pro / min</div></div>
+ <div class="tile grow"><div class="n" style="font-size:54px">$380</div><div class="t">e-Bike / min</div></div>
+ <div class="tile grow"><div class="n l" style="font-size:54px">$1.200</div><div class="t">Drone AeroLift 4 / min</div></div>
+</div>
+<div class="row mt2 a" style="--i:4">
+ <div class="tile grow"><h3 class="cy">O compra</h3><p>Desde <b>$2.890.000</b> hasta <b>$9.800.000</b> COP</p></div>
+ <div class="tile grow"><h3 class="ma">Y domicilio</h3><p>Tope de <b>5 entregas activas</b> por domiciliario</p></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min 15 s</div>
+<p>La lógica de negocio funciona así. El cliente reserva con un prepago de diez mil pesos, desbloquea el vehículo y viaja; el viaje se cobra por minuto y siempre redondeamos hacia arriba. La Volt S2 cuesta 450 pesos el minuto, la Volt Pro 520, la e-Bike 380 y el dron AeroLift 4, 1.200. Si prefiere comprar, los precios van desde 2.890.000 hasta 9.800.000, y se puede pedir domicilio. Para que la logística no se desborde, cada domiciliario puede tener máximo cinco entregas activas.</p>
+<div class="lbl">Puntos clave</div><ul><li>Prepago $10.000 → desbloqueo → cobro por minuto (redondeo arriba)</li><li>Tarifas: 450 / 520 / 380 / 1.200 por minuto</li><li>Compra: $2.890.000 a $9.800.000</li><li>Máximo 5 entregas activas por domiciliario</li></ul></aside>
+</section>
+
+<!-- 5 STACK -->
+<section class="slide" data-title="Stack tecnológico" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Stack</div>
+<h2 class="a" style="--i:1">Tecnología <em>de punta a punta</em></h2>
+<div class="row mt2" style="flex:1">
+ <div class="col grow">
+  <div class="tile a" style="--i:2"><h3 class="cy">Frontend</h3><div class="tags c"><span>TanStack Start (SSR)</span><span>React 19</span><span>TypeScript</span><span>Tailwind 4</span><span>shadcn/ui</span><span>Framer Motion</span><span>Leaflet</span></div></div>
+  <div class="tile a" style="--i:3"><h3 class="li">Servidor y datos</h3><div class="tags l"><span>Vite 8 + Nitro</span><span>SQLite (node:sqlite) · 12 tablas</span><span>SSE en vivo</span><span>onnxruntime-web</span></div></div>
+  <div class="tile a" style="--i:4"><h3 class="ma">Calidad</h3><div class="tags"><span>Vitest</span><span>Playwright</span><span>ESLint / Prettier</span><span>commitlint / Husky</span><span>GitHub Actions CI</span><span>Lighthouse CI</span></div></div>
+ </div>
+ <div class="tile a" style="--i:5;width:560px"><h3>Infraestructura</h3><ul class="b l mt2"><li>VM <b>Azure</b> Ubuntu 24.04</li><li><b>Nginx</b> + Certbot (HTTPS)</li><li><b>systemd</b>: servicio <code>umh</code></li><li>Node 24</li><li><b>DuckDNS</b> para el dominio</li></ul></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>El frontend usa TanStack Start con renderizado en servidor, React 19 y TypeScript, con Tailwind 4 y shadcn para la interfaz, Framer Motion para animar y Leaflet para el mapa. Todo corre sobre Vite 8 y Nitro. La base de datos es SQLite con el módulo nativo de Node, doce tablas, y los datos en vivo viajan por SSE. Para calidad: Vitest, Playwright, ESLint, Prettier, commitlint, Husky, GitHub Actions y Lighthouse CI. Y en producción, una máquina virtual de Azure con Ubuntu 24.04, Nginx con HTTPS por Certbot, un servicio systemd llamado umh y Node 24.</p>
+<div class="lbl">Puntos clave</div><ul><li>TanStack Start + React 19 + TS; Tailwind 4 + shadcn</li><li>SQLite nativa (12 tablas) + SSE para tiempo real</li><li>CI con GitHub Actions y Lighthouse CI</li><li>Azure Ubuntu 24.04 + Nginx + Certbot + systemd (umh)</li></ul></aside>
+</section>
+
+<!-- 6 BOLD -->
+<section class="slide" data-title="Integración: Bold" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Integración 1 · pagos</div>
+<h2 class="a" style="--i:1">Bold: pagos <em>dentro de la página</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:40px">
+ <div class="col" style="flex:1.1">
+  <ul class="b">
+   <li class="a" style="--i:2">Pasarela colombiana, <b>modo pruebas</b></li>
+   <li class="a" style="--i:3">Checkout <b>embebido</b> con firma de integridad <code>SHA-256</code> (orderId + monto + COP + llave secreta)</li>
+   <li class="a" style="--i:4">O <b>link de pago</b> que vence a los 30 min</li>
+   <li class="a" style="--i:5">Webhook firmado <code>HMAC-SHA256</code> · cabecera <code>x-bold-signature</code></li>
+   <li class="a" style="--i:6">Eventos <code>SALE_APPROVED</code> / <code>SALE_REJECTED</code> + consulta de estado</li>
+   <li class="a" style="--i:7">El desbloqueo <b class="li">exige pago aprobado</b></li>
+  </ul>
+ </div>
+ <div class="a" style="--i:4;flex:.9;display:flex;align-items:flex-start"><img class="shot" style="width:100%;max-height:760px;object-fit:contain" src="../../docs/capturas/09-pago-bold-resultado.png" alt=""></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min 30 s</div>
+<p>La primera integración que conecté es Bold, una pasarela de pagos colombiana, en modo pruebas. El checkout va embebido dentro de nuestra página, con una firma de integridad SHA-256 que arma el identificador de la orden, el monto, la moneda COP y la llave secreta. También se puede generar un link de pago que vence a los 30 minutos. Bold nos avisa con un webhook firmado con HMAC-SHA256 en la cabecera x-bold-signature, con eventos de venta aprobada o rechazada, y además podemos consultar el estado. Lo clave: el desbloqueo exige un pago aprobado.</p>
+<div class="lbl">Puntos clave</div><ul><li>Firma de integridad SHA-256: orderId + monto + COP + llave secreta</li><li>Link de pago vence a 30 min</li><li>Webhook HMAC-SHA256, x-bold-signature; SALE_APPROVED / SALE_REJECTED</li><li>Sin pago aprobado no hay desbloqueo</li></ul></aside>
+</section>
+
+<!-- 7 BREVO -->
+<section class="slide" data-title="Integración: Brevo" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Integración 2 · correo</div>
+<h2 class="a" style="--i:1">Brevo: avisos de <em>entrega tardía</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:40px">
+ <div class="col" style="flex:1.1">
+  <ul class="b l">
+   <li class="a" style="--i:2">Correo transaccional por <b>API REST</b></li>
+   <li class="a" style="--i:3">Avisa al <b>cliente y al operador</b> cuando una entrega a domicilio se retrasa</li>
+   <li class="a" style="--i:4">La detecta un <b>revisor automático cada 20 s</b>, o el operador la marca tarde</li>
+   <li class="a" style="--i:5"><b>Sin duplicados</b>: registro único por entrega + plantilla + usuario</li>
+   <li class="a" style="--i:6">Sin llave → <code>simulado</code> · si falla → <code>failed</code> en la BD</li>
+  </ul>
+  <div class="tile a mt2" style="--i:7"><p>Solo para <b class="li">entregas tardías</b>, no para cada pedido.</p></div>
+ </div>
+ <div class="a" style="--i:4;flex:.9;display:flex;align-items:flex-start"><img class="shot" style="width:100%;max-height:760px;object-fit:contain" src="../../docs/capturas/08-correo-entrega-tardia.png" alt=""></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>La segunda integración es Brevo, para correo transaccional por su API REST. Ojo, lo usamos solo para un caso: avisar al cliente y al operador cuando una entrega a domicilio se retrasa. Un revisor automático lo detecta cada 20 segundos, o el operador puede marcarla como tarde. Para no spamear, hay un registro único por entrega, plantilla y usuario, así que no se duplican correos. Si falta la llave el envío queda como simulado, y si falla queda como failed en la base de datos.</p>
+<div class="lbl">Puntos clave</div><ul><li>Brevo SOLO para entregas tardías, no para cada pedido</li><li>Revisor cada 20 s o marca manual del operador</li><li>Unicidad entrega + plantilla + usuario</li><li>Estados: simulado (sin llave) / failed</li></ul></aside>
+</section>
+
+<!-- 8 AZURE -->
+<section class="slide" data-title="Integración: Azure + DuckDNS" data-who="jose">
+<div class="chip jose">José</div>
+<div class="kick a">Integración 3 · despliegue</div>
+<h2 class="a" style="--i:1">Azure + DuckDNS: <em>en línea de verdad</em></h2>
+<div class="flow mt a" style="--i:2">
+ <div class="step"><div class="k">DNS</div><h3>DuckDNS</h3><p>urbanmobility.duckdns.org</p></div><div class="arr">→</div>
+ <div class="step"><div class="k">HTTPS</div><h3>Nginx + Certbot</h3><p>Proxy inverso y certificado</p></div><div class="arr">→</div>
+ <div class="step"><div class="k">APP</div><h3>systemd · umh</h3><p>Node 24 en Ubuntu 24.04</p></div><div class="arr">→</div>
+ <div class="step"><div class="k">DATOS</div><h3>SQLite</h3><p>En la misma VM de Azure</p></div>
+</div>
+<div class="row mt a" style="--i:4"><div class="tile grow"><div class="n l" style="font-size:60px">HTTPS</div><div class="t">Certificado real, necesario para cámara y PWA</div></div><div class="tile grow"><div class="n" style="font-size:60px">VM</div><div class="t">Azure Ubuntu 24.04, servicio administrado con systemd</div></div></div>
+<aside class="notes"><div class="tm">≈ 45 s</div>
+<p>La tercera pieza es el despliegue. Una VM de Azure con Ubuntu 24.04, donde la app corre con Node 24 como servicio systemd llamado umh. Delante va Nginx con certificado de Certbot, así tenemos HTTPS, que además es obligatorio para usar la cámara y para que sea PWA. El nombre lo resolvemos con DuckDNS. Con esto cierro mi parte y le paso la palabra a Jaime, que explica la parte de IoT y cámara.</p>
+<div class="lbl">Puntos clave</div><ul><li>DuckDNS → Nginx + Certbot → systemd umh → Node 24</li><li>HTTPS necesario para cámara y PWA</li><li>Hand-off a Jaime</li></ul></aside>
+</section>
+
+<!-- 9 JAIME IA -->
+<section class="slide" data-title="IoT y cámara: casco con IA" data-who="jaime">
+<div class="chip jaime">Jaime</div>
+<div class="kick a">IoT y cámara</div>
+<h2 class="a" style="--i:1">Detección de casco con IA <em class="l">en el navegador</em></h2>
+<div class="row mt2">
+ <div class="tile grow a" style="--i:2"><div class="n l">6,4 MB</div><div class="t">YOLOv8n en ONNX fp16</div></div>
+ <div class="tile grow a" style="--i:3"><div class="n l">640²</div><div class="t">Entrada con letterbox</div></div>
+ <div class="tile grow a" style="--i:4"><div class="n l">2</div><div class="t">Clases: con casco / sin casco</div></div>
+ <div class="tile grow a" style="--i:5"><div class="n l">≥ 80%</div><div class="t">Exigido por la regla de dominio</div></div>
+</div>
+<div class="row mt2" style="flex:1">
+ <ul class="b l grow">
+  <li class="a" style="--i:6">Corre en <b>WASM</b> con onnxruntime-web</li>
+  <li class="a" style="--i:7">Confianza mínima del modelo <b>0.4</b> · NMS IoU <b>0.45</b></li>
+  <li class="a" style="--i:8">Cámara con <code>getUserMedia</code>: frontal (casco), trasera (QR)</li>
+ </ul>
+ <div class="tile a" style="--i:8;width:520px;border-color:var(--li);align-self:flex-start"><h3 class="li">Privacidad</h3><p>La imagen <b>nunca sale del dispositivo</b>. Todo se infiere localmente.</p></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min 30 s</div>
+<p>Gracias José. Yo me encargué de la parte de IoT y cámara. Detectamos el casco con inteligencia artificial directamente en el navegador: un YOLOv8n exportado a ONNX en fp16, que pesa unos 6,4 megas y corre en WebAssembly con onnxruntime-web. La imagen entra a 640 por 640 con letterbox y el modelo distingue dos clases, con casco y sin casco. Internamente usa confianza mínima de 0.4 y NMS con IoU de 0.45, pero la regla de dominio exige al menos 80 %. Lo mejor para privacidad: la imagen nunca sale del dispositivo. Usamos getUserMedia: cámara frontal para el casco y trasera para el QR.</p>
+<div class="lbl">Puntos clave</div><ul><li>YOLOv8n → ONNX fp16 ≈ 6,4 MB, WASM</li><li>640×640 letterbox; 2 clases; conf 0.4, NMS IoU 0.45; regla ≥ 80 %</li><li>Privacidad: la imagen no sale del dispositivo</li><li>Frontal = casco, trasera = QR</li></ul></aside>
+</section>
+
+<!-- 10 JAIME DESBLOQUEO -->
+<section class="slide" data-title="Flujo de desbloqueo" data-who="jaime">
+<div class="chip jaime">Jaime</div>
+<div class="kick a">Desbloqueo</div>
+<h2 class="a" style="--i:1">Sesión de <em class="l">120 s</em>: QR, rostro y casco</h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:36px">
+ <div class="col" style="width:760px">
+  <div class="flow a" style="--i:2;flex-direction:column">
+   <div class="step"><div class="k">1 · QR</div><p>Formato <code>UMH:{id}</code></p></div>
+   <div class="step"><div class="k">2 · ROSTRO</div><p>Similitud ≥ 85 %, opcional, con consentimiento biométrico</p></div>
+   <div class="step"><div class="k">3 · CASCO</div><p>Detección con IA en el dispositivo</p></div>
+   <div class="step" style="border-color:var(--li)"><div class="k">4 · VIAJE</div><p>Inicia el viaje</p></div>
+  </div>
+  <div class="tile a" style="--i:5;border-color:var(--ma)"><p class="ma"><b>Sin casco → denegado</b> (HTTP 400): no se puede iniciar viaje.</p></div>
+ </div>
+ <div class="a" style="--i:3;flex:1;min-width:0;display:flex;flex-direction:column"><img class="dia zoom" style="max-height:760px;width:100%" src="../diagramas/img/18-secuencia-desbloqueo.png" alt="Secuencia de desbloqueo"><div class="cap">Clic para ampliar</div></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min 15 s</div>
+<p>El desbloqueo es una sesión de 120 segundos. Primero se escanea el QR del vehículo, que tiene el formato UMH dos puntos el id. Luego viene el rostro, con similitud mínima de 85 %, que es opcional y solo con consentimiento biométrico, y después el casco. Si todo pasa, se inicia el viaje. Si no hay casco, el servidor responde denegado con un 400 y no se puede arrancar. En el diagrama de secuencia se ve cómo la página, el servidor y la base de datos intercambian esos pasos.</p>
+<div class="lbl">Puntos clave</div><ul><li>Sesión de 120 s</li><li>QR UMH:{id} → rostro (≥ 85 %, opcional + consentimiento) → casco</li><li>Sin casco: HTTP 400, no hay viaje</li></ul></aside>
+</section>
+
+<!-- 11 JAIME TELEMETRIA -->
+<section class="slide" data-title="Telemetría y gemelos digitales" data-who="jaime">
+<div class="chip jaime">Jaime</div>
+<div class="kick a">Telemetría</div>
+<h2 class="a" style="--i:1">Gemelos digitales y <em class="l">alertas</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:30px">
+ <div class="col" style="width:880px;gap:16px">
+  <div class="tile a" style="--i:2;padding:20px 28px"><p><b>Contrato:</b> <span class="mono">vehicleId · lat · lng · batería · velocidad · helmetOn · impactG · gpsFixAge · tripActive</span></p></div>
+  <div class="tile a" style="--i:3;padding:20px 28px"><p>Topics estilo MQTT: <code>umh/vehicle/{id}/telemetry</code> · <code>/alert</code><br>Ingestión: <code>POST /api/ingest</code> · simulador cada <b>2 s</b></p></div>
+  <div class="tile a" style="--i:4;padding:20px 28px"><p>Gemelo digital = estado vivo en BD, emitido por <b class="li">SSE</b> al mapa y al panel.</p></div>
+  <div class="tile a" style="--i:5;padding:20px 28px"><h3 style="font-size:30px">Prioridad de alertas</h3><p>① accidente <b>≥ 3 g</b> › ② sin casco › ③ GPS perdido <b>≥ 10 s</b> › ④ batería <b>≤ 15 %</b><br><span style="color:var(--mut)">No se borran solas: el operador las cierra.</span></p></div>
+  <div class="tile a" style="--i:6;border-color:var(--ma);padding:20px 28px"><p class="ma"><b>Honestidad:</b> hardware simulado. Siguiente paso: conectar el dispositivo real por MQTT.</p></div>
+ </div>
+ <div class="a" style="--i:3;flex:1;min-width:0"><img class="dia zoom" style="max-height:780px;width:100%" src="../diagramas/img/19-secuencia-alerta.png" alt="Secuencia de alerta"><div class="cap">Clic para ampliar</div></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min 45 s</div>
+<p>Cada vehículo reporta un mensaje con id, latitud, longitud, batería, velocidad, si trae casco, el impacto en g, la edad del GPS y si hay viaje activo. Diseñamos los topics al estilo MQTT, umh/vehicle/id/telemetry y alert, y los datos entran por POST a /api/ingest; un simulador de flota emite cada dos segundos. El gemelo digital es el estado vivo de cada vehículo en la base de datos, y se empuja por SSE al mapa y al panel. Las alertas tienen prioridad: primero accidente con impacto de 3 g o más, luego sin casco, GPS perdido por 10 segundos o más y batería de 15 % o menos. No se borran solas: las cierra el operador. Y siendo honestos: el hardware está simulado. El contrato ya está listo para MQTT, pero el broker aún no está desplegado; el siguiente paso es conectar el dispositivo real por MQTT.</p>
+<div class="lbl">Puntos clave</div><ul><li>Contrato de mensaje + topics tipo MQTT + POST /api/ingest</li><li>Gemelo digital en BD → SSE a mapa y panel</li><li>Prioridad: accidente (≥3 g) › sin casco › GPS perdido (≥10 s) › batería (≤15 %)</li><li>Decirlo claro: simulado, broker MQTT pendiente</li></ul></aside>
+</section>
+
+<!-- 12 JAIME CALIDAD -->
+<section class="slide" data-title="Calidad" data-who="jaime">
+<div class="chip jaime">Jaime</div>
+<div class="kick a">Calidad</div>
+<h2 class="a" style="--i:1">Probado, medido y <em class="l">en verde</em></h2>
+<div class="row mt2">
+ <div class="tile grow a" style="--i:2"><div class="n l">115</div><div class="t">pruebas unitarias / integración</div></div>
+ <div class="tile grow a" style="--i:3"><div class="n l">19</div><div class="t">pruebas E2E con Playwright</div></div>
+ <div class="tile grow a" style="--i:4"><div class="n l">≥ 80%</div><div class="t">cobertura en módulos críticos</div></div>
+</div>
+<div class="row mt2">
+ <div class="tile grow a" style="--i:5"><div class="n">100</div><div class="t">Lighthouse · Accesibilidad</div></div>
+ <div class="tile grow a" style="--i:6"><div class="n">100</div><div class="t">Buenas prácticas</div></div>
+ <div class="tile grow a" style="--i:7"><div class="n">100</div><div class="t">SEO</div></div>
+ <div class="tile grow a" style="--i:8"><div class="n">94–99</div><div class="t">Rendimiento</div></div>
+</div>
+<div class="row mt2" style="flex:1">
+ <div class="tile grow a" style="--i:9"><h3>CI</h3><p>lint · typecheck · cobertura · <code>npm audit</code></p></div>
+ <div class="tile grow a" style="--i:10"><h3>Ronda con 5 usuarios</h3><p>Corrigió <b>doble cobro</b>, textos con jerga y páginas legales.</p></div>
+</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>En calidad tenemos 115 pruebas unitarias y de integración y 19 pruebas E2E con Playwright, todas en verde. El CI corre lint, typecheck, cobertura de al menos 80 % en módulos críticos y npm audit. En Lighthouse sacamos 100 en accesibilidad, 100 en buenas prácticas, 100 en SEO y entre 94 y 99 en rendimiento. Además hicimos una ronda con cinco usuarios reales, que nos hizo corregir un doble cobro, textos con jerga y agregar páginas legales. Ahora Santiago les explica los diagramas.</p>
+<div class="lbl">Puntos clave</div><ul><li>115 unit/integración + 19 E2E</li><li>CI: lint, typecheck, cobertura ≥ 80 %, npm audit</li><li>Lighthouse 100/100/100 y rendimiento 94–99</li><li>5 usuarios: doble cobro, jerga, páginas legales</li></ul></aside>
+</section>
+
+<!-- 13 SANTI ANALISIS -->
+<section class="slide" data-title="Análisis: casos de uso y DFD" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Análisis</div>
+<h2 class="a" style="--i:1">Qué hace el sistema: <em class="m">casos de uso y flujo de datos</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:26px">
+ <div class="a" style="--i:2;flex:1.1;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/02-casos-de-uso-general.png" alt=""><div class="cap"><b>Casos de uso:</b> 20 casos, 3 roles</div></div>
+ <div class="a" style="--i:3;flex:.9;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/06-dfd-nivel-0.png" alt=""><div class="cap"><b>DFD nivel 0:</b> el sistema y sus entidades externas</div></div>
+</div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>Gracias Jaime. Yo me encargué de los diagramas. Empezamos por el análisis. A la izquierda, el diagrama de casos de uso general: son 20 casos de uso repartidos entre los tres roles. Miren los actores a los lados y cómo cada uno solo toca sus casos. A la derecha, el DFD nivel 0, que muestra el sistema como una sola caja y con quién intercambia datos. Hay también un DFD nivel 1 que lo abre en procesos.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Casos de uso: actores a los lados, óvalos = funciones, 20 en total</li><li>DFD 0: una caja central, flechas = datos que entran y salen</li><li>Señalar: qué casos son del cliente, cuáles del operador y cuáles del domiciliario</li></ul></aside>
+</section>
+
+<!-- 14 SANTI C4 -->
+<section class="slide" data-title="Arquitectura C4" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Arquitectura</div>
+<h2 class="a" style="--i:1">Modelo C4: <em class="m">de lejos a cerca</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:26px">
+ <div class="a" style="--i:2;flex:1;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/08-c4-contexto.png" alt=""><div class="cap"><b>Nivel 1 · Contexto:</b> usuarios y sistemas externos</div></div>
+ <div class="a" style="--i:3;flex:1;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/09-c4-contenedores.png" alt=""><div class="cap"><b>Nivel 2 · Contenedores:</b> piezas desplegables</div></div>
+</div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>La arquitectura la documentamos con el modelo C4, que es como hacer zoom en un mapa. Primero el contexto: el sistema en el centro, las personas que lo usan y los servicios externos como Bold y Brevo. Después los contenedores: ahí ya vemos las piezas que se despliegan, la aplicación web, el servidor, la base de datos. Si un profesor pregunta dónde entra Bold o Brevo, se señalan en el de contexto.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Contexto: quién usa el sistema y con qué sistemas externos habla</li><li>Contenedores: qué se despliega y cómo se conectan</li><li>Señalar: Bold y Brevo como externos</li></ul></aside>
+</section>
+
+<!-- 15 SANTI COMPONENTES -->
+<section class="slide" data-title="Componentes y despliegue" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Componentes y despliegue</div>
+<h2 class="a" style="--i:1">Por dentro y <em class="m">dónde corre</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:26px">
+ <div class="a" style="--i:2;flex:1;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/11-componentes.png" alt=""><div class="cap"><b>Componentes:</b> módulos y dependencias</div></div>
+ <div class="a" style="--i:3;flex:1;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/12-nodos.png" alt=""><div class="cap"><b>Nodos:</b> dispositivos y servidores</div></div>
+</div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>Bajando un nivel más, el diagrama de componentes muestra los módulos internos y quién depende de quién. Y el de nodos es el de despliegue: dónde corre cada cosa físicamente, el navegador del usuario, la máquina virtual en Azure con Nginx y la app, y los servicios externos. Es el mapa de la infraestructura que contó José.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Componentes: cajas = módulos, flechas = dependencia</li><li>Nodos: cajas 3D = máquinas, dentro van los artefactos</li><li>Conecta con el stack de José</li></ul></aside>
+</section>
+
+<!-- 16 SANTI DISEÑO -->
+<section class="slide" data-title="Diseño: clases y datos" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Diseño</div>
+<h2 class="a" style="--i:1">Clases, BCE y <em class="m">modelo de datos</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:20px">
+ <div class="a" style="--i:2;flex:1;min-width:0"><img class="dia zoom" style="max-height:640px;width:100%" src="../diagramas/img/13-clases.png" alt=""><div class="cap"><b>Clases</b> de dominio</div></div>
+ <div class="a" style="--i:3;flex:1;min-width:0"><img class="dia zoom" style="max-height:640px;width:100%" src="../diagramas/img/25-clases-bce.png" alt=""><div class="cap"><b>BCE:</b> frontera · control · entidad</div></div>
+ <div class="a" style="--i:4;flex:1;min-width:0"><img class="dia zoom" style="max-height:640px;width:100%" src="../diagramas/img/14-modelo-datos.png" alt=""><div class="cap"><b>Modelo de datos</b> (12 tablas)</div></div>
+</div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 1 min 15 s</div>
+<p>En diseño tenemos tres vistas de lo mismo. El diagrama de clases con las entidades del dominio. El diagrama BCE, que separa clases de frontera, de control y de entidad, o sea qué toca la pantalla, qué orquesta la lógica y qué guarda datos. Y el modelo de datos, que es lo que terminó en SQLite: doce tablas con sus relaciones. Son tres niveles de abstracción de la misma idea.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Clases: atributos, métodos y relaciones</li><li>BCE: frontera (UI) → control (lógica) → entidad (datos)</li><li>Modelo de datos: tablas y llaves, 12 en total</li></ul></aside>
+</section>
+
+<!-- 17 SANTI COMPORTAMIENTO -->
+<section class="slide" data-title="Comportamiento: secuencia y estados" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Comportamiento</div>
+<h2 class="a" style="--i:1">Cómo se mueve: <em class="m">secuencia y estados</em></h2>
+<div class="row mt2" style="flex:1;min-height:0;gap:26px">
+ <div class="a" style="--i:2;flex:1.2;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/17-secuencia-alquiler-pago.png" alt=""><div class="cap"><b>Secuencia:</b> alquiler + pago</div></div>
+ <div class="a" style="--i:3;flex:.8;min-width:0"><img class="dia zoom" style="max-height:700px;width:100%" src="../diagramas/img/22-estados-vehiculo.png" alt=""><div class="cap"><b>Estados</b> del vehículo</div></div>
+</div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>Para el comportamiento: el diagrama de secuencia de alquiler y pago se lee de arriba hacia abajo, es el orden de los mensajes entre el cliente, la app, el servidor y Bold. Es la historia de la reserva con prepago hasta el cobro. A la derecha, el diagrama de estados del vehículo: los estados por los que pasa y qué evento dispara cada cambio.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Secuencia: líneas verticales = participantes, flechas = mensajes en orden</li><li>Estados: cajas = estado, flechas = transición</li><li>Conectar con la lógica de pago de José</li></ul></aside>
+</section>
+
+<!-- 18 SANTI RIESGOS -->
+<section class="slide" data-title="Gestión: matriz de riesgos" data-who="santi">
+<div class="chip santi">Santiago</div>
+<div class="kick m a">Gestión</div>
+<h2 class="a" style="--i:1">Matriz de <em class="m">riesgos</em></h2>
+<div class="a mt2" style="--i:2;flex:1;min-height:0;display:flex;justify-content:center"><img class="dia zoom" style="max-height:760px;max-width:100%" src="../diagramas/img/24-matriz-riesgos.png" alt=""></div>
+<div class="zoomhint">clic en imagen = ampliar</div>
+<aside class="notes"><div class="tm">≈ 45 s</div>
+<p>Y para cerrar los diagramas, la matriz de riesgos de gestión del proyecto. Cruza probabilidad con impacto: lo que está más arriba a la derecha es lo que más nos preocupa y por eso tiene plan de mitigación. Con esto le devuelvo la palabra a José para cerrar.</p>
+<div class="lbl">Cómo leerlo</div><ul><li>Cruce probabilidad × impacto</li><li>Zona alta = riesgos prioritarios con mitigación</li><li>Revisar el diagrama antes de presentar para citar riesgos concretos</li></ul></aside>
+</section>
+
+<!-- 19 CIERRE -->
+<section class="slide center" data-title="Cierre" data-who="jose">
+<svg class="route" viewBox="0 0 900 420"><path d="M0 380 C150 300 200 120 380 160 S600 330 720 200 S860 60 900 40"/></svg>
+<div class="chip jose">José</div>
+<div class="kick a">Demo en vivo</div>
+<h2 class="a" style="--i:1;font-size:110px">Pruébenlo <em>ahora</em></h2>
+<div class="a mt2" style="--i:2"><a class="link" href="https://urbanmobility.duckdns.org">urbanmobility.duckdns.org</a></div>
+<div class="row mt a" style="--i:3;gap:20px;text-align:left;width:1500px">
+ <div class="tile grow"><h3 class="cy">Dispositivo IoT real</h3><p>Conectar por MQTT</p></div>
+ <div class="tile grow"><h3 class="li">Bold en producción</h3><p>Salir del modo pruebas</p></div>
+ <div class="tile grow"><h3 class="ma">Escalar la BD</h3><p>Más allá de SQLite</p></div>
+</div>
+<h3 class="a mt" style="--i:4;font-size:64px">Gracias · <span class="cy">¿Preguntas?</span></h3>
+<aside class="notes"><div class="tm">≈ 1 min</div>
+<p>Gracias Santiago. Para cerrar: la app está viva, abran urbanmobility.duckdns.org y la hacemos en vivo, reserva, desbloqueo y panel. Los próximos pasos son tres: conectar un dispositivo IoT real por MQTT, pasar Bold de pruebas a producción y escalar la base de datos. Muchas gracias por su atención, quedamos atentos a las preguntas.</p>
+<div class="lbl">Puntos clave</div><ul><li>Hacer demo en vivo en el link</li><li>Próximos pasos: IoT real por MQTT, Bold en producción, escalar BD</li><li>Abrir a preguntas</li></ul></aside>
+</section>
+
+</div></div>
+
+<div id="notes"></div><div id="grid"></div><div id="lb"><img alt=""></div>
+<script>
+(function(){
+var names={jose:'José',jaime:'Jaime',santi:'Santiago'};
+var stage=document.getElementById('stage'),slides=[].slice.call(document.querySelectorAll('.slide'));
+var bar=document.getElementById('bar'),ctr=document.getElementById('ctr'),notes=document.getElementById('notes'),grid=document.getElementById('grid'),lb=document.getElementById('lb');
+var cur=0,N=slides.length;
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+s+')'}
+addEventListener('resize',fit);fit();
+function show(i,noHash){
+ cur=Math.max(0,Math.min(N-1,i));
+ slides.forEach(function(s,k){s.classList.toggle('active',k===cur)});
+ bar.style.width=((cur+1)/N*100)+'%';ctr.textContent=(cur+1)+' / '+N;
+ if(!noHash){try{history.replaceState(null,'','#'+(cur+1))}catch(e){}}
+ var s=slides[cur],a=s.querySelector('aside.notes'),w=s.dataset.who,tm=a.querySelector('.tm');
+ notes.innerHTML='<h4><span>Diapositiva '+(cur+1)+' · '+s.dataset.title+'</span><span class="who" style="--c:var(--'+w+')">Habla: '+names[w]+'</span><span class="tm">'+(tm?tm.textContent:'')+'</span></h4><div class="lbl">Guion</div>'+
+  [].map.call(a.children,function(c){return c.classList.contains('tm')?'':c.outerHTML}).join('');
+ notes.scrollTop=0;
+}
+function go(d){show(cur+d)}
+function toggleGrid(on){grid.classList.toggle('on',on===undefined?!grid.classList.contains('on'):on);
+ [].forEach.call(grid.children,function(c,k){c.classList.toggle('cur',k===cur)})}
+slides.forEach(function(s,k){var d=document.createElement('div');d.className='gc';d.style.setProperty('--c','var(--'+s.dataset.who+')');
+ d.innerHTML='<small>'+String(k+1).padStart(2,'0')+'</small><b>'+s.dataset.title+'</b><i>'+names[s.dataset.who]+'</i>';
+ d.onclick=function(e){e.stopPropagation();show(k);toggleGrid(false)};grid.appendChild(d)});
+function closeLb(){lb.classList.remove('on')}
+document.addEventListener('click',function(e){
+ var t=e.target;
+ if(lb.classList.contains('on')){closeLb();return}
+ if(grid.classList.contains('on')||notes.contains(t))return;
+ if(t.classList&&t.classList.contains('zoom')){lb.firstElementChild.src=t.src;lb.classList.add('on');return}
+ if(t.closest('a'))return;
+ go(e.clientX>innerWidth/2?1:-1);
+});
+addEventListener('keydown',function(e){
+ var k=e.key;
+ if(lb.classList.contains('on')){if(k==='Escape')closeLb();return}
+ if(grid.classList.contains('on')){if(k==='Escape'||k==='g'||k==='G')toggleGrid(false);return}
+ if(k==='ArrowRight'||k===' '||k==='PageDown'){e.preventDefault();go(1)}
+ else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(-1)}
+ else if(k==='Home')show(0);else if(k==='End')show(N-1);
+ else if(k==='n'||k==='N')notes.classList.toggle('on');
+ else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+ else if(k==='g'||k==='G'||k==='Escape')toggleGrid(true);
+});
+addEventListener('hashchange',function(){var n=parseInt(location.hash.slice(1),10);if(n&&n-1!==cur)show(n-1,true)});
+var h=parseInt(location.hash.slice(1),10);show(h?h-1:0,!h);
+})();
+</script>
+</body>
+</html>
