@@ -93,6 +93,17 @@ export type UnlockSession = {
   step: UnlockStep;
   reason?: string | undefined;
   expiresAt: number;
+  /** quién decidió el casco: la cámara del vehículo (ESP32-CAM) o la IA del navegador */
+  helmetSource?: "camera" | "client" | undefined;
+};
+
+/** Estado de la cámara de casco montada en un vehículo. */
+export type VehicleCameraStatus = {
+  online: boolean;
+  required: boolean;
+  /** último veredicto de la cámara (solo si está en línea) */
+  helmetDetected?: boolean | undefined;
+  confidence?: number | undefined;
 };
 
 export type FleetEvent =

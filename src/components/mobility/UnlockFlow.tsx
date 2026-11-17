@@ -20,7 +20,13 @@ import {
 } from "@/lib/camera";
 import { getDataSource } from "@/lib/data";
 import { keys, useMe } from "@/lib/data/queries";
-import { DataError, type Reservation, type UnlockSession, type Vehicle } from "@/lib/data/types";
+import {
+  DataError,
+  type Reservation,
+  type UnlockSession,
+  type Vehicle,
+  type VehicleCameraStatus,
+} from "@/lib/data/types";
 import { formatCOP, statusLabel } from "@/lib/format";
 import { helmetModelState, preloadHelmetModel } from "@/lib/helmet-model";
 import { playSound } from "@/lib/sound";
@@ -43,7 +49,12 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const [error, setError] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState("");
   const [wearing, setWearing] = useState(true);
-  const [helmetSource, setHelmetSource] = useState<"ia" | "simulacion" | null>(null);
+  const [helmetSource, setHelmetSource] = useState<"ia" | "simulacion" | "camara" | null>(null);
+  // Cámara del vehículo (ESP32-CAM): si está enviando imagen, ella decide el casco en el servidor.
+  const [vehicleCam, setVehicleCam] = useState<VehicleCameraStatus>({
+    online: false,
+    required: false,
+  });
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [finished, setFinished] = useState<Reservation | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -59,7 +70,8 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     else if (step === "denied" || step === "expired") playSound("error");
   }, [step]);
   const camera = useCamera(
-    !!session && (step === "qr" || step === "helmet") && !reservation,
+    // En el paso del casco, con cámara de vehículo en línea, NO se usa la cámara del celular.
+    !!session && (step === "qr" || (step === "helmet" && !vehicleCam.online)) && !reservation,
     step === "helmet" ? "user" : "environment",
   );
 
@@ -70,6 +82,23 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     setHelmetModel(helmetModelState());
     void preloadHelmetModel().then(() => setHelmetModel(helmetModelState()));
   }, [step]);
+
+  // Mientras se espera el casco, comprobar cada 2 s si la cámara del vehículo está en línea.
+  useEffect(() => {
+    if (step !== "helmet") return;
+    let alive = true;
+    const poll = () =>
+      ds
+        .vehicleCamera(vehicle.id)
+        .then((c) => alive && setVehicleCam(c))
+        .catch(() => alive && setVehicleCam({ online: false, required: false }));
+    void poll();
+    const t = setInterval(poll, 2000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [ds, step, vehicle.id]);
 
   // Crear la sesión de desbloqueo en el backend
   useEffect(() => {
@@ -120,17 +149,16 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
   const verifyHelmet = () =>
     session &&
     void run("helmet", async () => {
-      const result = await detectHelmet({
-        video: camera.videoRef.current,
-        simulatedWearing: wearing,
+      // Con cámara de vehículo en línea no se corre la IA del navegador: el servidor usa el veredicto de la placa.
+      const result = vehicleCam.online
+        ? { helmetDetected: false, confidence: 0, source: "camara" as const }
+        : await detectHelmet({ video: camera.videoRef.current, simulatedWearing: wearing });
+      const next = await ds.verifyHelmet(session.id, {
+        helmetDetected: result.helmetDetected,
+        confidence: result.confidence,
       });
-      setHelmetSource(result.source);
-      setSession(
-        await ds.verifyHelmet(session.id, {
-          helmetDetected: result.helmetDetected,
-          confidence: result.confidence,
-        }),
-      );
+      setHelmetSource(next.helmetSource === "camera" ? "camara" : result.source);
+      setSession(next);
     });
 
   const useFace = () =>
@@ -398,22 +426,26 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                 data-testid={step === "ready" ? "unlock-step-ready" : "unlock-step-helmet"}
                 className="w-full max-w-sm space-y-5 text-center"
               >
-                <CameraBox
-                  show={showCamera}
-                  videoRef={camera.videoRef}
-                  round
-                  icon={
-                    <ScanFace
-                      className={`size-28 ${step === "ready" ? "text-success" : "text-primary-glow/70"}`}
-                      aria-hidden
-                    />
-                  }
-                  overlay={
-                    step === "ready" ? (
-                      <CheckCircle2 className="size-12 text-success" aria-hidden />
-                    ) : null
-                  }
-                />
+                {step === "helmet" && vehicleCam.online ? (
+                  <VehicleStream vehicleId={vehicle.id} status={vehicleCam} />
+                ) : (
+                  <CameraBox
+                    show={showCamera}
+                    videoRef={camera.videoRef}
+                    round
+                    icon={
+                      <ScanFace
+                        className={`size-28 ${step === "ready" ? "text-success" : "text-primary-glow/70"}`}
+                        aria-hidden
+                      />
+                    }
+                    overlay={
+                      step === "ready" ? (
+                        <CheckCircle2 className="size-12 text-success" aria-hidden />
+                      ) : null
+                    }
+                  />
+                )}
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-primary-glow">
                     Paso {step === "ready" ? 3 : 2} de 3
@@ -424,33 +456,48 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
                   </h2>
                   <p className="text-sm text-muted-foreground" role="status">
                     {step === "ready"
-                      ? helmetSource === "ia"
-                        ? "Casco verificado por IA. Puedes iniciar tu viaje."
-                        : "Casco detectado correctamente. Puedes iniciar tu viaje."
+                      ? helmetSource === "camara"
+                        ? "Casco verificado por la cámara del vehículo. Puedes iniciar tu viaje."
+                        : helmetSource === "ia"
+                          ? "Casco verificado por IA. Puedes iniciar tu viaje."
+                          : "Casco detectado correctamente. Puedes iniciar tu viaje."
                       : busy === "helmet"
                         ? "Verificando uso de casco…"
-                        : helmetModel === "loading"
-                          ? "Descargando el modelo de IA…"
-                          : "Colócate el casco y mira a la cámara."}
+                        : vehicleCam.online
+                          ? "Colócate el casco y mira la cámara del vehículo."
+                          : helmetModel === "loading"
+                            ? "Descargando el modelo de IA…"
+                            : "Colócate el casco y mira a la cámara."}
                   </p>
                 </div>
-                {step === "helmet" && helmetModel === "ready" && (
+                {step === "helmet" && vehicleCam.online && (
+                  <p
+                    className="rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-medium text-success"
+                    data-testid="unlock-vehicle-camera"
+                  >
+                    Cámara del vehículo conectada
+                  </p>
+                )}
+                {step === "helmet" && !vehicleCam.online && helmetModel === "ready" && (
                   <p className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-glow">
                     Detección IA activa (YOLOv8n)
                   </p>
                 )}
-                {step === "helmet" && DEMO_TOOLS && helmetModel !== "ready" && (
-                  <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={wearing}
-                      onChange={(e) => setWearing(e.target.checked)}
-                      data-testid="unlock-sim-helmet"
-                      className="accent-[var(--primary)]"
-                    />
-                    Modo simulación: llevo el casco puesto
-                  </label>
-                )}
+                {step === "helmet" &&
+                  DEMO_TOOLS &&
+                  !vehicleCam.online &&
+                  helmetModel !== "ready" && (
+                    <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={wearing}
+                        onChange={(e) => setWearing(e.target.checked)}
+                        data-testid="unlock-sim-helmet"
+                        className="accent-[var(--primary)]"
+                      />
+                      Modo simulación: llevo el casco puesto
+                    </label>
+                  )}
                 {step === "helmet" && (
                   <Button
                     variant="secondary"
@@ -523,6 +570,43 @@ function CameraBox({
         aria-hidden
       />
       {overlay && <div className="absolute inset-x-0 bottom-8 flex justify-center">{overlay}</div>}
+    </div>
+  );
+}
+
+/** Video en vivo (MJPEG) de la ESP32-CAM montada en el vehículo, con el veredicto del casco en tiempo real. */
+function VehicleStream({ vehicleId, status }: { vehicleId: string; status: VehicleCameraStatus }) {
+  const pct = Math.round((status.confidence ?? 0) * 100);
+  const seen = status.confidence !== undefined && status.confidence > 0;
+  return (
+    <div
+      className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-secondary/60"
+      data-testid="unlock-vehicle-stream"
+    >
+      <img
+        src={`/api/vehicles/${encodeURIComponent(vehicleId)}/camera/stream`}
+        alt="Vista en vivo de la cámara del vehículo"
+        className="absolute inset-0 size-full object-cover"
+      />
+      <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
+        ● EN VIVO · cámara del vehículo
+      </span>
+      <span
+        className={`absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+          !seen
+            ? "bg-black/60 text-white"
+            : status.helmetDetected
+              ? "bg-success text-success-foreground"
+              : "bg-destructive text-destructive-foreground"
+        }`}
+        role="status"
+      >
+        {!seen
+          ? "Buscando tu cabeza…"
+          : status.helmetDetected
+            ? `Casco detectado ${pct}%`
+            : `Sin casco ${pct}%`}
+      </span>
     </div>
   );
 }

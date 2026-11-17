@@ -1,0 +1,9 @@
+{
+  "input": 640,
+  "inputH": 480,
+  "classes": ["helmet", "head", "person"],
+  "positive": ["helmet"],
+  "negative": ["head"],
+  "scoreThreshold": 0.35,
+  "iouThreshold": 0.5
+}

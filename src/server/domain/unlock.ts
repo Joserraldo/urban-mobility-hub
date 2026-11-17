@@ -2,7 +2,7 @@
 // Máquina de estados del desbloqueo: qr -> helmet -> ready, con rechazos y caducidad.
 
 export const UNLOCK_TTL_MS = 120_000;
-export const HELMET_MIN_CONFIDENCE = 0.8;
+export const HELMET_MIN_CONFIDENCE = 0.7;
 export const FACE_MIN_SIMILARITY = 0.85;
 
 export type UnlockStep = "qr" | "helmet" | "ready" | "denied" | "expired";

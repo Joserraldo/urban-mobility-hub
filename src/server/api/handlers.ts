@@ -46,6 +46,8 @@ import {
 } from "../services/bold";
 import { applyTelemetry, markLate } from "../services/fleet-sim";
 import { stream } from "../services/stream";
+import { cameraRequired, cameraStream, cameraVerdict } from "../services/camera";
+import { vehicleQrPayload, vehicleQrSvg } from "../services/qr";
 
 const ALERT_OUT: Record<string, string> = {
   ok: "ok",
@@ -61,6 +63,13 @@ const inFlight = new Set<string>();
 /** UC14-E2: un domiciliario no recibe más de este número de entregas abiertas a la vez. */
 export const MAX_ACTIVE_DELIVERIES = 5;
 
+/** Solo ve la cámara de un vehículo quien lo tiene reservado (por desbloquear o en viaje) o el operador. */
+function canViewVehicleCamera(u: SessionUser, vehicleId: string): boolean {
+  if (u.role === "operator") return true;
+  return (repos.reservations.byUser(u.id) as ReservationRow[]).some(
+    (r) => r.vehicle_id === vehicleId && (r.status === "requested" || r.status === "active"),
+  );
+}
 /** Ejecuta varias escrituras como una sola: si una falla, no queda ninguna (todo o nada). */
 function atomically<T>(fn: () => T): T {
   const db = getDb();
@@ -233,12 +242,57 @@ export async function handle(request: Request): Promise<Response> {
       const mode = url.searchParams.get("mode");
       return ok(repos.vehicles.list(mode ? { mode } : undefined).map(toClientVehicle));
     }
+    // QR imprimible del vehículo (se pega en el manubrio). Su contenido no es secreto: es UMH:<id>.
+    const qrMatch = path.match(/^\/api\/vehicles\/([^/]+)\/qr\.svg$/);
+    if (method === "GET" && qrMatch?.[1]) {
+      const v = repos.vehicles.byId(decodeURIComponent(qrMatch[1]));
+      if (!v) throw httpError(404, "Vehículo no encontrado");
+      return new Response(await vehicleQrSvg(v.qr_code || vehicleQrPayload(v.id)), {
+        headers: {
+          "content-type": "image/svg+xml; charset=utf-8",
+          "cache-control": "public, max-age=3600",
+        },
+      });
+    }
     const vehicleMatch = path.match(/^\/api\/vehicles\/([^/]+)$/);
     if (method === "GET" && vehicleMatch?.[1]) {
       const v = repos.vehicles.byId(vehicleMatch[1]);
       if (!v) throw httpError(404, "Vehículo no encontrado");
       return ok(toClientVehicle(v));
     }
+    // ¿La cámara del vehículo está enviando imagen? La pantalla de desbloqueo lo consulta cada 2 s.
+    const camMatch = path.match(/^\/api\/vehicles\/([^/]+)\/camera$/);
+    if (method === "GET" && camMatch?.[1]) {
+      const u = requireUser(request);
+      const id = decodeURIComponent(camMatch[1]);
+      if (!canViewVehicleCamera(u, id))
+        throw httpError(403, "No tienes un desbloqueo en curso para este vehículo");
+      const cam = await cameraVerdict(id);
+      return ok({
+        online: cam !== null,
+        required: cameraRequired(),
+        ...(cam ? { helmetDetected: cam.helmetDetected, confidence: cam.confidence } : {}),
+      });
+    }
+
+    // Video en vivo del vehículo (MJPEG): solo para quien está desbloqueándolo (o el operador).
+    const camStreamMatch = path.match(/^\/api\/vehicles\/([^/]+)\/camera\/stream$/);
+    if (method === "GET" && camStreamMatch?.[1]) {
+      const u = requireUser(request);
+      const id = decodeURIComponent(camStreamMatch[1]);
+      if (!canViewVehicleCamera(u, id))
+        throw httpError(403, "No tienes un desbloqueo en curso para este vehículo");
+      const upstream = await cameraStream(id, request.signal);
+      if (!upstream) throw httpError(503, "La cámara del vehículo no está disponible");
+      return new Response(upstream.body, {
+        headers: {
+          "content-type":
+            upstream.headers.get("content-type") ?? "multipart/x-mixed-replace; boundary=frame",
+          "cache-control": "no-store",
+        },
+      });
+    }
+
     if (method === "GET" && path === "/api/hubs") return ok(repos.hubs.list().map(toClientHub));
     const hubMatch = path.match(/^\/api\/hubs\/([^/]+)$/);
     if (method === "GET" && hubMatch?.[1]) {
@@ -455,14 +509,27 @@ export async function handle(request: Request): Promise<Response> {
       };
 
       let updated: DomainSession;
+      let helmetSource: "camera" | "client" | undefined;
       if (action === "qr") {
         const b = await body<QrBody>(request);
-        updated = scanQr(session, String(b.code ?? ""), now);
+        updated = scanQr(session, String(b.code ?? "").trim(), now);
       } else if (action === "helmet") {
         const b = await body<HelmetBody>(request);
+        // Cámara del vehículo (ESP32-CAM + umh-vision): si hay fotograma reciente, su veredicto manda y lo que
+        // declare el navegador se ignora. Sin cámara: IA del navegador (demo), salvo UMH_REQUIRE_CAMERA=1.
+        const cam = await cameraVerdict(session.vehicleId);
+        if (!cam && cameraRequired())
+          throw httpError(
+            409,
+            "La cámara del vehículo no está enviando imagen. Acércate a ella e inténtalo de nuevo",
+          );
+        helmetSource = cam ? "camera" : "client";
         updated = verifyHelmet(
           session,
-          { helmetDetected: Boolean(b.helmetDetected), confidence: Number(b.confidence ?? 0) },
+          cam ?? {
+            helmetDetected: Boolean(b.helmetDetected),
+            confidence: Number(b.confidence ?? 0),
+          },
           now,
         );
       } else if (action === "face") {
@@ -492,9 +559,9 @@ export async function handle(request: Request): Promise<Response> {
       }
 
       repos.unlock.setStep(sid, updated.step, updated.reason);
-      if (updated.step === "denied" || updated.step === "expired")
-        return ok(updated, { status: 400 });
-      return ok(updated);
+      const out = helmetSource ? { ...updated, helmetSource } : updated;
+      if (updated.step === "denied" || updated.step === "expired") return ok(out, { status: 400 });
+      return ok(out);
     }
 
     // ---------- telemetría y alertas (UC20/UC11/UC12) ----------
@@ -603,12 +670,48 @@ export async function handle(request: Request): Promise<Response> {
       if (!saved) throw httpError(500, "No se pudo guardar el vehículo");
       return ok(toClientVehicle(saved));
     }
-    const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
-    if (method === "DELETE" && adminVehicleDelete?.[1]) {
+    // Los vehículos NO se borran (conservan su historial, RNF-04): el operador cambia su ESTADO.
+    const adminVehicleStatus = path.match(/^\/api\/admin\/vehicles\/([^/]+)\/status$/);
+    if (method === "PATCH" && adminVehicleStatus?.[1]) {
       requireRole(request, "operator");
-      repos.vehicles.remove(adminVehicleDelete[1]);
-      return ok({ ok: true });
+      const id = decodeURIComponent(adminVehicleStatus[1]);
+      const status = String((await body<{ status?: string }>(request)).status ?? "").replace(
+        "-",
+        "_",
+      );
+      if (!["available", "reserved", "in_use", "offline"].includes(status))
+        throw httpError(
+          422,
+          "El estado debe ser: disponible, reservado, en uso o fuera de servicio",
+        );
+      const v = repos.vehicles.byId(id);
+      if (!v) throw httpError(404, "Vehículo no encontrado");
+      if (v.status === "sold") throw httpError(409, "Un vehículo vendido ya no cambia de estado");
+      // Liberar el vehículo (disponible / fuera de servicio) cancela sus reservas abiertas, todo o nada,
+      // para que no queden reservas colgando de un vehículo que ya no está en uso.
+      const open = ["available", "offline"].includes(status)
+        ? repos.reservations.openByVehicle(id)
+        : [];
+      const now = Date.now();
+      atomically(() => {
+        for (const r of open) {
+          const next = transition({ status: r.status as never }, "cancel");
+          repos.reservations.setStatus(r.id, next.status, { ended_at: now });
+        }
+        repos.vehicles.setStatus(id, status);
+      });
+      stream.emit("vehicle", { vehicleId: id, status });
+      return ok({
+        vehicle: toClientVehicle(repos.vehicles.byId(id) as VehicleRow),
+        cancelled: open.length,
+      });
     }
+    const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
+    if (method === "DELETE" && adminVehicleDelete?.[1])
+      throw httpError(
+        405,
+        "Los vehículos no se borran: cambia su estado (disponible, en uso, fuera de servicio)",
+      );
     if (method === "POST" && path === "/api/admin/hubs") {
       requireRole(request, "operator");
       const b = await body<HubBody>(request);

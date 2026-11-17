@@ -9,6 +9,7 @@ import type {
   Reservation,
   ReservationInput,
   UnlockSession,
+  VehicleCameraStatus,
   Unsubscribe,
   User,
   Vehicle,
@@ -57,13 +58,19 @@ export interface DataSource {
     sessionId: string,
     result: { helmetDetected: boolean; confidence: number },
   ): Promise<UnlockSession>;
+  /** ¿La cámara del vehículo está enviando imagen? Si es así, ella decide el casco (el servidor ignora al navegador). */
+  vehicleCamera(vehicleId: string): Promise<VehicleCameraStatus>;
   verifyFace(sessionId: string, result: { score: number }): Promise<UnlockSession>;
   /** Solo se acepta si la sesión está en `ready` (RF-09 paso 3). Crea la reserva activa. */
   startTrip(sessionId: string): Promise<Reservation>;
 
   // Gestión de catálogo y hubs por el operador (H7)
   saveVehicle(vehicle: Vehicle): Promise<Vehicle>;
-  deleteVehicle(id: string): Promise<void>;
+  /** El operador cambia el ESTADO de uso de un vehículo (no se borran). Liberarlo cancela sus reservas abiertas. */
+  setVehicleStatus(
+    id: string,
+    status: "available" | "reserved" | "in_use" | "offline",
+  ): Promise<{ vehicle: Vehicle; cancelled: number }>;
   saveHub(hub: Hub): Promise<Hub>;
   deleteHub(id: string): Promise<void>;
 }

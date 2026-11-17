@@ -63,3 +63,10 @@ entregables/diagramas/plantuml.jar
 
 # Grafo local de graphify (regenerable con: graphify update .)
 graphify-out/
+
+# Firmware ESP32-CAM y servicio de vision
+firmware/**/.pio/
+firmware/**/include/secrets.h
+vision-service/dist/
+models/*.onnx
+models/*.pt

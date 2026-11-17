@@ -523,12 +523,15 @@ export function createMockDataSource(): DataSource {
     async verifyHelmet(sessionId, { helmetDetected, confidence }) {
       const s = this_session(sessions, sessionId);
       if (s.step !== "helmet") throw new DataError("Primero escanea el código QR", "conflict");
-      if (helmetDetected && confidence >= 0.8) s.step = "ready";
+      if (helmetDetected && confidence >= 0.7) s.step = "ready";
       else {
         s.step = "denied";
         s.reason = "No se detectó el casco con suficiente confianza";
       }
       return { ...s };
+    },
+    async vehicleCamera() {
+      return { online: false, required: false }; // el modo demostración no tiene cámaras de vehículo
     },
     async verifyFace(sessionId, { score }) {
       const me = requireUser();
@@ -577,10 +580,14 @@ export function createMockDataSource(): DataSource {
       emit({ type: "vehicle", vehicle: { ...vehicle } });
       return { ...vehicle };
     },
-    async deleteVehicle(id) {
+    async setVehicleStatus(id, status) {
       const operator = requireUser();
       if (operator.role !== "operator") throw new DataError("Solo operadores", "forbidden");
-      vehicles = vehicles.filter((v) => v.id !== id);
+      const v = vehicles.find((x) => x.id === id);
+      if (!v) throw new DataError("Vehículo no encontrado", "not_found");
+      v.status = status;
+      emit({ type: "vehicle", vehicle: { ...v } });
+      return { vehicle: { ...v }, cancelled: 0 };
     },
     async saveHub(hub) {
       const operator = requireUser();

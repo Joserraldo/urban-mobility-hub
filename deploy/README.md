@@ -36,41 +36,9 @@ NITRO_PRESET=node_server VITE_SITE_URL=https://urbanmobility.duckdns.org \
 
 Van en `/etc/umh/umh.env` (root:umh, 640). **Nunca** se suben al repositorio.
 
-| Variable             | Valor / uso                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`           | `production`                                                                                                                              |
-| `PORT`               | `8080`                                                                                                                                    |
-| `HOST`               | `127.0.0.1` (solo Nginx llega al app)                                                                                                     |
-| `UMH_INTERNAL_URL`   | `http://127.0.0.1:8080` (fetch del SSR contra el API)                                                                                     |
-| `UMH_DB_PATH`        | `/var/lib/umh/umh.db`                                                                                                                     |
-| `UMH_SESSION_SECRET` | secreto aleatorio de 32 bytes (HMAC de sesión)                                                                                            |
-| `UMH_DATA_KEY`       | secreto aleatorio de 32 bytes (datos sensibles)                                                                                           |
-| `BREVO_API_KEY`      | opcional; sin ella el correo queda en `simulated`                                                                                         |
-| `BREVO_SENDER`       | opcional; remitente verificado en Brevo                                                                                                   |
-| `BOLD_IDENTITY_KEY`  | llave de identidad de Bold (pruebas); sin ella, pasarela simulada                                                                         |
-| `BOLD_SECRET_KEY`    | llave secreta de Bold (la de PRUEBAS en sandbox); firma la orden del checkout embebido. Sin ella se usa el link de pago (redirige a Bold) |
-| `BOLD_EMBEDDED`      | opcional; `0` fuerza el link de pago aunque haya llave secreta                                                                            |
-| `BOLD_ENV`           | `test` (sandbox) o `production`                                                                                                           |
-| `UMH_PUBLIC_URL`     | `https://urbanmobility.duckdns.org` (retorno del pago)                                                                                    |
-| `UMH_SEED_DEMO`      | `1` carga el seeder de datos demo (ver `docs/SEEDER.md`); idempotente                                                                     |
-
-## Pagos con Bold (llaves de prueba)
-
-Sin `BOLD_IDENTITY_KEY` la app usa la pasarela simulada. Para activar Bold en la VM:
-
-```bash
-ssh -i ultima_ingsoftii_key.pem azureuser@64.236.156.220
-sudo nano /etc/umh/umh.env     # BOLD_IDENTITY_KEY, BOLD_SECRET_KEY (de pruebas), BOLD_ENV=test, UMH_PUBLIC_URL
-sudo chown root:umh /etc/umh/umh.env && sudo chmod 640 /etc/umh/umh.env
-sudo systemctl restart umh
-```
-
-Con `BOLD_SECRET_KEY` el pago se abre **dentro de la página** (checkout embebido del Botón de
-pagos). Las dos llaves deben ser del mismo ambiente (ambas de pruebas o ambas de producción).
-En pruebas Bold no envía webhooks solos: la app consulta el estado de la orden a la API de Bold.
-
-En el panel de Bold (Integraciones) registra el webhook de pruebas:
-`https://urbanmobility.duckdns.org/api/payments/bold/webhook`.
+| `UMH_SEED_DEMO` | `1` carga el seeder de datos demo (ver `docs/SEEDER.md`); idempotente |
+| `UMH_VISION_URL` | opcional; URL del servicio `umh-vision` (por defecto `http://127.0.0.1:8090`) |
+| `UMH_REQUIRE_CAMERA` | opcional; `1` exige que el casco lo confirme la cámara del vehículo (sin caer al navegador) |
 
 ## Desplegar una versión nueva
 
@@ -163,3 +131,53 @@ Pasos usados para levantar la VM nueva (Ubuntu 24.04 limpia, 4 GB RAM):
    (si no, la API responde 401 `unrecognised IP address`). Ver `docs/INTEGRACIONES.md`.
 
 > `*.pem` está en `.gitignore`. Si pegaste llaves (Bold, Brevo) en un chat, rótalas.
+
+## Cámara de casco del vehículo (ESP32-CAM + `umh-vision`)
+
+El casco del desbloqueo (UC09) lo puede decidir la **cámara montada en el vehículo**, no solo el navegador:
+
+```
+ESP32-CAM ──JPEG por HTTPS──► Nginx /api/camera/frame ──► umh-vision (127.0.0.1:8090, modelo YOLOv8 ONNX)
+                                                              │ último veredicto por vehículo
+API (umh.service) ◄── GET 127.0.0.1:8090/api/camera/latest ───┘   (src/server/services/camera.ts)
+```
+
+- En `POST /api/unlock/sessions/:id/helmet`, si la cámara del vehículo mandó un fotograma en los últimos 5 s,
+  **su veredicto manda** y lo que declare el navegador se ignora (la respuesta trae `helmetSource: "camera"`).
+  Sin cámara se mantiene la IA del navegador (la demo no se rompe). `UMH_REQUIRE_CAMERA=1` obliga a usar la cámara.
+- `GET /api/vehicles/:id/camera` → `{ online, required }`; la pantalla de desbloqueo lo consulta cada 2 s.
+- Variables nuevas del API (opcionales): `UMH_VISION_URL` (por defecto `http://127.0.0.1:8090`) y `UMH_REQUIRE_CAMERA`.
+- Servicio `umh-vision`: código en `vision-service/`, unidad en `vision-service/deploy/umh-vision.service`,
+  entorno en `/etc/umh/vision.env` (`INGEST_KEY` ≥ 16 caracteres), modelo en `/opt/umh-vision/models/`
+  (ver `models/README.md`). Detalle y comandos en `vision-service/README.md`.
+- Firmware de la placa y configuración del Wi-Fi por Bluetooth (`/provision.html`): `firmware/esp32cam-helmet/README.md`.
+
+### Instalar `umh-vision` en la VM (cámara)
+
+```bash
+# 1) En local: compilar el sidecar y subir todo
+npx esbuild vision-service/server.ts --bundle --platform=node --format=esm \
+  --external:onnxruntime-node --external:sharp \
+  --banner:js='import { createRequire as __cr } from "module"; const require = __cr(import.meta.url);' \
+  --outfile=vision-service/dist/server.mjs
+scp -i ultima_ingsoftii_key.pem -r vision-service/dist vision-service/public \
+  azureuser@64.236.156.220:/home/azureuser/vision/
+
+# 2) En la VM (una sola vez)
+sudo mkdir -p /opt/umh-vision/models
+sudo cp -r /home/azureuser/vision/dist/* /opt/umh-vision/
+sudo cp -r /home/azureuser/vision/public /opt/umh-vision/
+cd /opt/umh-vision && sudo npm init -y && sudo npm i onnxruntime-node@1.31.1 sharp@0.35.5
+# models/helmet.onnx y models/helmet.labels.json (ver public/models y vision-service/README.md)
+sudo cp ~/umh-vision/vision.env /etc/umh/vision.env   # INGEST_KEY=... (openssl rand -hex 24)
+sudo chown -R umh:umh /opt/umh-vision && sudo chmod 600 /etc/umh/vision.env
+sudo cp vision-service/deploy/umh-vision.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now umh-vision
+curl -s http://127.0.0.1:8090/api/camera/health
+
+# 3) Nginx: incluir las locations /api/camera/ y /provision.html (deploy/nginx-umh.conf)
+sudo nginx -t && sudo systemctl reload nginx
+
+# 4) Configurar la placa desde el celular:
+#    https://urbanmobility.duckdns.org/provision.html
+```

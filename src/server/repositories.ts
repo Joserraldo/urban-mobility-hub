@@ -216,6 +216,7 @@ export const repos = {
     remove(id: string) {
       run("DELETE FROM vehicles WHERE id = ?", id);
     },
+
     updateLive(id: string, lat: number, lng: number, battery: number, alertState: string) {
       run(
         "UPDATE vehicles SET lat=?, lng=?, battery=?, alert_state=? WHERE id=?",
@@ -375,6 +376,13 @@ export const repos = {
       return rows<ReservationRow>(
         "SELECT * FROM reservations WHERE user_id = ? ORDER BY requested_at DESC",
         userId,
+      );
+    },
+    /** Reservas abiertas (solicitada o en curso) de un vehículo. */
+    openByVehicle(vehicleId: string): ReservationRow[] {
+      return rows<ReservationRow>(
+        "SELECT * FROM reservations WHERE vehicle_id = ? AND status IN ('requested','active')",
+        vehicleId,
       );
     },
     pendingDeliveries() {

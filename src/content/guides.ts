@@ -66,7 +66,7 @@ export const GUIDES: Guide[] = [
         heading: "Qué ocurre en pantalla",
         paragraphs: ["Tras escanear el QR se abre la cámara y se analiza una imagen:"],
         list: [
-          "Si se detecta casco con confianza suficiente (80 % o más), se habilita «Iniciar viaje».",
+          "Si se detecta casco con confianza suficiente (70 % o más), se habilita «Iniciar viaje».",
           "Si no se detecta, el acceso se deniega y puedes reintentar.",
           "Los pasos no se pueden saltar: sin QR no hay verificación y sin verificación no hay viaje.",
         ],
