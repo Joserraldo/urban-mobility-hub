@@ -10,7 +10,7 @@
 ## 0. Resumen de 10 minutos (si solo tienes una hora)
 
 1. **UML se parte en dos**: diagramas **estructurales** (qué hay: clases, paquetes, componentes, nodos, objetos) y **de comportamiento** (qué pasa: casos de uso, secuencia, estados, actividad, comunicación). Si te preguntan "¿este diagrama es estático o dinámico?", esa es la respuesta.
-2. **El proyecto tiene 27 diagramas**: 25 numerados (01–25) + 2 en `entregables/diseno/`. Cubren análisis (01–07), diseño (08–23, 25) y gestión (24).
+2. **El proyecto tiene 29 diagramas**: 27 numerados (01–27) + 2 en `entregables/diseno/`. Cubren análisis (01–07), diseño (08–23, 25–27) y gestión (24).
 3. **Frase comodín para casi cualquier diagrama**: _"Elegí este diagrama porque muestra [vista] y me deja verificar [propiedad: acoplamiento, orden de mensajes, estados válidos, despliegue físico]."_
 4. **Los 5 errores que más regalan puntos en contra**: confundir `«include»` con `«extend»`, dibujar dependencia con flecha sólida, poner el triángulo de herencia al revés, usar el DFD como diagrama de flujo (las flechas son **datos**, no acciones) y olvidar el actor externo.
 5. **Números del proyecto que pueden preguntar**: 20 casos de uso, 3 roles, 5 sistemas externos, 6 procesos y 5 almacenes en el DFD nivel 1, 12 tablas, 15 riesgos (RD1–RD15), 25,5 persona-mes (alcance original) y 34,6 (alcance ampliado).
@@ -32,6 +32,8 @@
 | 07  | DFD nivel 1                     | DFD            | No                    | Análisis | ¿Qué procesos internos hay y dónde se guarda cada dato?            | `.puml`            | `07-dfd-nivel-1.png`                   |
 | 08  | C4 contexto                     | C4 nivel 1     | No (C4)               | Diseño   | ¿Con quién se comunica el sistema?                                 | `.puml`            | `08-c4-contexto.png`                   |
 | 09  | C4 contenedores                 | C4 nivel 2     | No (C4)               | Diseño   | ¿Cuáles son las piezas grandes desplegables?                       | `.puml`            | `09-c4-contenedores.png`               |
+| 26  | C4 componentes                  | C4 nivel 3     | No (C4)               | Diseño   | ¿Qué componentes hay dentro del servidor y cómo se conectan?       | `.puml`            | `26-c4-componentes.png`                |
+| 27  | C4 código                       | C4 nivel 4     | No (C4)               | Diseño   | ¿Cómo se implementa un camino concreto (ingest → alerta)?          | `.puml`            | `27-c4-codigo.png`                     |
 | 10  | Paquetes                        | Estructural    | Sí                    | Diseño   | ¿Cómo se agrupa el código y quién depende de quién?                | `.puml`            | `10-paquetes.png`                      |
 | 11  | Componentes                     | Estructural    | Sí                    | Diseño   | ¿Qué piezas ofrecen y piden servicios?                             | `.puml`            | `11-componentes.png`                   |
 | 12  | Nodos (despliegue)              | Estructural    | Sí                    | Diseño   | ¿Dónde corre cada cosa y cómo se comunican?                        | `.puml`            | `12-nodos.png`                         |
@@ -222,7 +224,7 @@ ESTRUCTURALES (estáticos)          DE COMPORTAMIENTO (dinámicos)
 
 ---
 
-### Ficha 4 — C4: contexto y contenedores (#08, #09)
+### Ficha 4 — C4: los cuatro niveles (#08, #09, #26, #27)
 
 **Qué es.** Modelo de arquitectura de **Simon Brown** con 4 niveles: **1 Contexto**, **2 Contenedores**, **3 Componentes**, **4 Código**. No es UML, pero usa sus símbolos.
 
@@ -233,13 +235,17 @@ ESTRUCTURALES (estáticos)          DE COMPORTAMIENTO (dinámicos)
 1. **Nivel 1:** el sistema como una caja, las personas que lo usan y los sistemas externos. Una flecha por relación, con verbo.
 2. **Nivel 2:** abre el sistema en **contenedores** desplegables: aplicación web, API, base de datos, servicio de eventos, simulador. No bajes a clases.
 3. Nombra cada contenedor con **tecnología** si aplica.
-4. Marca la diferencia entre lo **construido** y lo **previsto** con color o nota.
+4. **Nivel 3:** abre **un** contenedor en componentes con interfaces y tecnología en las flechas. No es el diagrama UML de componentes: aquí se muestra una sola caja del nivel 2 por vez.
+5. **Nivel 4:** abre **un** componente y muestra clases/funciones reales de ese módulo.
+6. Marca la diferencia entre lo **construido** y lo **previsto** con color o nota.
 
 **En nuestro proyecto.**
 
 - #08: sistema + Cliente/Operador/Domiciliario + Bold, OpenStreetMap, Brevo, Vehículos simulados.
 - #09: cinco contenedores: **Sitio web**, **Servidor (API)**, **Canal en vivo (SSE)**, **Simulador de flota**, **Base de datos SQLite**.
-- Nota honesta del diagrama: "hoy todo corre en el computador del equipo; la nube está prevista, no realizada".
+- #26: abre el contenedor **Servidor (API)**: handlers, sesiones, desbloqueo, reservas, alertas, simulador, repositorios, SSE y pagos/correos. El **Dispositivo IoT** entra con `POST /api/ingest`.
+- #27: abre el componente **Alertas de flota**: `handle` → `Telemetry` → `evaluateTelemetry` → `applyTelemetry` → `repos` / `stream`. El botón del operador usa el mismo `applyTelemetry(t, "simulator")`.
+- Nota honesta del diagrama 09: "hoy todo corre en el computador del equipo; la nube está prevista, no realizada".
 
 **Trampas de examen.**
 

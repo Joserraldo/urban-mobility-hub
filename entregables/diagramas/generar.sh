@@ -12,7 +12,7 @@ if command -v dot >/dev/null 2>&1; then FALLBACK=""; else
 for f in fuentes/*.puml; do
   if grep -q '^!pragma layout' "$f"; then L=""; else L="$FALLBACK"; fi
   for t in png svg; do
-    java -DPLANTUML_LIMIT_SIZE=8192 -jar "$JAR" $L -t$t -o ../img "$f" || echo "FALLO $t $f"
+    java -DPLANTUML_LIMIT_SIZE=8192 -jar "$JAR" -charset UTF-8 $L -t$t -o ../img "$f" || echo "FALLO $t $f"
   done
 done
 # 01 y 02 (Python + matplotlib) y 24 (Mermaid) se generan aparte:

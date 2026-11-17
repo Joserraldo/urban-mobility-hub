@@ -1,0 +1,50 @@
+@startuml 26-c4-componentes
+!pragma layout elk
+!include estilo.iuml
+title C4 nivel 3 — Componentes dentro del servidor (API)
+
+skinparam nodesep 30
+skinparam ranksep 45
+skinparam defaultTextAlignment center
+
+actor "Cliente / Operador /\nDomiciliario" as U
+
+rectangle "**Dispositivo IoT**\nuno por vehículo alquilado\nGPS, batería, caída, casco" as IOT #EEEEEE
+cloud "Bold · Brevo\n(servicios externos)" as EXT #EEEEEE
+
+rectangle "Servidor (API)" {
+  rectangle "**API REST (handlers)**\nenruta /api/*" as API #DBEAFE
+  rectangle "**Sesiones y roles**\ncreateSession · requireRole" as SES #DBEAFE
+  rectangle "**Desbloqueo**\nQR · casco · rostro" as UNL #DBEAFE
+  rectangle "**Reservas y compras**\nstart · finish · cancel" as RES #DBEAFE
+  rectangle "**Alertas de flota**\nevaluateTelemetry" as ALR #DBEAFE
+  rectangle "**Simulador de flota**\nfleet-sim" as SIM #DBEAFE
+  rectangle "**Repositorios**\núnico acceso a la base" as REPO #DBEAFE
+  rectangle "**Canal en vivo (SSE)**\nstream.emit" as SSE #DBEAFE
+  rectangle "**Pagos y correos**\nBold · Brevo" as PAY #DBEAFE
+}
+
+database "**Base de datos**\nSQLite umh.db" as DB #DBEAFE
+
+U --> API : HTTPS /api/*
+IOT --> API : HTTPS POST /api/ingest
+API --> SES : verifica sesión y rol
+API --> UNL : aplica reglas
+API --> RES : aplica reglas
+API --> PAY : cobra / avisa
+API --> SIM : botón del operador
+SIM --> ALR : evaluateTelemetry
+ALR --> REPO : guarda la alerta
+ALR --> SSE : stream.emit("alert")
+SIM --> SSE : stream.emit("position")
+API --> REPO : lee y guarda
+REPO --> DB : SQL
+SSE ..> U : eventos en vivo
+PAY ..> EXT : HTTPS + firma
+
+legend bottom
+  Azul = componentes que construimos, dentro del contenedor.
+  Gris = sistemas externos.
+  Este nivel abre el contenedor "Servidor (API)" del diagrama 09.
+endlegend
+@enduml

@@ -1,0 +1,95 @@
+@startuml 27-c4-codigo
+!pragma layout elk
+!include estilo.iuml
+title C4 nivel 4 — Código: del POST /api/ingest a la alerta
+
+skinparam nodesep 30
+skinparam ranksep 45
+skinparam defaultTextAlignment center
+skinparam class {
+  BackgroundColor #F7F9FC
+  BorderColor #1B2A41
+  FontSize 12
+}
+skinparam interface {
+  BackgroundColor #FFF4CC
+  BorderColor #A08A1E
+  FontSize 12
+}
+
+class "Dispositivo IoT\n(simulado)" as IOT <<externo>>
+
+class "handle(request)" as Handler <<entry>> {
+  <size:10>src/server/api/handlers.ts</size>
+  + POST /api/ingest
+  + POST /api/admin/simulate-alert
+  + GET /api/alerts
+}
+
+class "**Telemetry**\n<size:10>domain/alerts.ts</size>" as Tel <<type>> {
+  + vehicleId, ts, lat, lng
+  + battery, speedKmh, helmetOn
+  + impactG, gpsFixAgeMs, tripActive
+}
+
+class "**ALERT_THRESHOLDS**\n<size:10>domain/alerts.ts</size>" as Th <<const>> {
+  criticalBattery = 15
+  impactG = 3
+  gpsFixAgeMs = 10000
+}
+
+class "**evaluateTelemetry(t)**\n<size:10>domain/alerts.ts</size>" as Eval <<function>> {
+  prioridad: crash, sin casco,
+  sin GPS, batería baja, ok
+}
+
+class "**TelemetryAlert**\n<size:10>unión de tipos</size>" as Ta <<type>> {
+  ok · no-helmet · crash
+  gps-lost · low-battery
+}
+
+class "**applyTelemetry(t, origin)**\n<size:10>services/fleet-sim.ts</size>" as Apply <<function>> {
+  + evalúa, actualiza, emite
+}
+
+interface "**repos**\n<size:10>src/server/repositories.ts</size>" as Repos {
+  + vehicles.byId(id)
+  + vehicles.updateLive(id, lat, lng, battery, alert)
+  + alerts.insert(row)
+}
+
+interface "**stream**\n<size:10>src/server/services/stream.ts</size>" as Stream {
+  + emit(tipo, payload)
+  + add(sub)
+}
+
+class "**alert_log**\n<size:10>db/schema.sql</size>" as Row <<table>> {
+  id · vehicle_id · type
+  lat · lng · at · origin
+}
+
+class "Navegador del operador\n(SSE)" as Op <<externo>>
+
+IOT --> Handler : HTTPS POST /api/ingest
+Handler --> Tel : valida y arma la muestra
+Handler --> Apply : origin = "telemetry"
+Apply --> Eval : evaluateTelemetry(t)
+Eval --> Th : lee los umbrales
+Eval ..> Ta : devuelve una alerta
+Apply --> Repos : byId · updateLive · insert
+Apply --> Stream : emit
+Repos --> Row : SQL
+Stream ..> Op : SSE position / alert
+
+note bottom of Apply
+  El botón del operador usa el MISMO camino:
+  /api/admin/simulate-alert llama a
+  applyTelemetry(t, "simulator").
+  Una lectura sana NO borra una alerta activa.
+end note
+
+legend bottom
+  Este nivel abre el componente "Alertas de flota" del diagrama 26.
+  Nombres y reglas tomados del código real.
+endlegend
+@enduml

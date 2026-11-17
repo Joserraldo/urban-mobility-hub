@@ -10,7 +10,7 @@ $fallback = if (Get-Command dot -ErrorAction SilentlyContinue) { @() } else { @(
 foreach ($f in Get-ChildItem fuentes/*.puml) {
   $layout = if (Select-String -Path $f.FullName -Pattern '^!pragma layout' -Quiet) { @() } else { $fallback }
   foreach ($t in "png", "svg") {
-    java -DPLANTUML_LIMIT_SIZE=8192 -jar $jar @layout "-t$t" -o ../img $f.FullName
+    java -DPLANTUML_LIMIT_SIZE=8192 -jar $jar "-charset" "UTF-8" @layout "-t$t" -o ../img $f.FullName
   }
 }
 Write-Host "Listo: imagenes en $PSScriptRoot\img"
