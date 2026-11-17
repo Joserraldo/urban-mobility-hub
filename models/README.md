@@ -46,3 +46,12 @@ Cualquier detector YOLO exportado a ONNX (Ultralytics `yolo export format=onnx i
 Un modelo nano/small (`yolov8n`, `yolo11n`) a 640 px tarda ~30-80 ms por fotograma en CPU de portátil. Variables útiles:
 `VISION_THREADS` (hilos de ONNX Runtime, 2 por defecto) y `CAMERA_FRESH_MS` (antigüedad máxima del fotograma
 usado para desbloquear, 5000 por defecto).
+
+## Modelo en la VM (2026-11-17)
+
+La VM usa el YOLOv8n de `public/models/helmet.onnx` (el del navegador, 2 clases `With Helmet` / `Without Helmet`, 640×640)
+**convertido de float16 a float32**, porque `onnxruntime-node` en el servidor alimenta tensores float32 y con el fp16 original
+falla con `Unexpected input data type`. Conversión: cambiar initializers, nodos `Cast` y tipos de entrada/salida de FLOAT16 a FLOAT
+(librería `onnx`). Etiquetas en la VM (`/opt/umh-vision/models/helmet.labels.json`):
+`{"input":640,"classes":["With Helmet","Without Helmet"],"positive":["With Helmet"],"negative":["Without Helmet"]}`.
+Para pasar al YOLOv8m de 3 clases descrito arriba, reemplazar ambos archivos y reiniciar `umh-vision`.
