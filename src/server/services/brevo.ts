@@ -50,7 +50,17 @@ type Mail = { toEmail: string; toName: string; subject: string; html: string };
  * Sin `BREVO_API_KEY` (modo demo) queda `simulated`; si Brevo falla queda `failed`.
  * Nunca lanza: la notificación es lateral a la operación.
  */
-async function deliver(notifId: string, mail: Mail, event: Record<string, unknown>): Promise<void> {
+async function deliver(notifId: string, orig: Mail, event: Record<string, unknown>): Promise<void> {
+  // BREVO_FORCE_TO: demo/pruebas — todo correo sale a esa dirección (se indica el destinatario original).
+  const forceTo = process.env["BREVO_FORCE_TO"]?.trim();
+  const mail: Mail = forceTo
+    ? {
+        ...orig,
+        toEmail: forceTo,
+        toName: orig.toName,
+        subject: `[para ${orig.toEmail}] ${orig.subject}`,
+      }
+    : orig;
   const apiKey = process.env["BREVO_API_KEY"];
   if (!apiKey) {
     repos.notifications.setStatus(notifId, "simulated");

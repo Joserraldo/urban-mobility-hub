@@ -136,7 +136,13 @@ export function UnlockFlow({ vehicle, onClose }: { vehicle: Vehicle; onClose: ()
     [],
   );
 
-  const scan = (code: string) =>
+  // Lo escrito a mano puede ser solo el id (SC-1171): se normaliza a lo que dice el QR (UMH:SC-1171).
+  const scan = (raw: string) => {
+    const clean = raw.replace(/[\s]+/g, "");
+    const code = /^umh:/i.test(clean) ? `UMH:${clean.slice(4)}` : `UMH:${clean}`;
+    return scanNormalized(code);
+  };
+  const scanNormalized = (code: string) =>
     session &&
     step === "qr" &&
     busy === null &&

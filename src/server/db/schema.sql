@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   model TEXT NOT NULL,
   mode TEXT NOT NULL CHECK (mode IN ('rent','sale')),
   status TEXT NOT NULL DEFAULT 'available'
-    CHECK (status IN ('available','reserved','in_use','sold','offline')),
+    CHECK (status IN ('available','reserved','in_use','sold','offline','maintenance')),
   condition TEXT CHECK (condition IN ('nuevo','seminuevo')),
   price_cop INTEGER,
   rate_per_min_cop INTEGER,
@@ -60,6 +60,34 @@ CREATE TABLE IF NOT EXISTS vehicles (
   qr_code TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_vehicles_status ON vehicles(mode, status);
+
+-- Órdenes de mantenimiento: una abierta (closed_at NULL) por vehículo a la vez.
+CREATE TABLE IF NOT EXISTS maintenance_orders (
+  id TEXT PRIMARY KEY,
+  vehicle_id TEXT NOT NULL REFERENCES vehicles(id),
+  reason TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  opened_at INTEGER NOT NULL,
+  opened_by TEXT NOT NULL,
+  closed_at INTEGER,
+  closed_by TEXT,
+  resolution TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_maintenance_vehicle ON maintenance_orders(vehicle_id, closed_at);
+
+-- Historial de telemetría (máx. 1 fila cada ~10 s por vehículo, se poda a 24 h).
+CREATE TABLE IF NOT EXISTS telemetry_log (
+  vehicle_id TEXT NOT NULL REFERENCES vehicles(id),
+  ts INTEGER NOT NULL,
+  lat REAL NOT NULL,
+  lng REAL NOT NULL,
+  battery REAL NOT NULL,
+  speed_kmh REAL NOT NULL DEFAULT 0,
+  helmet_on INTEGER NOT NULL DEFAULT 0,
+  impact_g REAL NOT NULL DEFAULT 1,
+  alert TEXT NOT NULL DEFAULT 'ok'
+);
+CREATE INDEX IF NOT EXISTS idx_telemetry_vehicle_ts ON telemetry_log(vehicle_id, ts);
 
 CREATE TABLE IF NOT EXISTS reservations (
   id TEXT PRIMARY KEY,

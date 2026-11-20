@@ -6,12 +6,16 @@ import {
   type FleetEvent,
   type Hub,
   type LoginInput,
+  type MaintenanceList,
+  type MaintenanceOrder,
   type Purchase,
+  type TelemetrySample,
   type RegisterInput,
   type Reservation,
   type ReservationInput,
   type UnlockSession,
   type VehicleCameraStatus,
+  type PcCameraVerdict,
   type Unsubscribe,
   type User,
   type Vehicle,
@@ -142,6 +146,7 @@ type ReservationRow = {
   started_at?: number | null;
   ended_at?: number | null;
   total_cost_cop?: number | null;
+  prepaid?: boolean;
 };
 type PurchaseRow = {
   id: string;
@@ -206,6 +211,33 @@ const mapVehicle = (v: VehicleRow): Vehicle => ({
   qrCode: v.qrCode,
 });
 
+type MaintenanceRow = {
+  id: string;
+  vehicle_id: string;
+  vehicle_model?: string;
+  vehicle_kind?: string;
+  reason: string;
+  notes: string;
+  opened_at: number;
+  opened_by: string;
+  closed_at: number | null;
+  closed_by: string | null;
+  resolution: string | null;
+};
+const mapOrder = (o: MaintenanceRow): MaintenanceOrder => ({
+  id: o.id,
+  vehicleId: o.vehicle_id,
+  vehicleModel: o.vehicle_model ?? "",
+  vehicleKind: (o.vehicle_kind ?? "scooter") as MaintenanceOrder["vehicleKind"],
+  reason: o.reason,
+  notes: o.notes,
+  openedAt: Number(o.opened_at),
+  openedBy: o.opened_by,
+  closedAt: o.closed_at ?? undefined,
+  closedBy: o.closed_by ?? undefined,
+  resolution: o.resolution ?? undefined,
+});
+
 const mapHub = (h: HubRow): Hub => ({
   id: h.id,
   name: h.name,
@@ -230,6 +262,7 @@ const mapReservation = (r: ReservationRow & { paymentRef?: string | undefined })
   endedAt: r.ended_at ?? undefined,
   totalCost: r.total_cost_cop ?? undefined,
   paymentRef: r.paymentRef,
+  paid: r.prepaid ?? (r.paymentRef ? true : undefined),
 });
 
 const mapPurchase = (p: PurchaseRow & { paymentRef?: string | undefined }): Purchase => ({
@@ -285,7 +318,15 @@ export function createApiDataSource(): DataSource {
       const es = new EventSource("/api/stream");
       es.addEventListener("position", (e) => {
         const d = JSON.parse((e as MessageEvent).data);
-        onEvent({ type: "position", vehicleId: d.vehicleId, lat: d.lat, lng: d.lng, ts: d.ts });
+        onEvent({
+          type: "position",
+          vehicleId: d.vehicleId,
+          lat: d.lat,
+          lng: d.lng,
+          ts: d.ts,
+          battery: typeof d.battery === "number" ? d.battery : undefined,
+          speedKmh: typeof d.speedKmh === "number" ? d.speedKmh : undefined,
+        });
       });
       es.addEventListener("alert", (e) => {
         const d = JSON.parse((e as MessageEvent).data);
@@ -355,7 +396,22 @@ export function createApiDataSource(): DataSource {
         }),
       });
       await settleBold(pay);
-      return mapReservation({ ...created.reservation, paymentRef: pay.reference });
+      // settleBold solo resuelve con el pago aprobado (o redirige al link de Bold).
+      return {
+        ...mapReservation({ ...created.reservation, paymentRef: pay.reference }),
+        paid: true,
+      };
+    },
+    payReservation: async (id) => {
+      const pay = await req<BoldPay>("/api/payments", {
+        method: "POST",
+        body: JSON.stringify({ ownerType: "reservation", ownerId: id, method: "card" }),
+      });
+      await settleBold(pay);
+      const rows = await req<ReservationRow[]>("/api/reservations");
+      const found = rows.find((r) => r.id === id);
+      if (!found) throw new DataError("Reserva no encontrada", "not_found");
+      return mapReservation(found);
     },
     listReservations: () =>
       req<ReservationRow[]>("/api/reservations").then((rows) => rows.map(mapReservation)),
@@ -393,9 +449,11 @@ export function createApiDataSource(): DataSource {
 
     createUnlockSession: async (vehicleId) => {
       const reservations = await req<ReservationRow[]>("/api/reservations");
-      const reservation = reservations.find(
+      // Si hubiera varias abiertas para el mismo vehículo, se prefiere la que ya tiene el prepago.
+      const open = reservations.filter(
         (r) => r.vehicle_id === vehicleId && r.status === "requested",
       );
+      const reservation = open.find((r) => r.prepaid) ?? open[0];
       return req<UnlockRow>("/api/unlock/sessions", {
         method: "POST",
         body: JSON.stringify({ vehicleId, reservationId: reservation?.id }),
@@ -413,6 +471,13 @@ export function createApiDataSource(): DataSource {
       }).then(toUnlock),
     vehicleCamera: (vehicleId) =>
       req<VehicleCameraStatus>(`/api/vehicles/${encodeURIComponent(vehicleId)}/camera`),
+    sendPcCameraFrame: async (vehicleId, jpeg) => {
+      const r = await req<{ ok: number; h?: number; c?: number }>(
+        `/api/admin/camera/${encodeURIComponent(vehicleId)}/frame`,
+        { method: "POST", body: jpeg, headers: { "content-type": "image/jpeg" } },
+      );
+      return { helmetDetected: r.h === 1, confidence: (r.c ?? 0) / 100 };
+    },
     verifyFace: (sessionId, result) =>
       req<UnlockRow>(`/api/unlock/sessions/${sessionId}/face`, {
         method: "POST",
@@ -446,6 +511,45 @@ export function createApiDataSource(): DataSource {
         `/api/admin/vehicles/${encodeURIComponent(id)}/status`,
         { method: "PATCH", body: JSON.stringify({ status }) },
       ).then((r) => ({ vehicle: mapVehicle(r.vehicle), cancelled: Number(r.cancelled ?? 0) })),
+    listMaintenance: () =>
+      req<{ open: MaintenanceRow[]; closed: MaintenanceRow[] }>("/api/admin/maintenance").then(
+        (r): MaintenanceList => ({ open: r.open.map(mapOrder), closed: r.closed.map(mapOrder) }),
+      ),
+    sendToMaintenance: (vehicleId, input) =>
+      req<{ order: MaintenanceRow; cancelled: number }>(
+        `/api/admin/vehicles/${encodeURIComponent(vehicleId)}/maintenance`,
+        { method: "POST", body: JSON.stringify(input) },
+      ).then((r) => ({ order: mapOrder(r.order), cancelled: Number(r.cancelled ?? 0) })),
+    closeMaintenance: (orderId, resolution) =>
+      req<{ order: MaintenanceRow; vehicle: VehicleRow }>(
+        `/api/admin/maintenance/${encodeURIComponent(orderId)}/close`,
+        { method: "POST", body: JSON.stringify({ resolution }) },
+      ).then((r) => ({ order: mapOrder(r.order), vehicle: mapVehicle(r.vehicle) })),
+    vehicleTelemetry: (vehicleId, minutes = 60) =>
+      req<
+        {
+          ts: number;
+          lat: number;
+          lng: number;
+          battery: number;
+          speed_kmh: number;
+          helmet_on: number;
+          impact_g: number;
+          alert: string;
+        }[]
+      >(`/api/admin/vehicles/${encodeURIComponent(vehicleId)}/telemetry?minutes=${minutes}`).then(
+        (rows): TelemetrySample[] =>
+          rows.map((r) => ({
+            ts: Number(r.ts),
+            lat: Number(r.lat),
+            lng: Number(r.lng),
+            battery: Number(r.battery),
+            speedKmh: Number(r.speed_kmh),
+            helmetOn: Boolean(r.helmet_on),
+            impactG: Number(r.impact_g),
+            alert: r.alert,
+          })),
+      ),
     saveHub: async (hub) => {
       const saved = await req<HubRow>("/api/admin/hubs", {
         method: "POST",

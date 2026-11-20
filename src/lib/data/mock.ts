@@ -5,7 +5,9 @@ import {
   type AlertEvent,
   type FleetEvent,
   type Hub,
+  type MaintenanceOrder,
   type Purchase,
+  type TelemetrySample,
   type Reservation,
   type UnlockSession,
   type User,
@@ -272,6 +274,7 @@ export function createMockDataSource(): DataSource {
   let hubs: Hub[] = structuredClone(SEED_HUBS);
   let vehicles: Vehicle[] = structuredClone(SEED_VEHICLES);
   let alerts: AlertEvent[] = load<AlertEvent[]>(LS.alerts, []);
+  let orders: MaintenanceOrder[] = [];
   const sessions = new Map<string, UnlockSession & { faceOk?: boolean }>();
   const listeners = new Set<(e: FleetEvent) => void>();
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -292,6 +295,12 @@ export function createMockDataSource(): DataSource {
   const currentUser = (): StoredUser | null => {
     const id = load<string | null>(LS.session, null);
     return id ? (load<StoredUser[]>(LS.users, []).find((u) => u.id === id) ?? null) : null;
+  };
+  const requireOperator = () => {
+    const u = currentUser();
+    if (!u) throw new DataError("Inicia sesión para continuar", "unauthorized");
+    if (u.role !== "operator") throw new DataError("Solo operadores", "forbidden");
+    return u;
   };
   const requireUser = () => {
     const u = currentUser();
@@ -441,10 +450,20 @@ export function createMockDataSource(): DataSource {
         modality,
         status: "requested",
         createdAt: Date.now(),
+        paid: true, // el mock cobra el prepago al reservar
         ...(address ? { address: address.trim() } : {}),
       };
       save(LS.reservations, [reservation, ...all]);
       return reservation;
+    },
+    async payReservation(id) {
+      const me = requireUser();
+      const all = load<Reservation[]>(LS.reservations, []);
+      const r = all.find((x) => x.id === id && x.userId === me.id);
+      if (!r) throw new DataError("Reserva no encontrada", "not_found");
+      r.paid = true;
+      save(LS.reservations, all);
+      return { ...r };
     },
     async listReservations() {
       await delay(60);
@@ -533,6 +552,10 @@ export function createMockDataSource(): DataSource {
     async vehicleCamera() {
       return { online: false, required: false }; // el modo demostración no tiene cámaras de vehículo
     },
+    async sendPcCameraFrame() {
+      const helmetDetected = Math.random() > 0.4; // simulado: el modo demostración no tiene visión
+      return { helmetDetected, confidence: 0.8 + Math.random() * 0.15 };
+    },
     async verifyFace(sessionId, { score }) {
       const me = requireUser();
       const s = this_session(sessions, sessionId);
@@ -585,9 +608,88 @@ export function createMockDataSource(): DataSource {
       if (operator.role !== "operator") throw new DataError("Solo operadores", "forbidden");
       const v = vehicles.find((x) => x.id === id);
       if (!v) throw new DataError("Vehículo no encontrado", "not_found");
+      if (status === "maintenance") {
+        await this.sendToMaintenance(id, { reason: "Retiro manual" });
+        return { vehicle: { ...v }, cancelled: 0 };
+      }
       v.status = status;
       emit({ type: "vehicle", vehicle: { ...v } });
       return { vehicle: { ...v }, cancelled: 0 };
+    },
+    async listMaintenance() {
+      requireOperator();
+      const closed = orders
+        .filter((o) => o.closedAt !== undefined)
+        .sort((a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0))
+        .slice(0, 50);
+      return {
+        open: orders.filter((o) => o.closedAt === undefined).map((o) => ({ ...o })),
+        closed: closed.map((o) => ({ ...o })),
+      };
+    },
+    async sendToMaintenance(vehicleId, input) {
+      const operator = requireOperator();
+      const v = vehicles.find((x) => x.id === vehicleId);
+      if (!v) throw new DataError("Vehículo no encontrado", "not_found");
+      if (v.status === "in_use")
+        throw new DataError(
+          "El vehículo está en un viaje activo: espera a que termine",
+          "conflict",
+        );
+      if (v.status === "sold" || v.status === "maintenance")
+        throw new DataError("El vehículo no se puede enviar a mantenimiento", "conflict");
+      if (!input.reason.trim()) throw new DataError("Indica el motivo", "validation");
+      const order: MaintenanceOrder = {
+        id: uid("MNT"),
+        vehicleId,
+        vehicleModel: v.model,
+        vehicleKind: v.kind,
+        reason: input.reason.trim(),
+        notes: input.notes?.trim() ?? "",
+        openedAt: Date.now(),
+        openedBy: operator.id,
+      };
+      orders = [order, ...orders];
+      v.status = "maintenance";
+      emit({ type: "vehicle", vehicle: { ...v } });
+      return { order: { ...order }, cancelled: 0 };
+    },
+    async closeMaintenance(orderId, resolution) {
+      const operator = requireOperator();
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) throw new DataError("Orden no encontrada", "not_found");
+      if (order.closedAt !== undefined)
+        throw new DataError("La orden ya estaba cerrada", "conflict");
+      if (!resolution.trim()) throw new DataError("Indica la resolución", "validation");
+      order.closedAt = Date.now();
+      order.closedBy = operator.id;
+      order.resolution = resolution.trim();
+      const v = vehicles.find((x) => x.id === order.vehicleId) as Vehicle;
+      v.status = "available";
+      v.alert = "ok";
+      emit({ type: "vehicle", vehicle: { ...v } });
+      return { order: { ...order }, vehicle: { ...v } };
+    },
+    async vehicleTelemetry(vehicleId, minutes = 60) {
+      requireOperator();
+      const v = vehicles.find((x) => x.id === vehicleId);
+      if (!v) throw new DataError("Vehículo no encontrado", "not_found");
+      // El mock no persiste historial: sintetiza una serie corta coherente con la batería actual.
+      const now = Date.now();
+      const n = 12;
+      return Array.from({ length: n }, (_, i): TelemetrySample => {
+        const k = n - 1 - i;
+        return {
+          ts: now - (k * minutes * 60_000) / n,
+          lat: v.lat,
+          lng: v.lng,
+          battery: Math.min(100, v.battery + k * 0.4),
+          speedKmh: v.status === "in_use" ? 12 + ((i * 7) % 11) : 0,
+          helmetOn: true,
+          impactG: 1,
+          alert: "ok",
+        };
+      });
     },
     async saveHub(hub) {
       const operator = requireUser();

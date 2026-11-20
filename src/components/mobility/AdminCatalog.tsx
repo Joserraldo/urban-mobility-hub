@@ -7,16 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getDataSource } from "@/lib/data";
-import { keys } from "@/lib/data/queries";
+import { keys, maintenanceKeys } from "@/lib/data/queries";
 import type { Hub, Vehicle, VehicleKind, VehicleMode } from "@/lib/data/types";
 import { formatCOP, kindLabel } from "@/lib/format";
 
-type VehicleStatusChoice = "available" | "reserved" | "in_use" | "offline";
+type VehicleStatusChoice = "available" | "reserved" | "in_use" | "offline" | "maintenance";
 const STATUS_CHOICES: Record<VehicleStatusChoice, string> = {
   available: "Disponible",
   reserved: "Reservado",
   in_use: "En uso",
   offline: "Fuera de servicio",
+  maintenance: "En mantenimiento",
 };
 // Gestión de catálogo y hubs por el operador (UC13 / RF-23, RF-24): crear, editar y retirar.
 // RNF-08: agregar no exige cambios de modelo.
@@ -31,6 +32,7 @@ export function AdminCatalog({ vehicles, hubs }: { vehicles: Vehicle[]; hubs: Hu
     Promise.all([
       qc.invalidateQueries({ queryKey: keys.vehicles }),
       qc.invalidateQueries({ queryKey: keys.hubs }),
+      qc.invalidateQueries({ queryKey: maintenanceKeys.list }),
     ]);
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "No se pudo guardar");
 

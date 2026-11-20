@@ -8,7 +8,8 @@ export type ActiveAlertType = Exclude<AlertType, "ok">;
 export type ReservationStatus = "requested" | "active" | "completed" | "cancelled";
 export type RentalModality = "hub" | "delivery";
 export type UserRole = "user" | "operator" | "courier";
-export type VehicleStatus = "available" | "reserved" | "in_use" | "sold" | "offline";
+export type VehicleStatus =
+  "available" | "reserved" | "in_use" | "sold" | "offline" | "maintenance";
 
 export type Hub = {
   id: string;
@@ -40,6 +41,8 @@ export type Vehicle = {
   /** estado comercial/operativo (contrato `domain.ts`); el mock lo asume 'available' */
   status?: VehicleStatus | undefined;
   qrCode?: string | undefined;
+  /** velocidad en vivo (km/h) llegada por SSE; solo vehículos en viaje */
+  speedKmh?: number | undefined;
 };
 
 export type AlertEvent = {
@@ -65,6 +68,8 @@ export type Reservation = {
   totalCost?: number | undefined;
   /** referencia de la pasarela al pagar (UC18); ausente en el mock */
   paymentRef?: string | undefined;
+  /** ¿El prepago ya está aprobado? Solo una reserva pagada se puede desbloquear. */
+  paid?: boolean | undefined;
 };
 
 export type Purchase = {
@@ -107,7 +112,16 @@ export type VehicleCameraStatus = {
 };
 
 export type FleetEvent =
-  | { type: "position"; vehicleId: string; lat: number; lng: number; ts: number }
+  | {
+      type: "position";
+      vehicleId: string;
+      lat: number;
+      lng: number;
+      ts: number;
+      /** telemetría en vivo (solo viajes simulados/reales en curso) */
+      battery?: number | undefined;
+      speedKmh?: number | undefined;
+    }
   | { type: "vehicle"; vehicle: Vehicle }
   | { type: "alert"; alert: AlertEvent };
 
@@ -144,3 +158,34 @@ export class DataError extends Error {
     this.name = "DataError";
   }
 }
+
+/** Veredicto que devuelve umh-vision al recibir un fotograma de la webcam del PC. */
+export type PcCameraVerdict = { helmetDetected: boolean; confidence: number };
+
+/** Orden de mantenimiento de un vehículo (abierta mientras `closedAt` es undefined). */
+export type MaintenanceOrder = {
+  id: string;
+  vehicleId: string;
+  vehicleModel: string;
+  vehicleKind: VehicleKind;
+  reason: string;
+  notes: string;
+  openedAt: number;
+  openedBy: string;
+  closedAt?: number | undefined;
+  closedBy?: string | undefined;
+  resolution?: string | undefined;
+};
+export type MaintenanceList = { open: MaintenanceOrder[]; closed: MaintenanceOrder[] };
+
+/** Una lectura del historial de telemetría (máx. 1 cada ~10 s por vehículo). */
+export type TelemetrySample = {
+  ts: number;
+  lat: number;
+  lng: number;
+  battery: number;
+  speedKmh: number;
+  helmetOn: boolean;
+  impactG: number;
+  alert: string;
+};

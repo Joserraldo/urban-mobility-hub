@@ -4,12 +4,16 @@ import type {
   FleetEvent,
   Hub,
   LoginInput,
+  MaintenanceList,
+  MaintenanceOrder,
   Purchase,
+  TelemetrySample,
   RegisterInput,
   Reservation,
   ReservationInput,
   UnlockSession,
   VehicleCameraStatus,
+  PcCameraVerdict,
   Unsubscribe,
   User,
   Vehicle,
@@ -46,6 +50,8 @@ export interface DataSource {
 
   // Alquiler y compra (RF-03, 05)
   createReservation(input: ReservationInput): Promise<Reservation>;
+  /** Paga (o reintenta pagar) el prepago de una reserva solicitada. */
+  payReservation(id: string): Promise<Reservation>;
   listReservations(): Promise<Reservation[]>;
   transitionReservation(id: string, event: "start" | "finish" | "cancel"): Promise<Reservation>;
   createPurchase(vehicleId: string): Promise<Purchase>;
@@ -60,6 +66,8 @@ export interface DataSource {
   ): Promise<UnlockSession>;
   /** ¿La cámara del vehículo está enviando imagen? Si es así, ella decide el casco (el servidor ignora al navegador). */
   vehicleCamera(vehicleId: string): Promise<VehicleCameraStatus>;
+  /** Operador: envía un JPEG de la webcam del PC como si fuera la cámara del vehículo (demo local). */
+  sendPcCameraFrame(vehicleId: string, jpeg: Blob): Promise<PcCameraVerdict>;
   verifyFace(sessionId: string, result: { score: number }): Promise<UnlockSession>;
   /** Solo se acepta si la sesión está en `ready` (RF-09 paso 3). Crea la reserva activa. */
   startTrip(sessionId: string): Promise<Reservation>;
@@ -69,8 +77,22 @@ export interface DataSource {
   /** El operador cambia el ESTADO de uso de un vehículo (no se borran). Liberarlo cancela sus reservas abiertas. */
   setVehicleStatus(
     id: string,
-    status: "available" | "reserved" | "in_use" | "offline",
+    status: "available" | "reserved" | "in_use" | "offline" | "maintenance",
   ): Promise<{ vehicle: Vehicle; cancelled: number }>;
   saveHub(hub: Hub): Promise<Hub>;
+
+  // Mantenimiento y telemetría histórica (operador)
+  listMaintenance(): Promise<MaintenanceList>;
+  /** Retira el vehículo a mantenimiento (409 si está en viaje, vendido o ya tiene orden abierta). */
+  sendToMaintenance(
+    vehicleId: string,
+    input: { reason: string; notes?: string },
+  ): Promise<{ order: MaintenanceOrder; cancelled: number }>;
+  /** Cierra la orden y deja el vehículo disponible con la alerta en `ok`. */
+  closeMaintenance(
+    orderId: string,
+    resolution: string,
+  ): Promise<{ order: MaintenanceOrder; vehicle: Vehicle }>;
+  vehicleTelemetry(vehicleId: string, minutes?: number): Promise<TelemetrySample[]>;
   deleteHub(id: string): Promise<void>;
 }

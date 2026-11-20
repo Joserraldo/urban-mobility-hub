@@ -36,7 +36,7 @@ export default defineConfig(({ command, mode }) => {
       ],
       ignoreOutdatedRequests: true,
     },
-    server: { host: "::", port: 8080 },
+    server: { host: "::", port: 8080, allowedHosts: [".trycloudflare.com", ".ngrok-free.app"] },
     plugins: [
       tailwindcss(),
       tsConfigPaths({ projects: ["./tsconfig.json"] }),

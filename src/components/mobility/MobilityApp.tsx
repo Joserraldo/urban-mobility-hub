@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useFleetLive, useHubs, useMe, useVehicles } from "@/lib/data/queries";
+import { MyOpenReservations } from "@/components/mobility/MyOpenReservations";
 import type { RentalModality, Vehicle, VehicleKind } from "@/lib/data/types";
 import { formatCOP, kindLabel } from "@/lib/format";
 import {
@@ -125,7 +126,11 @@ export function MobilityApp() {
   useEffect(() => setIsClient(true), []);
 
   const hubs = hubsQ.data ?? [];
-  const vehicles = useMemo(() => vehiclesQ.data ?? [], [vehiclesQ.data]);
+  // Los vehículos vendidos y los en mantenimiento no se muestran al cliente (el operador los ve en /admin).
+  const vehicles = useMemo(
+    () => (vehiclesQ.data ?? []).filter((v) => v.status !== "maintenance" && v.status !== "sold"),
+    [vehiclesQ.data],
+  );
   const hub = hubs.find((h) => h.id === hubId) ?? null;
   const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
   const rentals = vehicles.filter((v) => v.mode === "rent");
@@ -579,6 +584,7 @@ export function MobilityApp() {
           <LegendRow color="var(--success)">Batería alta (50 % o más)</LegendRow>
           <LegendRow color="var(--warning)">Batería media (20–49 %)</LegendRow>
           <LegendRow color="var(--destructive)">Batería baja o alerta</LegendRow>
+          <LegendRow color="oklch(0.68 0.2 305)">En alquiler (en marcha, no reservable)</LegendRow>
           <li className="flex items-center gap-2">
             <span className="size-3 rounded-[4px] bg-gradient-primary" aria-hidden />
             Hub, con su ocupación debajo
@@ -627,15 +633,30 @@ export function MobilityApp() {
               <HubList
                 title="Disponibles para alquiler"
                 items={rentals.filter((v) => v.hubId === hub.id)}
-                action={(v) => (
-                  <Button
-                    size="sm"
-                    onClick={() => setUnlocking(v)}
-                    data-testid={`btn-unlock-${v.id}`}
-                  >
-                    Desbloquear
-                  </Button>
-                )}
+                action={(v) =>
+                  v.status === "available" ? (
+                    <ReserveDialog
+                      vehicle={v}
+                      redirectTo="/app"
+                      defaultModality={submode}
+                      hubName={hub.name}
+                      onUnlock={() => setUnlocking(v)}
+                      trigger={
+                        <Button size="sm" data-testid={`btn-reserve-${v.id}`}>
+                          Reservar
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => setUnlocking(v)}
+                      data-testid={`btn-unlock-${v.id}`}
+                    >
+                      Desbloquear
+                    </Button>
+                  )
+                }
               />
               <HubList
                 title="Disponibles para compra"
@@ -694,8 +715,29 @@ export function MobilityApp() {
             )}
             <Rise i={2} className="mt-4 grid grid-cols-2 gap-3">
               <BatteryStat value={vehicle.battery} />
-              <Stat label="Tarifa" value={`${formatCOP(vehicle.pricePerMinute ?? 0)} / min`} />
+              {vehicle.status === "in_use" ? (
+                <Stat
+                  label="Velocidad"
+                  value={
+                    vehicle.speedKmh !== undefined
+                      ? `${Math.round(vehicle.speedKmh)} km/h`
+                      : "En marcha"
+                  }
+                />
+              ) : (
+                <Stat label="Tarifa" value={`${formatCOP(vehicle.pricePerMinute ?? 0)} / min`} />
+              )}
             </Rise>
+            {vehicle.status === "in_use" && (
+              <p
+                className="mt-3 text-xs font-medium"
+                style={{ color: "oklch(0.78 0.16 305)" }}
+                role="status"
+                data-testid="vehicle-rented"
+              >
+                En alquiler: otra persona lo está usando y no se puede reservar ahora.
+              </p>
+            )}
             <p className="mt-3 text-xs text-muted-foreground">{vehicle.spec}</p>
             {vehicle.alert !== "ok" && (
               <p className="mt-2 text-xs text-destructive" role="status">
@@ -707,10 +749,12 @@ export function MobilityApp() {
                 vehicle={vehicle}
                 redirectTo="/app"
                 defaultModality={submode}
+                hubName={hubs.find((h) => h.id === vehicle.hubId)?.name}
+                onUnlock={() => setUnlocking(vehicle)}
                 trigger={
                   <Button
                     variant="secondary"
-                    disabled={vehicle.alert !== "ok"}
+                    disabled={vehicle.alert !== "ok" || vehicle.status === "in_use"}
                     data-testid={`btn-reserve-${vehicle.id}`}
                   >
                     Reservar
@@ -718,7 +762,7 @@ export function MobilityApp() {
                 }
               />
               <Button
-                disabled={vehicle.alert !== "ok"}
+                disabled={vehicle.alert !== "ok" || vehicle.status === "in_use"}
                 onClick={() => setUnlocking(vehicle)}
                 data-testid={`btn-unlock-${vehicle.id}`}
               >
@@ -823,6 +867,8 @@ export function MobilityApp() {
           No hay vehículos disponibles con este filtro.
         </p>
       )}
+
+      {mode === "rent" && <MyOpenReservations onUnlock={setUnlocking} />}
 
       <AnimatePresence>
         {unlocking && <UnlockFlow vehicle={unlocking} onClose={() => setUnlocking(null)} />}

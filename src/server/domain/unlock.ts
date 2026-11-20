@@ -40,7 +40,10 @@ const isExpired = (session: UnlockSession, now: number) => now > session.expires
 
 export function scanQr(session: UnlockSession, code: string, now: number): UnlockSession {
   if (isExpired(session, now)) return { ...session, step: "expired" };
-  if (code.trim() === `UMH:${session.vehicleId}`) return { ...session, step: "helmet" };
+  // El QR impreso trae `UMH:<id>`; a mano se acepta también solo el id (sin distinguir mayúsculas).
+  const typed = code.replace(/[\s]+/g, "").toUpperCase();
+  const id = session.vehicleId.toUpperCase();
+  if (typed === `UMH:${id}` || typed === id) return { ...session, step: "helmet" };
   return { ...session, step: "denied", reason: "El código QR no corresponde a este vehículo" };
 }
 

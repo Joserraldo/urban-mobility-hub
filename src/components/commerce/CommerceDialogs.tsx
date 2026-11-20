@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { directionsUrl } from "@/components/mobility/ReservationCard";
 import { getDataSource } from "@/lib/data";
 import { playSound } from "@/lib/sound";
 import { SuccessCheck } from "@/components/common/SuccessCheck";
@@ -161,13 +162,18 @@ export function ReserveDialog({
   trigger,
   redirectTo,
   defaultModality = "hub",
+  hubName,
   onReserved,
+  onUnlock,
 }: {
   vehicle: Vehicle;
   trigger: ReactNode;
   redirectTo: string;
   defaultModality?: RentalModality;
+  hubName?: string | undefined;
   onReserved?: (r: Reservation) => void;
+  /** Abre el flujo de desbloqueo del vehículo recién reservado. */
+  onUnlock?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [modality, setModality] = useState<RentalModality>(
@@ -230,17 +236,49 @@ export function ReserveDialog({
                 {statusLabel[done.status]}
               </strong>
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground" data-testid="reservation-where">
               {done.modality === "delivery"
                 ? `Te lo llevamos a ${done.address}.`
-                : "Recógelo en su hub y desbloquéalo con el QR."}{" "}
+                : `Está en ${hubName ?? "su hub"}. Ve hasta el vehículo y desbloquéalo con el QR de su manubrio.`}{" "}
               Referencia {done.id}.
             </p>
-            {done.paymentRef && (
+            {done.paid && (
               <p className="text-xs text-muted-foreground" data-testid="payment-ref">
-                Prepago aprobado · número de comprobante {done.paymentRef}
+                Prepago aprobado
+                {done.paymentRef ? ` · número de comprobante ${done.paymentRef}` : ""}
               </p>
             )}
+            <div className="flex flex-col gap-2">
+              {onUnlock && (
+                <Button
+                  size="lg"
+                  onClick={() => {
+                    setOpen(false);
+                    onUnlock();
+                  }}
+                  data-testid="reserve-unlock"
+                >
+                  Desbloquear ahora
+                </Button>
+              )}
+              {done.modality === "hub" && (
+                <Button asChild variant="secondary">
+                  <a
+                    href={directionsUrl(vehicle.lat, vehicle.lng)}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="reserve-directions"
+                  >
+                    Cómo llegar
+                  </a>
+                </Button>
+              )}
+              <Link to="/mis-reservas">
+                <Button variant="ghost" className="w-full">
+                  Ver en Mis reservas
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

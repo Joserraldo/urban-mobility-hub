@@ -26,6 +26,32 @@ export type VehicleRow = {
   deliverable: number;
   qr_code: string;
 };
+export type MaintenanceOrderRow = {
+  id: string;
+  vehicle_id: string;
+  reason: string;
+  notes: string;
+  opened_at: number;
+  opened_by: string;
+  closed_at: number | null;
+  closed_by: string | null;
+  resolution: string | null;
+};
+export type MaintenanceOrderWithVehicle = MaintenanceOrderRow & {
+  vehicle_model: string;
+  vehicle_kind: string;
+};
+export type TelemetryLogRow = {
+  vehicle_id: string;
+  ts: number;
+  lat: number;
+  lng: number;
+  battery: number;
+  speed_kmh: number;
+  helmet_on: number;
+  impact_g: number;
+  alert: string;
+};
 export type HubRow = VehiclelessHub;
 type VehiclelessHub = {
   id: string;
@@ -226,6 +252,96 @@ export const repos = {
         alertState,
         id,
       );
+    },
+  },
+
+  maintenance: {
+    openByVehicle(vehicleId: string): MaintenanceOrderRow | undefined {
+      return row<MaintenanceOrderRow>(
+        "SELECT * FROM maintenance_orders WHERE vehicle_id = ? AND closed_at IS NULL",
+        vehicleId,
+      );
+    },
+    byId(id: string): MaintenanceOrderRow | undefined {
+      return row<MaintenanceOrderRow>("SELECT * FROM maintenance_orders WHERE id = ?", id);
+    },
+    open(o: {
+      id: string;
+      vehicle_id: string;
+      reason: string;
+      notes: string;
+      by: string;
+      at: number;
+    }) {
+      run(
+        `INSERT INTO maintenance_orders (id, vehicle_id, reason, notes, opened_at, opened_by)
+         VALUES (?,?,?,?,?,?)`,
+        o.id,
+        o.vehicle_id,
+        o.reason,
+        o.notes,
+        o.at,
+        o.by,
+      );
+    },
+    close(id: string, resolution: string, by: string, at: number) {
+      run(
+        "UPDATE maintenance_orders SET closed_at=?, closed_by=?, resolution=? WHERE id=?",
+        at,
+        by,
+        resolution,
+        id,
+      );
+    },
+    /** Órdenes abiertas (más antigua primero) y las últimas `closedLimit` cerradas. */
+    list(closedLimit = 50): {
+      open: MaintenanceOrderWithVehicle[];
+      closed: MaintenanceOrderWithVehicle[];
+    } {
+      const base = `SELECT o.*, v.model AS vehicle_model, v.kind AS vehicle_kind
+        FROM maintenance_orders o JOIN vehicles v ON v.id = o.vehicle_id`;
+      return {
+        open: rows<MaintenanceOrderWithVehicle>(
+          `${base} WHERE o.closed_at IS NULL ORDER BY o.opened_at`,
+        ),
+        closed: rows<MaintenanceOrderWithVehicle>(
+          `${base} WHERE o.closed_at IS NOT NULL ORDER BY o.closed_at DESC LIMIT ?`,
+          closedLimit,
+        ),
+      };
+    },
+    count(): number {
+      return (
+        row<{ n: number }>("SELECT COUNT(*) AS n FROM vehicles WHERE status='maintenance'")?.n ?? 0
+      );
+    },
+  },
+
+  telemetry: {
+    insert(r: TelemetryLogRow) {
+      run(
+        `INSERT INTO telemetry_log (vehicle_id, ts, lat, lng, battery, speed_kmh, helmet_on, impact_g, alert)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+        r.vehicle_id,
+        r.ts,
+        r.lat,
+        r.lng,
+        r.battery,
+        r.speed_kmh,
+        r.helmet_on,
+        r.impact_g,
+        r.alert,
+      );
+    },
+    since(vehicleId: string, fromTs: number): TelemetryLogRow[] {
+      return rows<TelemetryLogRow>(
+        "SELECT * FROM telemetry_log WHERE vehicle_id = ? AND ts >= ? ORDER BY ts",
+        vehicleId,
+        fromTs,
+      );
+    },
+    prune(olderThanTs: number) {
+      run("DELETE FROM telemetry_log WHERE ts < ?", olderThanTs);
     },
   },
 
@@ -721,13 +837,17 @@ export const repos = {
       const one = <T>(sql: string, ...args: (string | number | null)[]) => row<T>(sql, ...args);
       return {
         connectedVehicles:
-          one<{ n: number }>("SELECT COUNT(*) AS n FROM vehicles WHERE status != 'offline'")?.n ??
-          0,
+          one<{ n: number }>(
+            "SELECT COUNT(*) AS n FROM vehicles WHERE status NOT IN ('offline','maintenance')",
+          )?.n ?? 0,
         activeHubs: one<{ n: number }>("SELECT COUNT(*) AS n FROM hubs WHERE active=1")?.n ?? 0,
         averageBattery:
           one<{ a: number }>(
-            "SELECT ROUND(AVG(battery)) AS a FROM vehicles WHERE mode='rent' AND status != 'offline'",
+            "SELECT ROUND(AVG(battery)) AS a FROM vehicles WHERE mode='rent' AND status NOT IN ('offline','maintenance')",
           )?.a ?? 0,
+        inMaintenance:
+          one<{ n: number }>("SELECT COUNT(*) AS n FROM vehicles WHERE status = 'maintenance'")
+            ?.n ?? 0,
         activeAlerts:
           one<{ n: number }>("SELECT COUNT(*) AS n FROM vehicles WHERE alert_state != 'ok'")?.n ??
           0,

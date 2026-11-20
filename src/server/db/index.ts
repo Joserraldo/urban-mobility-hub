@@ -21,11 +21,44 @@ export function getDb(): DatabaseSync {
     if (DB_PATH !== ":memory:") mkdirSync(dirnameSafe(DB_PATH), { recursive: true });
     db = new DatabaseSync(DB_PATH);
     db.exec("PRAGMA foreign_keys = ON;");
+    migrateVehicleStatus(db);
     db.exec(readFileSync(SCHEMA_PATH, "utf8"));
     seedIfEmpty(db);
     if (process.env["UMH_SEED_DEMO"] === "1") seedDemoData(db);
   }
   return db;
+}
+
+/**
+ * SQLite no permite alterar un CHECK: si `vehicles` viene de una BD anterior (sin el estado
+ * 'maintenance') se recrea la tabla con el procedimiento oficial (create new, copy, drop, rename).
+ * Idempotente: si el CHECK ya incluye 'maintenance' no hace nada. Corre ANTES del schema.sql
+ * para que los índices se vuelvan a crear sobre la tabla nueva.
+ */
+export function migrateVehicleStatus(d: DatabaseSync): void {
+  const r = d
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='vehicles'")
+    .get() as { sql: string } | undefined;
+  if (!r || r.sql.includes("'maintenance'")) return;
+  const next = r.sql
+    .replace(/CREATE TABLE (IF NOT EXISTS )?"?vehicles"?/i, "CREATE TABLE vehicles_new")
+    .replace("'sold','offline'", "'sold','offline','maintenance'");
+  if (!next.includes("'maintenance'")) return;
+  d.exec("PRAGMA foreign_keys = OFF;");
+  d.exec("BEGIN");
+  try {
+    d.exec("DROP TABLE IF EXISTS vehicles_new;");
+    d.exec(next);
+    d.exec("INSERT INTO vehicles_new SELECT * FROM vehicles;");
+    d.exec("DROP TABLE vehicles;");
+    d.exec("ALTER TABLE vehicles_new RENAME TO vehicles;");
+    d.exec("COMMIT");
+  } catch (e) {
+    d.exec("ROLLBACK");
+    throw e;
+  } finally {
+    d.exec("PRAGMA foreign_keys = ON;");
+  }
 }
 
 function dirnameSafe(file: string): string {
@@ -47,6 +80,8 @@ export function resetDb(): void {
     "reservations",
     "unlock_sessions",
     "alert_log",
+    "telemetry_log",
+    "maintenance_orders",
     "biometric_templates",
     "consents",
     "vehicles",

@@ -372,6 +372,19 @@ textarea {
 .umh-vehicle.bat-low {
   --ring: var(--destructive);
 }
+/* Alquilado y en marcha: violeta; en mantenimiento (solo operador): gris con borde naranja. */
+.umh-vehicle.is-rented {
+  --ring: oklch(0.68 0.2 305);
+  color: oklch(0.78 0.16 305) !important;
+}
+.umh-vehicle.is-rented .umh-core {
+  background: color-mix(in oklab, oklch(0.68 0.2 305) 28%, var(--surface-elevated));
+}
+.umh-vehicle.is-maint {
+  --ring: oklch(0.72 0.17 55);
+  color: oklch(0.7 0.01 285) !important;
+  filter: grayscale(0.6);
+}
 .umh-core {
   display: flex;
   width: 100%;

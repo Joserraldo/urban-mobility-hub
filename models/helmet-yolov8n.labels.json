@@ -1,0 +1,6 @@
+{
+  "input": 640,
+  "classes": ["With Helmet", "Without Helmet"],
+  "positive": ["With Helmet"],
+  "negative": ["Without Helmet"]
+}

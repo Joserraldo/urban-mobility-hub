@@ -281,6 +281,36 @@ describe("prepago de reserva con Bold", () => {
     expect(res.status).toBe(402);
   });
 
+  it("tras el webhook APPROVED del prepago: la reserva sale pagada y el desbloqueo ya no da 402", async () => {
+    mockBold();
+    const resId = reservaPendiente();
+    const vehicleId = repos.reservations.byId(resId)!.vehicle_id;
+    const pay = await call(cliente, "POST", "/api/payments", {
+      ownerType: "reservation",
+      ownerId: resId,
+    });
+    const { orderId } = (await pay.json()) as { orderId: string };
+    const unlockBody = { vehicleId, reservationId: resId };
+    expect((await call(cliente, "POST", "/api/unlock/sessions", unlockBody)).status).toBe(402);
+    await webhook(repos.boldOrders.byId(orderId)!.link_id, "SALE_APPROVED");
+    const list = (await (await call(cliente, "GET", "/api/reservations")).json()) as {
+      id: string;
+      status: string;
+      prepaid: boolean;
+    }[];
+    expect(list.find((r) => r.id === resId)).toMatchObject({ status: "requested", prepaid: true });
+    const res = await call(cliente, "POST", "/api/unlock/sessions", unlockBody);
+    expect(res.status).toBe(201);
+    const session = (await res.json()) as { id: string };
+    const base = `/api/unlock/sessions/${session.id}`;
+    const qr = await call(cliente, "POST", `${base}/qr`, { code: ` ${vehicleId.toLowerCase()} ` });
+    expect(((await qr.json()) as { step: string }).step).toBe("helmet");
+    await call(cliente, "POST", `${base}/helmet`, { helmetDetected: true, confidence: 0.95 });
+    expect((await call(cliente, "POST", `${base}/start`)).status).toBe(200);
+    expect(repos.reservations.byId(resId)!.status).toBe("active");
+    expect(repos.vehicles.byId(vehicleId)!.status).toBe("in_use");
+  });
+
   it("reutiliza el link pendiente en vez de crear uno nuevo al reintentar", async () => {
     const calls = mockBold();
     const resId = reservaPendiente();

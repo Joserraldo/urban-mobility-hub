@@ -20,6 +20,7 @@ import { Route as MisReservasRouteImport } from './routes/mis-reservas'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as TerminosRouteImport } from './routes/terminos'
+import { Route as AdminQrRouteImport } from './routes/admin_.qr'
 import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoSlugRouteImport } from './routes/catalogo.$slug'
 import { Route as GuiasIndexRouteImport } from './routes/guias.index'
@@ -83,6 +84,11 @@ const TerminosRoute = TerminosRouteImport.update({
   path: '/terminos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminQrRoute = AdminQrRouteImport.update({
+  id: '/admin_/qr',
+  path: '/admin/qr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
   id: '/catalogo/',
   path: '/catalogo/',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
   '/terminos': typeof TerminosRoute
+  '/admin/qr': typeof AdminQrRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
   '/terminos': typeof TerminosRoute
+  '/admin/qr': typeof AdminQrRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/privacidad': typeof PrivacidadRoute
   '/registro': typeof RegistroRoute
   '/terminos': typeof TerminosRoute
+  '/admin_/qr': typeof AdminQrRoute
   '/catalogo/$slug': typeof CatalogoSlugRoute
   '/guias/$slug': typeof GuiasSlugRoute
   '/hubs/$hubId': typeof HubsHubIdRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/privacidad'
     | '/registro'
     | '/terminos'
+    | '/admin/qr'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/privacidad'
     | '/registro'
     | '/terminos'
+    | '/admin/qr'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/privacidad'
     | '/registro'
     | '/terminos'
+    | '/admin_/qr'
     | '/catalogo/$slug'
     | '/guias/$slug'
     | '/hubs/$hubId'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   PrivacidadRoute: typeof PrivacidadRoute
   RegistroRoute: typeof RegistroRoute
   TerminosRoute: typeof TerminosRoute
+  AdminQrRoute: typeof AdminQrRoute
   CatalogoSlugRoute: typeof CatalogoSlugRoute
   GuiasSlugRoute: typeof GuiasSlugRoute
   HubsHubIdRoute: typeof HubsHubIdRoute
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/qr': {
+      id: '/admin_/qr'
+      path: '/admin/qr'
+      fullPath: '/admin/qr'
+      preLoaderRoute: typeof AdminQrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalogo/': {
       id: '/catalogo/'
       path: '/catalogo'
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadRoute: PrivacidadRoute,
   RegistroRoute: RegistroRoute,
   TerminosRoute: TerminosRoute,
+  AdminQrRoute: AdminQrRoute,
   CatalogoSlugRoute: CatalogoSlugRoute,
   GuiasSlugRoute: GuiasSlugRoute,
   HubsHubIdRoute: HubsHubIdRoute,

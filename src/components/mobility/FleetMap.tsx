@@ -202,6 +202,8 @@ export default function FleetMap({
     }
     for (const v of rentals) {
       const bad = v.alert !== "ok";
+      const rented = v.status === "in_use";
+      const maint = v.status === "maintenance";
       const level = batteryLevel(v.battery);
       const enter = enterAttr(state.current);
       // Anillo de batería: el arco coloreado es el porcentaje que queda (alta/media/baja).
@@ -209,9 +211,9 @@ export default function FleetMap({
         className: "umh-marker",
         iconSize: [40, 40],
         iconAnchor: [20, 20],
-        html: `<button type="button" data-testid="vehicle-marker-${v.id}" data-alert="${v.alert}" data-battery="${level}" aria-pressed="${selectedVehicleId === v.id}" aria-label="${escapeHtml(kindLabel[v.kind])} ${v.id}, batería ${v.battery}%${bad ? `, alerta: ${alertLabel[v.alert]}` : ""}" class="umh-vehicle bat-${level} ${bad ? "is-alert" : ""} ${selectedVehicleId === v.id ? "is-selected" : ""} ${enter.cls}" style="--bat:${Math.max(0, Math.min(100, v.battery))};${enter.style}"><span class="umh-core">${ICONS[v.kind]}</span></button>`,
+        html: `<button type="button" data-testid="vehicle-marker-${v.id}" data-alert="${v.alert}" data-battery="${level}" aria-pressed="${selectedVehicleId === v.id}" aria-label="${escapeHtml(kindLabel[v.kind])} ${v.id}${rented ? ", en alquiler" : maint ? ", en mantenimiento" : ""}, batería ${v.battery}%${bad ? `, alerta: ${alertLabel[v.alert]}` : ""}" class="umh-vehicle bat-${level} ${rented ? "is-rented" : ""} ${maint ? "is-maint" : ""} ${bad ? "is-alert" : ""} ${selectedVehicleId === v.id ? "is-selected" : ""} ${enter.cls}" style="--bat:${Math.max(0, Math.min(100, v.battery))};${enter.style}"><span class="umh-core">${ICONS[v.kind]}</span></button>`,
       });
-      const sig = `${v.alert}|${selectedVehicleId === v.id}|${Math.round(v.battery)}`;
+      const sig = `${v.alert}|${v.status}|${selectedVehicleId === v.id}|${Math.round(v.battery)}`;
       const existing = vehicleMarkers.get(v.id);
       if (existing) {
         existing.setLatLng([v.lat, v.lng]);

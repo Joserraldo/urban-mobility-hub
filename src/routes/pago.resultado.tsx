@@ -124,10 +124,14 @@ function PaymentResult() {
         ) : (
           <Panel
             icon={<Clock className="size-8 text-muted-foreground" aria-hidden />}
-            title="Esperando la confirmación de Bold"
+            title={
+              data.lastAttempt === "rejected"
+                ? "Bold rechazó tu último intento"
+                : "Esperando la confirmación de Bold"
+            }
           >
             {data.lastAttempt === "rejected"
-              ? "Tu último intento fue rechazado. Puedes volver a intentarlo."
+              ? "No se cobró nada. Pulsa «Reintentar el pago» y usa otra tarjeta de prueba."
               : gaveUp
                 ? "Bold aún no confirma el pago. Si ya pagaste, revisa en unos minutos “Mis reservas”."
                 : "Esto toma solo unos segundos. No cierres esta página."}
@@ -138,7 +142,7 @@ function PaymentResult() {
                   size="sm"
                   onClick={() => void openEmbeddedCheckout(data.embedded as EmbeddedPayload)}
                 >
-                  Abrir el pago
+                  {data.lastAttempt === "rejected" ? "Reintentar el pago" : "Abrir el pago"}
                 </Button>
               </span>
             ) : null}

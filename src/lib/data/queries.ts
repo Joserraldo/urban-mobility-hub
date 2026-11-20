@@ -42,7 +42,17 @@ export function useFleetLive() {
     const unsub = ds().subscribeFleet((e: FleetEvent) => {
       if (e.type === "position") {
         qc.setQueryData<Vehicle[]>(keys.vehicles, (old) =>
-          old?.map((v) => (v.id === e.vehicleId ? { ...v, lat: e.lat, lng: e.lng } : v)),
+          old?.map((v) =>
+            v.id === e.vehicleId
+              ? {
+                  ...v,
+                  lat: e.lat,
+                  lng: e.lng,
+                  ...(e.battery !== undefined ? { battery: Math.round(e.battery) } : {}),
+                  ...(e.speedKmh !== undefined ? { speedKmh: e.speedKmh } : {}),
+                }
+              : v,
+          ),
         );
       } else if (e.type === "vehicle") {
         qc.setQueryData<Vehicle[]>(keys.vehicles, (old) => {
@@ -86,6 +96,48 @@ export function useAuthActions() {
         qc.removeQueries({ queryKey: keys.reservations });
         qc.removeQueries({ queryKey: keys.purchases });
       },
+    }),
+  };
+}
+
+export const maintenanceKeys = {
+  list: ["maintenance"] as const,
+  telemetry: (vehicleId: string, minutes: number) => ["telemetry", vehicleId, minutes] as const,
+};
+
+export const useMaintenance = () =>
+  useQuery({ queryKey: maintenanceKeys.list, queryFn: () => ds().listMaintenance() });
+
+/** Historial de telemetría de un vehículo (se refresca cada 30 s mientras el gemelo está abierto). */
+export const useVehicleTelemetry = (vehicleId: string | undefined, minutes = 60) =>
+  useQuery({
+    queryKey: maintenanceKeys.telemetry(vehicleId ?? "", minutes),
+    queryFn: () => ds().vehicleTelemetry(vehicleId as string, minutes),
+    enabled: Boolean(vehicleId),
+    refetchInterval: 30_000,
+  });
+
+export function useMaintenanceActions() {
+  const qc = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: maintenanceKeys.list }),
+      qc.invalidateQueries({ queryKey: keys.vehicles }),
+      qc.invalidateQueries({ queryKey: keys.reservations }),
+    ]);
+  return {
+    send: useMutation({
+      mutationFn: (i: { vehicleId: string; reason: string; notes?: string }) =>
+        ds().sendToMaintenance(i.vehicleId, {
+          reason: i.reason,
+          ...(i.notes ? { notes: i.notes } : {}),
+        }),
+      onSuccess: refresh,
+    }),
+    close: useMutation({
+      mutationFn: (i: { orderId: string; resolution: string }) =>
+        ds().closeMaintenance(i.orderId, i.resolution),
+      onSuccess: refresh,
     }),
   };
 }

@@ -65,11 +65,12 @@ export interface Vehicle {
    * No es un secreto: el control real es la sesión de desbloqueo + casco.
    */
   qrCode: string;
-  /** Disponibilidad comercial/operativa. Un vehículo "sold" o "in-use" no se puede reservar/comprar. */
+  /** Disponibilidad comercial/operativa. Un vehículo "sold" o "in_use" no se puede reservar/comprar. */
   status: VehicleStatus;
 }
 
-export type VehicleStatus = "available" | "reserved" | "in-use" | "sold" | "offline";
+export type VehicleStatus =
+  "available" | "reserved" | "in_use" | "sold" | "offline" | "maintenance";
 
 /** Entrada de la bitácora auditable de alertas (RF-12, RNF-04). */
 export interface AlertEvent {

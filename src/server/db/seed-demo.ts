@@ -13,7 +13,10 @@ const DAY = 24 * 60 * MIN;
 
 export function seedDemoData(db: DatabaseSync): void {
   const done = db.prepare("SELECT 1 FROM users WHERE email = ?").get("cliente3@demo.co");
-  if (done) return;
+  if (done) {
+    ensureLiveRentals(db);
+    return;
+  }
   const now = Date.now();
 
   // --- Usuarios (con consentimiento de datos personales) ---
@@ -368,4 +371,88 @@ export function seedDemoData(db: DatabaseSync): void {
     "simulated",
     now - 8 * MIN,
   );
+  ensureLiveRentals(db);
+}
+
+/**
+ * Alquileres "en vivo" para la demo: 3 vehículos en viaje activo (`in_use` + reserva `active`)
+ * de un usuario aparte (viajero@demo.co) para no bloquear al cliente demo principal.
+ * `fleet-sim` solo mueve los `in_use`. Idempotente: filas con id fijo (INSERT OR IGNORE) y, en
+ * cada arranque, el viaje se reactiva si terminó y la batería baja se restablece.
+ */
+export const LIVE_RENTAL_USER = "USRJ-VIAJERO";
+export const LIVE_RENTAL_VEHICLES = ["SC-1201", "SC-1202", "BK-2203"] as const;
+
+function ensureLiveRentals(db: DatabaseSync): void {
+  const now = Date.now();
+  db.prepare(
+    "INSERT OR IGNORE INTO users (id, name, email, password_hash, role, created_at) VALUES (?,?,?,?,?,?)",
+  ).run(
+    LIVE_RENTAL_USER,
+    "Viajero Demo",
+    "viajero@demo.co",
+    hashPassword("Demo1234!"),
+    "user",
+    now,
+  );
+  db.prepare(
+    "INSERT OR IGNORE INTO consents (id, user_id, purpose, accepted_at, revoked) VALUES (?,?,?,?,0)",
+  ).run("CON-DEMO-LIVE", LIVE_RENTAL_USER, "datos_personales", now);
+
+  const veh: [string, string, string, number, number, number, string][] = [
+    // id, kind, model, rate, lat, lng, hub
+    ["SC-1201", "scooter", "Volt S3", 480, 7.1139, -73.1098, "HUB-01"],
+    ["SC-1202", "scooter", "Volt S2", 450, 7.1205, -73.1132, "HUB-02"],
+    ["BK-2203", "bike", "Eco E-Bike", 380, 7.1098, -73.1165, "HUB-03"],
+  ];
+  const insVeh = db.prepare(
+    `INSERT OR IGNORE INTO vehicles (id, kind, model, mode, status, condition, price_cop, rate_per_min_cop,
+      spec, battery, lat, lng, hub_id, alert_state, deliverable, qr_code)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  );
+  const insRes = db.prepare(
+    `INSERT OR IGNORE INTO reservations (id, user_id, vehicle_id, modality, address, status, requested_at, started_at, ended_at, total_cost_cop)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+  );
+  veh.forEach(([id, kind, model, rate, lat, lng, hub], i) => {
+    insVeh.run(
+      id,
+      kind,
+      model,
+      "rent",
+      "in_use",
+      null,
+      null,
+      rate,
+      "Alquiler en curso (demo)",
+      85 - i * 10,
+      lat,
+      lng,
+      hub,
+      "ok",
+      0,
+      `UMH:${id}`,
+    );
+    const resId = `RES-DEMO-LIVE-${i + 1}`;
+    const started = now - (6 + i * 4) * MIN;
+    insRes.run(
+      resId,
+      LIVE_RENTAL_USER,
+      id,
+      "hub",
+      null,
+      "active",
+      started - 2 * MIN,
+      started,
+      null,
+      null,
+    );
+    // Si el viaje terminó (o el vehículo quedó libre) se reactiva; batería baja → recargada.
+    db.prepare(
+      "UPDATE reservations SET status='active', started_at=?, ended_at=NULL, total_cost_cop=NULL WHERE id=? AND status <> 'active'",
+    ).run(started, resId);
+    db.prepare(
+      "UPDATE vehicles SET status='in_use', alert_state='ok', battery = CASE WHEN battery < 30 THEN 90 ELSE battery END WHERE id=? AND (status <> 'in_use' OR alert_state <> 'ok' OR battery < 30)",
+    ).run(id);
+  });
 }

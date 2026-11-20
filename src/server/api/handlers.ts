@@ -47,6 +47,7 @@ import {
 import { applyTelemetry, markLate } from "../services/fleet-sim";
 import { stream } from "../services/stream";
 import { cameraRequired, cameraStream, cameraVerdict } from "../services/camera";
+import { relayCameraFrame } from "../services/camera-relay";
 import { vehicleQrPayload, vehicleQrSvg } from "../services/qr";
 
 const ALERT_OUT: Record<string, string> = {
@@ -240,14 +241,22 @@ export async function handle(request: Request): Promise<Response> {
     // ---------- catálogo y flota (UC03/UC06/UC07) ----------
     if (method === "GET" && path === "/api/vehicles") {
       const mode = url.searchParams.get("mode");
-      return ok(repos.vehicles.list(mode ? { mode } : undefined).map(toClientVehicle));
+      // Los vehículos en mantenimiento solo los ve el operador (el cliente no los ve en mapa ni catálogo).
+      const isOperator = readSessionUser(request)?.role === "operator";
+      return ok(
+        repos.vehicles
+          .list(mode ? { mode } : undefined)
+          .filter((v) => isOperator || v.status !== "maintenance")
+          .map(toClientVehicle),
+      );
     }
     // QR imprimible del vehículo (se pega en el manubrio). Su contenido no es secreto: es UMH:<id>.
     const qrMatch = path.match(/^\/api\/vehicles\/([^/]+)\/qr\.svg$/);
     if (method === "GET" && qrMatch?.[1]) {
       const v = repos.vehicles.byId(decodeURIComponent(qrMatch[1]));
       if (!v) throw httpError(404, "Vehículo no encontrado");
-      return new Response(await vehicleQrSvg(v.qr_code || vehicleQrPayload(v.id)), {
+      // Siempre el contenido canónico: es exactamente lo que valida el desbloqueo (UMH:<id>).
+      return new Response(await vehicleQrSvg(vehicleQrPayload(v.id)), {
         headers: {
           "content-type": "image/svg+xml; charset=utf-8",
           "cache-control": "public, max-age=3600",
@@ -369,6 +378,8 @@ export async function handle(request: Request): Promise<Response> {
         requested_at: Date.now(),
       };
       atomically(() => {
+        // Máx. 1 reserva abierta sin pagar por cliente: al crear una nueva se cancelan las anteriores.
+        releaseUnpaidReservations(u.id, { all: true });
         repos.reservations.create(r);
         repos.vehicles.setStatus(v.id, "reserved");
       });
@@ -391,9 +402,15 @@ export async function handle(request: Request): Promise<Response> {
 
     if (method === "GET" && path === "/api/reservations") {
       const u = requireUser(request);
+      // Limpieza perezosa: las solicitudes sin pagar de hace más de UNPAID_TTL_MS se cancelan.
+      releaseUnpaidReservations(u.id, { all: false });
       const mine = repos.reservations.byUser(u.id) as ReservationRow[];
       return ok(
-        mine.map((r) => ({ ...r, delivery: repos.deliveries.activeForReservation(r.id) ?? null })),
+        mine.map((r) => ({
+          ...r,
+          delivery: repos.deliveries.activeForReservation(r.id) ?? null,
+          prepaid: repos.payments.hasApproved("reservation", r.id, "base"),
+        })),
       );
     }
 
@@ -476,8 +493,16 @@ export async function handle(request: Request): Promise<Response> {
           409,
           "Primero reserva este vehículo y paga el prepago; luego podrás desbloquearlo",
         );
-      if (boldConfig() && !repos.payments.hasApproved("reservation", r.id, "base"))
-        throw httpError(402, "Completa el pago del prepago en Bold para desbloquear el vehículo");
+      // El prepago manda siempre (Bold o pasarela simulada): sin pago aprobado no hay desbloqueo.
+      if (!repos.payments.hasApproved("reservation", r.id, "base"))
+        throw httpError(
+          402,
+          boldConfig()
+            ? "Completa el pago del prepago en Bold para desbloquear el vehículo"
+            : "Paga el prepago de esta reserva para desbloquear el vehículo",
+        );
+      if (repos.vehicles.byId(String(b.vehicleId ?? r.vehicle_id))?.status === "maintenance")
+        throw httpError(409, "Este vehículo está en mantenimiento y no se puede desbloquear");
       const session = createUnlockSession(String(b.vehicleId ?? r.vehicle_id));
       repos.unlock.create({
         id: session.id,
@@ -546,6 +571,8 @@ export async function handle(request: Request): Promise<Response> {
       } else {
         if (!canStartTrip(session, now))
           throw httpError(409, `No se puede iniciar el viaje (paso '${session.step}')`);
+        if (repos.vehicles.byId(session.vehicleId)?.status === "maintenance")
+          throw httpError(409, "Este vehículo está en mantenimiento y no se puede desbloquear");
         const next = transition({ status: reservation.status as never }, "start");
         atomically(() => {
           repos.reservations.setStatus(reservation.id, next.status, { started_at: now });
@@ -611,6 +638,15 @@ export async function handle(request: Request): Promise<Response> {
       return ok(repos.alerts.list().map(toClientAlert));
     }
 
+    // Webcam del PC del operador -> umh-vision (la clave de ingesta no sale del servidor).
+    const pcCamMatch = path.match(/^\/api\/admin\/camera\/([^/]+)\/frame$/);
+    if (method === "POST" && pcCamMatch?.[1]) {
+      requireRole(request, "operator");
+      const id = decodeURIComponent(pcCamMatch[1]);
+      if (!repos.vehicles.byId(id)) throw httpError(404, "Vehículo no encontrado");
+      return ok(await relayCameraFrame(id, await request.arrayBuffer()));
+    }
+
     if (method === "POST" && path === "/api/admin/simulate-alert") {
       requireRole(request, "operator");
       const b = await body<SimulateBody>(request);
@@ -673,20 +709,32 @@ export async function handle(request: Request): Promise<Response> {
     // Los vehículos NO se borran (conservan su historial, RNF-04): el operador cambia su ESTADO.
     const adminVehicleStatus = path.match(/^\/api\/admin\/vehicles\/([^/]+)\/status$/);
     if (method === "PATCH" && adminVehicleStatus?.[1]) {
-      requireRole(request, "operator");
+      const operatorUser = requireRole(request, "operator");
       const id = decodeURIComponent(adminVehicleStatus[1]);
       const status = String((await body<{ status?: string }>(request)).status ?? "").replace(
         "-",
         "_",
       );
-      if (!["available", "reserved", "in_use", "offline"].includes(status))
+      if (!["available", "reserved", "in_use", "offline", "maintenance"].includes(status))
         throw httpError(
           422,
-          "El estado debe ser: disponible, reservado, en uso o fuera de servicio",
+          "El estado debe ser: disponible, reservado, en uso, fuera de servicio o en mantenimiento",
         );
       const v = repos.vehicles.byId(id);
       if (!v) throw httpError(404, "Vehículo no encontrado");
       if (v.status === "sold") throw httpError(409, "Un vehículo vendido ya no cambia de estado");
+      // No se retira un vehículo con viaje en curso (fuera de servicio / mantenimiento).
+      if (["offline", "maintenance"].includes(status) && v.status === "in_use")
+        throw httpError(409, "El vehículo está en un viaje activo: espera a que termine");
+      // `maintenance` por PATCH crea la orden "Retiro manual" para que el historial quede coherente;
+      // salir de mantenimiento por PATCH cierra la orden abierta ("Cierre manual").
+      if (status === "maintenance") {
+        const { cancelled } = sendToMaintenance(id, "Retiro manual", "", operatorUser.id);
+        return ok({
+          vehicle: toClientVehicle(repos.vehicles.byId(id) as VehicleRow),
+          cancelled,
+        });
+      }
       // Liberar el vehículo (disponible / fuera de servicio) cancela sus reservas abiertas, todo o nada,
       // para que no queden reservas colgando de un vehículo que ya no está en uso.
       const open = ["available", "offline"].includes(status)
@@ -698,6 +746,11 @@ export async function handle(request: Request): Promise<Response> {
           const next = transition({ status: r.status as never }, "cancel");
           repos.reservations.setStatus(r.id, next.status, { ended_at: now });
         }
+        const openOrder = repos.maintenance.openByVehicle(id);
+        if (openOrder) {
+          repos.maintenance.close(openOrder.id, "Cierre manual", operatorUser.id, now);
+          repos.vehicles.updateLive(id, v.lat, v.lng, v.battery, "ok");
+        }
         repos.vehicles.setStatus(id, status);
       });
       stream.emit("vehicle", { vehicleId: id, status });
@@ -705,6 +758,57 @@ export async function handle(request: Request): Promise<Response> {
         vehicle: toClientVehicle(repos.vehicles.byId(id) as VehicleRow),
         cancelled: open.length,
       });
+    }
+    // ---------- mantenimiento y telemetría histórica (operador) ----------
+    const maintOpen = path.match(/^\/api\/admin\/vehicles\/([^/]+)\/maintenance$/);
+    if (method === "POST" && maintOpen?.[1]) {
+      const operator = requireRole(request, "operator");
+      const b = await body<{ reason?: string; notes?: string }>(request);
+      const reason = String(b.reason ?? "").trim();
+      if (!reason) throw httpError(422, "Indica el motivo del mantenimiento");
+      const { order, cancelled } = sendToMaintenance(
+        decodeURIComponent(maintOpen[1]),
+        reason,
+        String(b.notes ?? "").trim(),
+        operator.id,
+      );
+      return ok({ order, cancelled }, { status: 201 });
+    }
+    const maintClose = path.match(/^\/api\/admin\/maintenance\/([^/]+)\/close$/);
+    if (method === "POST" && maintClose?.[1]) {
+      const operator = requireRole(request, "operator");
+      const b = await body<{ resolution?: string }>(request);
+      const resolution = String(b.resolution ?? "").trim();
+      if (!resolution) throw httpError(422, "Indica la resolución del mantenimiento");
+      const order = repos.maintenance.byId(decodeURIComponent(maintClose[1]));
+      if (!order) throw httpError(404, "Orden de mantenimiento no encontrada");
+      if (order.closed_at !== null) throw httpError(409, "La orden ya estaba cerrada");
+      const vehicle = repos.vehicles.byId(order.vehicle_id) as VehicleRow;
+      atomically(() => {
+        repos.maintenance.close(order.id, resolution, operator.id, Date.now());
+        repos.vehicles.updateLive(vehicle.id, vehicle.lat, vehicle.lng, vehicle.battery, "ok");
+        repos.vehicles.setStatus(vehicle.id, "available");
+      });
+      stream.emit("vehicle", { vehicleId: vehicle.id, status: "available" });
+      return ok({
+        order: repos.maintenance.byId(order.id),
+        vehicle: toClientVehicle(repos.vehicles.byId(vehicle.id) as VehicleRow),
+      });
+    }
+    if (method === "GET" && path === "/api/admin/maintenance") {
+      requireRole(request, "operator");
+      return ok(repos.maintenance.list(50));
+    }
+    const telemetryMatch = path.match(/^\/api\/admin\/vehicles\/([^/]+)\/telemetry$/);
+    if (method === "GET" && telemetryMatch?.[1]) {
+      requireRole(request, "operator");
+      const id = decodeURIComponent(telemetryMatch[1]);
+      if (!repos.vehicles.byId(id)) throw httpError(404, "Vehículo no encontrado");
+      const minutes = Math.min(
+        1440,
+        Math.max(1, Number(url.searchParams.get("minutes") ?? 60) || 60),
+      );
+      return ok(repos.telemetry.since(id, Date.now() - minutes * 60_000));
     }
     const adminVehicleDelete = path.match(/^\/api\/admin\/vehicles\/([^/]+)$/);
     if (method === "DELETE" && adminVehicleDelete?.[1])
@@ -943,6 +1047,28 @@ async function chargePurchase(p: PurchaseRow): Promise<Response> {
     repos.vehicles.setStatus(p.vehicle_id, "sold");
   });
   return ok({ purchase: repos.purchases.byId(p.id), reference: result.reference ?? null });
+}
+
+/** Una reserva sin prepago se considera abandonada pasado este tiempo (igual al vencimiento del link de Bold). */
+const UNPAID_TTL_MS = 30 * 60_000;
+
+/**
+ * Cancela las reservas 'requested' del cliente que nunca se pagaron y libera su vehículo.
+ * No toca: las ya pagadas, las de domicilio con entrega asignada ni las que tienen un pago de
+ * Bold en curso (menos de ORDER_EXPIRE_MS). Con `all: false` solo las más viejas que UNPAID_TTL_MS.
+ */
+function releaseUnpaidReservations(userId: string, opts: { all: boolean }): void {
+  const now = Date.now();
+  for (const r of repos.reservations.byUser(userId) as ReservationRow[]) {
+    if (r.status !== "requested") continue;
+    if (!opts.all && now - Number(r.requested_at) < UNPAID_TTL_MS) continue;
+    if (repos.payments.hasApproved("reservation", r.id, "base")) continue;
+    if (repos.deliveries.activeForReservation(r.id)) continue;
+    const pending = repos.boldOrders.pendingFor("reservation", r.id, "base");
+    if (pending && now - pending.created_at < ORDER_EXPIRE_MS) continue;
+    repos.reservations.setStatus(r.id, "cancelled");
+    repos.vehicles.setStatus(r.vehicle_id, "available");
+  }
 }
 
 async function payReservation(u: { id: string }, reservationId: string): Promise<Response> {
@@ -1221,6 +1347,33 @@ async function boldOrderStatus(userId: string, orderId: string): Promise<Respons
           })
         : null,
   });
+}
+
+/**
+ * Retira un vehículo a mantenimiento: 409 si está en viaje, vendido o ya tiene orden abierta;
+ * cancela sus reservas abiertas y abre la orden, todo o nada. La alerta se limpia al CERRAR la orden.
+ */
+function sendToMaintenance(vehicleId: string, reason: string, notes: string, by: string) {
+  const v = repos.vehicles.byId(vehicleId);
+  if (!v) throw httpError(404, "Vehículo no encontrado");
+  if (v.status === "in_use")
+    throw httpError(409, "El vehículo está en un viaje activo: espera a que termine");
+  if (v.status === "sold") throw httpError(409, "Un vehículo vendido ya no cambia de estado");
+  if (v.status === "maintenance" || repos.maintenance.openByVehicle(vehicleId))
+    throw httpError(409, "El vehículo ya tiene una orden de mantenimiento abierta");
+  const open = repos.reservations.openByVehicle(vehicleId);
+  const now = Date.now();
+  const orderId = uid("MNT");
+  atomically(() => {
+    for (const r of open) {
+      const next = transition({ status: r.status as never }, "cancel");
+      repos.reservations.setStatus(r.id, next.status, { ended_at: now });
+    }
+    repos.maintenance.open({ id: orderId, vehicle_id: vehicleId, reason, notes, by, at: now });
+    repos.vehicles.setStatus(vehicleId, "maintenance");
+  });
+  stream.emit("vehicle", { vehicleId, status: "maintenance" });
+  return { order: repos.maintenance.byId(orderId), cancelled: open.length };
 }
 
 function toClientVehicle(v: VehicleRow) {
