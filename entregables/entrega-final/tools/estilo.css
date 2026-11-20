@@ -1,0 +1,600 @@
+@page {
+  size: A4;
+  margin: 16mm 0 16mm 0;
+}
+@page land {
+  size: A4 landscape;
+  margin: 14mm 0 14mm 0;
+}
+
+:root {
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --soft: #f1f5f9;
+  --accent: #1d4ed8;
+  --accent-2: #0ea5e9;
+  --accent-soft: #eff6ff;
+  --ok: #15803d;
+  --ok-soft: #f0fdf4;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --bad: #b91c1c;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Inter", system-ui, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.wrap {
+  padding: 0 17mm;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+code,
+.mono {
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 8.6pt;
+  background: var(--soft);
+  padding: 0 3px;
+  border-radius: 3px;
+  color: #1e293b;
+}
+p {
+  margin: 0 0 7px;
+  text-align: justify;
+  hyphens: auto;
+}
+ul,
+ol {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+li {
+  margin: 2px 0;
+}
+strong,
+b {
+  color: var(--ink);
+}
+
+/* ---------- Portada ---------- */
+.cover {
+  height: 265mm;
+  position: relative;
+  page-break-after: always;
+  overflow: hidden;
+}
+.cover-band {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 13mm;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+.cover-body {
+  padding: 18mm 20mm 0 32mm;
+}
+.cover-uni {
+  font-size: 9.5pt;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+.cover-kicker {
+  margin-top: 38mm;
+  font-size: 10pt;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cover-title {
+  font-size: 29pt;
+  line-height: 1.12;
+  margin: 4mm 0 5mm;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.cover-sub {
+  font-size: 12.5pt;
+  color: var(--ink-2);
+  max-width: 150mm;
+}
+.cover-product {
+  margin-top: 9mm;
+  padding: 4mm 5mm;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  font-size: 9.5pt;
+  color: var(--ink-2);
+  max-width: 150mm;
+}
+.cover-product .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 4px;
+}
+.cover-meta {
+  position: absolute;
+  bottom: 14mm;
+  left: 32mm;
+  right: 20mm;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+}
+.cover-meta th {
+  text-align: left;
+  width: 32mm;
+  color: var(--muted);
+  font-weight: 600;
+  vertical-align: top;
+  padding: 2.2mm 0;
+  border-top: 1px solid var(--line);
+}
+.cover-meta td {
+  padding: 2.2mm 0;
+  border-top: 1px solid var(--line);
+}
+.cover-chips {
+  margin-top: 7mm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm;
+  max-width: 150mm;
+}
+.chip {
+  font-size: 8pt;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 1mm 3mm;
+  color: var(--ink-2);
+  background: #fff;
+}
+
+/* ---------- Índice ---------- */
+.toc {
+  page-break-after: always;
+}
+.toc h2 {
+  margin-top: 0;
+}
+.toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.toc li {
+  margin: 0;
+}
+.toc a {
+  display: flex;
+  align-items: baseline;
+  color: var(--ink);
+  padding: 0.55mm 0;
+}
+.toc .t {
+  flex: 0 1 auto;
+}
+.toc .dots {
+  flex: 1;
+  border-bottom: 1px dotted #cbd5e1;
+  margin: 0 2mm;
+  transform: translateY(-2px);
+}
+.toc .pg {
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 7mm;
+  text-align: right;
+}
+.toc .toc-l1 a {
+  font-weight: 700;
+  font-size: 10.2pt;
+  margin-top: 1.3mm;
+}
+.toc .toc-l2 a {
+  padding-left: 6mm;
+  font-size: 9.4pt;
+}
+.toc .toc-l3 a {
+  padding-left: 12mm;
+  font-size: 8.8pt;
+  color: var(--ink-2);
+}
+.toc-cols {
+  columns: 2;
+  column-gap: 9mm;
+}
+.toc-cols li {
+  break-inside: avoid;
+}
+
+/* ---------- Títulos ---------- */
+h2 {
+  font-size: 17pt;
+  margin: 0 0 4mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--ink);
+  letter-spacing: -0.01em;
+}
+h2 .num {
+  color: var(--accent);
+  margin-right: 3mm;
+}
+h3 {
+  font-size: 12.5pt;
+  margin: 6mm 0 2.5mm;
+  color: var(--ink);
+}
+h3 .num {
+  color: var(--accent);
+  margin-right: 2mm;
+}
+h4 {
+  font-size: 10.5pt;
+  margin: 4mm 0 1.5mm;
+  color: var(--ink-2);
+}
+.chapter {
+  page-break-before: always;
+}
+.lead {
+  font-size: 10.6pt;
+  color: var(--ink-2);
+}
+.eyebrow {
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1mm;
+}
+
+/* ---------- Tablas ---------- */
+table.t {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2mm 0 5mm;
+  font-size: 8.7pt;
+  page-break-inside: auto;
+}
+table.t th {
+  background: var(--ink);
+  color: #fff;
+  text-align: left;
+  padding: 1.6mm 2mm;
+  font-weight: 600;
+}
+table.t td {
+  padding: 1.5mm 2mm;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.t tr:nth-child(even) td {
+  background: #f8fafc;
+}
+table.t tr {
+  page-break-inside: avoid;
+}
+table.t.compact td,
+table.t.compact th {
+  padding: 1.1mm 1.6mm;
+  font-size: 8.2pt;
+}
+table.kv {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2mm 0 4mm;
+  font-size: 8.9pt;
+}
+table.kv th {
+  width: 38mm;
+  text-align: left;
+  vertical-align: top;
+  background: var(--soft);
+  padding: 1.6mm 2.4mm;
+  border: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+table.kv td {
+  padding: 1.6mm 2.4mm;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+
+/* ---------- Figuras ---------- */
+figure {
+  margin: 3mm 0 5mm;
+  page-break-inside: avoid;
+}
+figure .frame {
+  border: 1px solid var(--line);
+  border-radius: 2mm;
+  padding: 2mm;
+  background: #fff;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+figcaption {
+  font-size: 8.6pt;
+  color: var(--muted);
+  margin-top: 1.8mm;
+  text-align: center;
+}
+figcaption b {
+  color: var(--ink-2);
+}
+.fig-page {
+  page-break-before: always;
+  page-break-inside: avoid;
+}
+.fig-page.land {
+  page: land;
+}
+.fig-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4mm;
+  margin-bottom: 2mm;
+}
+.fig-head h3 {
+  margin: 0;
+}
+.fig-head .tag {
+  font-size: 8pt;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.fig-desc {
+  font-size: 9pt;
+  color: var(--ink-2);
+  margin-bottom: 2mm;
+}
+.fig-desc p {
+  margin-bottom: 1.5mm;
+}
+.shot img {
+  border: 1px solid #cbd5e1;
+  border-radius: 1.6mm;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+}
+.back {
+  font-size: 8pt;
+  text-align: right;
+  margin-top: 1mm;
+}
+
+/* ---------- Bloques ---------- */
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 2.6mm 4mm;
+  margin: 3mm 0 4mm;
+  font-size: 9pt;
+  page-break-inside: avoid;
+}
+.callout.ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+.callout.warn {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+.callout p:last-child {
+  margin-bottom: 0;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4mm;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3mm;
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 2mm;
+  padding: 3mm 3.5mm;
+  page-break-inside: avoid;
+  background: #fff;
+}
+.card h4 {
+  margin-top: 0;
+}
+.kpi {
+  border: 1px solid var(--line);
+  border-radius: 2mm;
+  padding: 3mm;
+  text-align: center;
+}
+.kpi .v {
+  font-size: 17pt;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.kpi .l {
+  font-size: 7.8pt;
+  color: var(--muted);
+  margin-top: 1mm;
+}
+.pill {
+  display: inline-block;
+  font-size: 7.4pt;
+  font-weight: 700;
+  padding: 0.3mm 2mm;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+.pill.ok {
+  background: #dcfce7;
+  color: var(--ok);
+}
+.pill.warn {
+  background: #fef3c7;
+  color: var(--warn);
+}
+.pill.info {
+  background: #dbeafe;
+  color: var(--accent);
+}
+.pill.bad {
+  background: #fee2e2;
+  color: var(--bad);
+}
+
+/* ---------- Casos de prueba ---------- */
+.tc {
+  page-break-before: always;
+}
+.tc-head {
+  background: var(--ink);
+  color: #fff;
+  padding: 3.5mm 4.5mm;
+  border-radius: 2mm 2mm 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tc-head .id {
+  font-size: 9pt;
+  letter-spacing: 0.1em;
+  color: #93c5fd;
+  font-weight: 700;
+}
+.tc-head .name {
+  font-size: 13pt;
+  font-weight: 700;
+}
+.tc-head .who {
+  text-align: right;
+  font-size: 8.6pt;
+  color: #cbd5e1;
+}
+.tc-head .who b {
+  color: #fff;
+}
+.tc table.kv {
+  margin-top: 0;
+}
+table.steps th:nth-child(1) {
+  width: 7mm;
+}
+table.steps td:nth-child(1) {
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent);
+}
+.sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6mm;
+  margin-top: 8mm;
+  font-size: 8.4pt;
+  color: var(--muted);
+}
+.sign div {
+  border-top: 1px solid var(--ink-2);
+  padding-top: 1.5mm;
+}
+
+.small {
+  font-size: 8.4pt;
+  color: var(--muted);
+}
+.nobreak {
+  page-break-inside: avoid;
+}
+
+/* ---------- Plantilla de caso de prueba (formato de clase) ---------- */
+table.plantilla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.4pt;
+  line-height: 1.4;
+  margin-bottom: 4mm;
+}
+table.plantilla th,
+table.plantilla td {
+  border: 1px solid #334155;
+  padding: 1.3mm 2.2mm;
+  vertical-align: top;
+  text-align: left;
+}
+table.plantilla th {
+  background: #e2e8f0;
+  width: 38mm;
+  font-weight: 700;
+  color: var(--ink);
+}
+table.plantilla .pt-title {
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+  font-size: 11pt;
+  letter-spacing: 0.04em;
+}
+table.plantilla .pt-flow th {
+  background: #cbd5e1;
+}
+table.plantilla .pt-flow th:not(:first-child) {
+  width: auto;
+  text-align: center;
+}
+table.plantilla .np,
+table.plantilla th.np {
+  width: 14mm;
+  text-align: center;
+  font-weight: 700;
+}
+table.plantilla ul {
+  margin: 0;
+  padding-left: 4.5mm;
+}
+table.plantilla tr {
+  page-break-inside: avoid;
+}
+.tc-extra {
+  margin-top: 2mm;
+}
+.tc-extra h4 {
+  margin-top: 2mm;
+}
+.toc .toc-group {
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 3mm 0 0;
+  padding-bottom: 0.8mm;
+  border-bottom: 1px solid var(--line);
+}

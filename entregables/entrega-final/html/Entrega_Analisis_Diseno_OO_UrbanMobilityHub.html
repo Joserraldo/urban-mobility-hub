@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Urban Mobility Hub — Análisis y diseño orientado a objetos</title>
+<style>@page { size: A4; margin: 16mm 0 16mm 0; }
+@page land { size: A4 landscape; margin: 14mm 0 14mm 0; }
+
+:root {
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --soft: #f1f5f9;
+  --accent: #1d4ed8;
+  --accent-2: #0ea5e9;
+  --accent-soft: #eff6ff;
+  --ok: #15803d;
+  --ok-soft: #f0fdf4;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --bad: #b91c1c;
+}
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Inter", system-ui, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.wrap { padding: 0 17mm; }
+a { color: var(--accent); text-decoration: none; }
+code, .mono { font-family: "Cascadia Code", Consolas, "Courier New", monospace; font-size: 8.6pt; background: var(--soft); padding: 0 3px; border-radius: 3px; color: #1e293b; }
+p { margin: 0 0 7px; text-align: justify; hyphens: auto; }
+ul, ol { margin: 0 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+strong, b { color: var(--ink); }
+
+/* ---------- Portada ---------- */
+.cover { height: 265mm; position: relative; page-break-after: always; overflow: hidden; }
+.cover-band { position: absolute; left: 0; top: 0; bottom: 0; width: 13mm; background: linear-gradient(180deg, var(--accent), var(--accent-2)); }
+.cover-body { padding: 18mm 20mm 0 32mm; }
+.cover-uni { font-size: 9.5pt; color: var(--muted); letter-spacing: .02em; line-height: 1.5; }
+.cover-kicker { margin-top: 38mm; font-size: 10pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.cover-title { font-size: 29pt; line-height: 1.12; margin: 4mm 0 5mm; font-weight: 800; letter-spacing: -.01em; }
+.cover-sub { font-size: 12.5pt; color: var(--ink-2); max-width: 150mm; }
+.cover-product { margin-top: 9mm; padding: 4mm 5mm; background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: 9.5pt; color: var(--ink-2); max-width: 150mm; }
+.cover-product .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 4px; }
+.cover-meta { position: absolute; bottom: 14mm; left: 32mm; right: 20mm; border-collapse: collapse; font-size: 9.5pt; }
+.cover-meta th { text-align: left; width: 32mm; color: var(--muted); font-weight: 600; vertical-align: top; padding: 2.2mm 0; border-top: 1px solid var(--line); }
+.cover-meta td { padding: 2.2mm 0; border-top: 1px solid var(--line); }
+.cover-chips { margin-top: 7mm; display: flex; flex-wrap: wrap; gap: 2mm; max-width: 150mm; }
+.chip { font-size: 8pt; border: 1px solid var(--line); border-radius: 20px; padding: 1mm 3mm; color: var(--ink-2); background: #fff; }
+
+/* ---------- Índice ---------- */
+.toc { page-break-after: always; }
+.toc h2 { margin-top: 0; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a { display: flex; align-items: baseline; color: var(--ink); padding: .55mm 0; }
+.toc .t { flex: 0 1 auto; }
+.toc .dots { flex: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 2mm; transform: translateY(-2px); }
+.toc .pg { color: var(--accent); font-weight: 600; min-width: 7mm; text-align: right; }
+.toc .toc-l1 a { font-weight: 700; font-size: 10.2pt; margin-top: 1.3mm; }
+.toc .toc-l2 a { padding-left: 6mm; font-size: 9.4pt; }
+.toc .toc-l3 a { padding-left: 12mm; font-size: 8.8pt; color: var(--ink-2); }
+.toc-cols { columns: 2; column-gap: 9mm; }
+.toc-cols li { break-inside: avoid; }
+
+/* ---------- Títulos ---------- */
+h2 { font-size: 17pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid var(--ink); letter-spacing: -.01em; }
+h2 .num { color: var(--accent); margin-right: 3mm; }
+h3 { font-size: 12.5pt; margin: 6mm 0 2.5mm; color: var(--ink); }
+h3 .num { color: var(--accent); margin-right: 2mm; }
+h4 { font-size: 10.5pt; margin: 4mm 0 1.5mm; color: var(--ink-2); }
+.chapter { page-break-before: always; }
+.lead { font-size: 10.6pt; color: var(--ink-2); }
+.eyebrow { font-size: 8pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1mm; }
+
+/* ---------- Tablas ---------- */
+table.t { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 8.7pt; page-break-inside: auto; }
+table.t th { background: var(--ink); color: #fff; text-align: left; padding: 1.6mm 2mm; font-weight: 600; }
+table.t td { padding: 1.5mm 2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t tr:nth-child(even) td { background: #f8fafc; }
+table.t tr { page-break-inside: avoid; }
+table.t.compact td, table.t.compact th { padding: 1.1mm 1.6mm; font-size: 8.2pt; }
+table.kv { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.9pt; }
+table.kv th { width: 38mm; text-align: left; vertical-align: top; background: var(--soft); padding: 1.6mm 2.4mm; border: 1px solid var(--line); font-weight: 600; color: var(--ink-2); }
+table.kv td { padding: 1.6mm 2.4mm; border: 1px solid var(--line); vertical-align: top; }
+
+/* ---------- Figuras ---------- */
+figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+figure .frame { border: 1px solid var(--line); border-radius: 2mm; padding: 2mm; background: #fff; text-align: center; }
+figure img { max-width: 100%; display: block; margin: 0 auto; }
+figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.8mm; text-align: center; }
+figcaption b { color: var(--ink-2); }
+.fig-page { page-break-before: always; page-break-inside: avoid; }
+.fig-page.land { page: land; }
+.fig-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; margin-bottom: 2mm; }
+.fig-head h3 { margin: 0; }
+.fig-head .tag { font-size: 8pt; color: var(--muted); white-space: nowrap; }
+.fig-desc { font-size: 9pt; color: var(--ink-2); margin-bottom: 2mm; }
+.fig-desc p { margin-bottom: 1.5mm; }
+.shot img { border: 1px solid #cbd5e1; border-radius: 1.6mm; box-shadow: 0 2px 10px rgba(15,23,42,.12); }
+.back { font-size: 8pt; text-align: right; margin-top: 1mm; }
+
+/* ---------- Bloques ---------- */
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 2.6mm 4mm; margin: 3mm 0 4mm; font-size: 9pt; page-break-inside: avoid; }
+.callout.ok { border-color: var(--ok); background: var(--ok-soft); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout p:last-child { margin-bottom: 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.card { border: 1px solid var(--line); border-radius: 2mm; padding: 3mm 3.5mm; page-break-inside: avoid; background: #fff; }
+.card h4 { margin-top: 0; }
+.kpi { border: 1px solid var(--line); border-radius: 2mm; padding: 3mm; text-align: center; }
+.kpi .v { font-size: 17pt; font-weight: 800; color: var(--accent); line-height: 1.1; }
+.kpi .l { font-size: 7.8pt; color: var(--muted); margin-top: 1mm; }
+.pill { display: inline-block; font-size: 7.4pt; font-weight: 700; padding: .3mm 2mm; border-radius: 10px; letter-spacing: .02em; }
+.pill.ok { background: #dcfce7; color: var(--ok); }
+.pill.warn { background: #fef3c7; color: var(--warn); }
+.pill.info { background: #dbeafe; color: var(--accent); }
+.pill.bad { background: #fee2e2; color: var(--bad); }
+
+/* ---------- Casos de prueba ---------- */
+.tc { page-break-before: always; }
+.tc-head { background: var(--ink); color: #fff; padding: 3.5mm 4.5mm; border-radius: 2mm 2mm 0 0; display: flex; justify-content: space-between; align-items: center; }
+.tc-head .id { font-size: 9pt; letter-spacing: .1em; color: #93c5fd; font-weight: 700; }
+.tc-head .name { font-size: 13pt; font-weight: 700; }
+.tc-head .who { text-align: right; font-size: 8.6pt; color: #cbd5e1; }
+.tc-head .who b { color: #fff; }
+.tc table.kv { margin-top: 0; }
+table.steps th:nth-child(1) { width: 7mm; }
+table.steps td:nth-child(1) { text-align: center; font-weight: 700; color: var(--accent); }
+.sign { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6mm; margin-top: 8mm; font-size: 8.4pt; color: var(--muted); }
+.sign div { border-top: 1px solid var(--ink-2); padding-top: 1.5mm; }
+
+.small { font-size: 8.4pt; color: var(--muted); }
+.nobreak { page-break-inside: avoid; }
+
+/* ---------- Plantilla de caso de prueba (formato de clase) ---------- */
+table.plantilla { width: 100%; border-collapse: collapse; font-size: 8.4pt; line-height: 1.4; margin-bottom: 4mm; }
+table.plantilla th, table.plantilla td { border: 1px solid #334155; padding: 1.3mm 2.2mm; vertical-align: top; text-align: left; }
+table.plantilla th { background: #e2e8f0; width: 38mm; font-weight: 700; color: var(--ink); }
+table.plantilla .pt-title { background: var(--ink); color: #fff; text-align: center; font-size: 11pt; letter-spacing: .04em; }
+table.plantilla .pt-flow th { background: #cbd5e1; }
+table.plantilla .pt-flow th:not(:first-child) { width: auto; text-align: center; }
+table.plantilla .np, table.plantilla th.np { width: 14mm; text-align: center; font-weight: 700; }
+table.plantilla ul { margin: 0; padding-left: 4.5mm; }
+table.plantilla tr { page-break-inside: avoid; }
+.tc-extra { margin-top: 2mm; }
+.tc-extra h4 { margin-top: 2mm; }
+.toc .toc-group { font-size: 8pt; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 3mm 0 0; padding-bottom: .8mm; border-bottom: 1px solid var(--line); }
+</style></head><body>
+<section class="cover">
+  <div class="cover-band"></div>
+  <div class="cover-body">
+    <div class="cover-uni">Universidad Autónoma de Bucaramanga · Facultad de Ingeniería<br>Ingeniería de Sistemas · Ingeniería de Software II</div>
+    <div class="cover-kicker">Entrega del proyecto del curso</div>
+    <h1 class="cover-title">Análisis y diseño orientado a objetos</h1>
+    <div class="cover-sub">Casos de uso, clases, secuencias, paquetes, componentes y nodos · casos de prueba por integrante · avance técnico del software</div>
+    <div class="cover-product"><span class="dot"></span> Urban Mobility Hub · <b>NODO Mobility</b> — Plataforma multimodal de micromovilidad, logística y venta de vehículos urbanos</div>
+    <div class="cover-chips"><span class="chip">UML 2.5</span><span class="chip">PlantUML</span><span class="chip">C4</span><span class="chip">React 19</span><span class="chip">Node 24</span><span class="chip">SQLite</span><span class="chip">YOLOv8n ONNX</span><span class="chip">ESP32-CAM</span><span class="chip">Bold</span><span class="chip">Brevo</span><span class="chip">Azure</span></div>
+    <table class="cover-meta">
+      <tr><th>Integrantes</th><td>Jaime Alejandro Vega Barbosa<br>José Alejandro Téllez Prada<br>David Santiago González Nigrinis</td></tr>
+      <tr><th>Docente</th><td>Daniel Arenas Seleey</td></tr>
+      <tr><th>Fecha</th><td>20 de noviembre de 2026</td></tr>
+      <tr><th>Producción</th><td>https://urbanmobility.duckdns.org</td></tr>
+      <tr><th>Repositorio</th><td>github.com/Joserraldo/urban-mobility-hub</td></tr>
+    </table>
+  </div>
+</section>
+<section class="toc wrap" id="indice">
+  <h2>Tabla de contenido</h2>
+  <p class="small">Todas las entradas son enlaces: haga clic para ir a la sección. Cada figura tiene un enlace «↑ Índice» en su encabezado.</p>
+  <ol>
+    <li class="toc-group">Productos solicitados</li>
+    <li class="toc-l1"><a href="#cap-1"><span class="t">Presentación de la entrega</span><span class="dots"></span><span class="pg" data-for="cap-1">4</span></a></li>
+    <li class="toc-l1"><a href="#cap-2"><span class="t">1. Diagrama de casos de uso</span><span class="dots"></span><span class="pg" data-for="cap-2">6</span></a></li>
+    <li class="toc-l2"><a href="#uc-general"><span class="t">Diagrama general (20 casos de uso)</span><span class="dots"></span><span class="pg" data-for="uc-general">7</span></a></li>
+    <li class="toc-l2"><a href="#uc-cliente"><span class="t">Casos de uso del Cliente</span><span class="dots"></span><span class="pg" data-for="uc-cliente">8</span></a></li>
+    <li class="toc-l2"><a href="#uc-operador"><span class="t">Casos de uso del Operador</span><span class="dots"></span><span class="pg" data-for="uc-operador">9</span></a></li>
+    <li class="toc-l2"><a href="#uc-domiciliario"><span class="t">Casos de uso del Domiciliario</span><span class="dots"></span><span class="pg" data-for="uc-domiciliario">10</span></a></li>
+    <li class="toc-l2"><a href="#uc-catalogo"><span class="t">Catálogo de casos de uso</span><span class="dots"></span><span class="pg" data-for="uc-catalogo">11</span></a></li>
+    <li class="toc-l1"><a href="#cap-3"><span class="t">2. Diagrama de clases UML — vista estática</span><span class="dots"></span><span class="pg" data-for="cap-3">12</span></a></li>
+    <li class="toc-l2"><a href="#clases-dominio"><span class="t">Diagrama de clases del dominio</span><span class="dots"></span><span class="pg" data-for="clases-dominio">13</span></a></li>
+    <li class="toc-l2"><a href="#clases-bce"><span class="t">Diagrama de clases de análisis BCE</span><span class="dots"></span><span class="pg" data-for="clases-bce">14</span></a></li>
+    <li class="toc-l2"><a href="#modelo-datos"><span class="t">Modelo de datos persistente</span><span class="dots"></span><span class="pg" data-for="modelo-datos">15</span></a></li>
+    <li class="toc-l1"><a href="#cap-4"><span class="t">3. Diagramas de secuencia de los casos de uso</span><span class="dots"></span><span class="pg" data-for="cap-4">16</span></a></li>
+    <li class="toc-l2"><a href="#seq-15"><span class="t">D-15 · Registro, inicio de sesión y fin del viaje</span><span class="dots"></span><span class="pg" data-for="seq-15">17</span></a></li><li class="toc-l2"><a href="#seq-16"><span class="t">D-16 · Comprar un vehículo (incluye Pagar)</span><span class="dots"></span><span class="pg" data-for="seq-16">18</span></a></li><li class="toc-l2"><a href="#seq-17"><span class="t">D-17 · Alquilar un vehículo y pagar el prepago</span><span class="dots"></span><span class="pg" data-for="seq-17">19</span></a></li><li class="toc-l2"><a href="#seq-18"><span class="t">D-18 · Desbloquear el vehículo (QR + casco, alterno con rostro)</span><span class="dots"></span><span class="pg" data-for="seq-18">20</span></a></li><li class="toc-l2"><a href="#seq-19"><span class="t">D-19 · Telemetría y alerta de un vehículo</span><span class="dots"></span><span class="pg" data-for="seq-19">21</span></a></li><li class="toc-l2"><a href="#seq-20"><span class="t">D-20 · Entrega a domicilio y retraso</span><span class="dots"></span><span class="pg" data-for="seq-20">22</span></a></li><li class="toc-l2"><a href="#seq-28"><span class="t">D-28 · Consultas del Cliente: catálogo, mapa y detalle de hub</span><span class="dots"></span><span class="pg" data-for="seq-28">23</span></a></li><li class="toc-l2"><a href="#seq-29"><span class="t">D-29 · Operador: KPIs, gemelos digitales, catálogo, hubs y mantenimiento</span><span class="dots"></span><span class="pg" data-for="seq-29">24</span></a></li>
+    <li class="toc-l2"><a href="#st-21"><span class="t">Diagramas de estados complementarios (D-21 a D-23)</span><span class="dots"></span><span class="pg" data-for="st-21">25</span></a></li>
+    <li class="toc-l1"><a href="#cap-5"><span class="t">4. Diagrama de paquetes</span><span class="dots"></span><span class="pg" data-for="cap-5">28</span></a></li>
+    <li class="toc-l2"><a href="#paquetes"><span class="t">Diagrama de paquetes</span><span class="dots"></span><span class="pg" data-for="paquetes">29</span></a></li>
+    <li class="toc-l1"><a href="#cap-6"><span class="t">5. Diagrama de componentes</span><span class="dots"></span><span class="pg" data-for="cap-6">30</span></a></li>
+    <li class="toc-l2"><a href="#componentes"><span class="t">Diagrama de componentes UML</span><span class="dots"></span><span class="pg" data-for="componentes">31</span></a></li>
+    <li class="toc-l2"><a href="#c4-componentes"><span class="t">Componentes del servidor (C4 nivel 3)</span><span class="dots"></span><span class="pg" data-for="c4-componentes">32</span></a></li>
+    <li class="toc-l1"><a href="#cap-7"><span class="t">6. Diagrama de nodos</span><span class="dots"></span><span class="pg" data-for="cap-7">33</span></a></li>
+    <li class="toc-l2"><a href="#nodos"><span class="t">Diagrama de nodos (despliegue)</span><span class="dots"></span><span class="pg" data-for="nodos">34</span></a></li>
+    <li class="toc-l1"><a href="#cap-9"><span class="t">7. Casos de prueba (uno por integrante, plantilla de clase)</span><span class="dots"></span><span class="pg" data-for="cap-9">35</span></a></li>
+    <li class="toc-l2"><a href="#cp-01"><span class="t">CP0001_ALQUILER · Alquilar y pagar el prepago — Jaime Alejandro Vega Barbosa</span><span class="dots"></span><span class="pg" data-for="cp-01">36</span></a></li>
+    <li class="toc-l2"><a href="#cp-02"><span class="t">CP0002_DESBLOQUEO · Desbloquear con QR y casco — José Alejandro Téllez Prada</span><span class="dots"></span><span class="pg" data-for="cp-02">38</span></a></li>
+    <li class="toc-l2"><a href="#cp-03"><span class="t">CP0003_ENTREGA · Entrega a domicilio y retraso — David Santiago González Nigrinis</span><span class="dots"></span><span class="pg" data-for="cp-03">40</span></a></li>
+    <li class="toc-group">Anexos</li>
+    <li class="toc-l1"><a href="#anexo-a"><span class="t">Anexo A. Arquitectura y tecnologías</span><span class="dots"></span><span class="pg" data-for="anexo-a">42</span></a></li>
+    <li class="toc-l1"><a href="#cap-8"><span class="t">Anexo B. Vistas arquitectónicas C4</span><span class="dots"></span><span class="pg" data-for="cap-8">43</span></a></li>
+    <li class="toc-l1"><a href="#cap-10"><span class="t">Anexo C. Avance técnico del desarrollo</span><span class="dots"></span><span class="pg" data-for="cap-10">47</span></a></li>
+    <li class="toc-l1"><a href="#cap-11"><span class="t">Anexo D. Matriz de trazabilidad</span><span class="dots"></span><span class="pg" data-for="cap-11">50</span></a></li>
+    <li class="toc-l1"><a href="#cap-12"><span class="t">Anexo E. Índice de figuras y regeneración</span><span class="dots"></span><span class="pg" data-for="cap-12">51</span></a></li>
+  </ol>
+</section>
+<section class="chapter wrap" id="cap-1">
+  <div class="eyebrow">Presentación</div>
+  <h2>Presentación de la entrega</h2>
+  <h3>Propósito</h3>
+  <p class="lead">Este documento reúne el <b>análisis y diseño orientado a objetos</b> de <b>Urban Mobility Hub</b> (marca de producto <b>NODO Mobility</b>), el proyecto de desarrollo de software del curso Ingeniería de Software II. Contiene los modelos UML exigidos —casos de uso, clases, secuencia, paquetes, componentes y nodos—, un caso de prueba por integrante sobre casos de uso representativos del dominio, y el estado técnico del software construido y desplegado.</p>
+  <h3>Descripción del sistema</h3>
+  <p>Urban Mobility Hub es una plataforma web multimodal de micromovilidad para Bucaramanga: <b>venta y alquiler</b> de patinetas eléctricas, bicicletas y drones urbanos, con <b>mapa de flota en tiempo real</b>, <b>entrega a domicilio</b> por domiciliarios propios y <b>seguridad IoT basada en gemelos digitales</b>. El desbloqueo de un vehículo exige escanear su QR y verificar que el usuario lleva casco mediante un modelo de visión por computador (YOLOv8n en ONNX) que procesa la imagen de la cámara del vehículo (ESP32-CAM) o del navegador. Los pagos se procesan con Bold (sandbox) y las notificaciones por correo con Brevo. Tres roles usan el sistema: <b>Cliente</b>, <b>Operador</b> y <b>Domiciliario</b>.</p>
+  <div class="grid3" style="margin:4mm 0">
+    <div class="kpi"><div class="v">20</div><div class="l">casos de uso especificados</div></div>
+    <div class="kpi"><div class="v">29</div><div class="l">diagramas (UML, C4, DFD)</div></div>
+    <div class="kpi"><div class="v">156/156</div><div class="l">pruebas automatizadas aprobadas (20-nov-2026)</div></div>
+    <div class="kpi"><div class="v">≈22 k</div><div class="l">líneas de TypeScript en <code>src/</code></div></div>
+    <div class="kpi"><div class="v">77</div><div class="l">commits en el repositorio</div></div>
+    <div class="kpi"><div class="v">100</div><div class="l">Lighthouse accesibilidad, buenas prácticas y SEO (producción)</div></div>
+  </div>
+  <h3 id="cap-1-3">Correspondencia con los productos solicitados</h3>
+  <table class="t">
+    <tr><th>Producto solicitado</th><th>Dónde está en este documento</th><th>Diagramas</th></tr>
+    <tr><td>Diagrama de casos de uso</td><td><a href="#cap-2">Capítulo 1</a></td><td>General + 3 por actor + catálogo de 20 UC</td></tr>
+    <tr><td>Diagrama de clases UML — vista estática</td><td><a href="#cap-3">Capítulo 2</a></td><td>Clases del dominio, BCE y modelo de datos</td></tr>
+    <tr><td>Diagramas de secuencia de los casos de uso</td><td><a href="#cap-4">Capítulo 3</a></td><td>8 diagramas que cubren los 20 UC (+3 de estados)</td></tr>
+    <tr><td>Diagrama de paquetes</td><td><a href="#cap-5">Capítulo 4</a></td><td>Paquetes y dependencias</td></tr>
+    <tr><td>Diagrama de componentes</td><td><a href="#cap-6">Capítulo 5</a></td><td>Componentes UML + C4 nivel 3</td></tr>
+    <tr><td>Diagrama de nodos</td><td><a href="#cap-7">Capítulo 6</a></td><td>Despliegue en VM Azure y demo local</td></tr>
+    <tr><td>Caso de prueba por integrante</td><td><a href="#cap-9">Capítulo 7</a></td><td>CP0001_ALQUILER, CP0002_DESBLOQUEO y CP0003_ENTREGA (ninguno de login o registro)</td></tr>
+    <tr><td>Pantallazos de la página y del software</td><td>Documento aparte: <b>Entrega_Pantallazos_UrbanMobilityHub.pdf</b></td><td>Más de 30 figuras con tabla de contenido enlazada</td></tr>
+  </table>
+  </section>
+
+<section class="chapter wrap" id="cap-2">
+  <div class="eyebrow">Producto 1</div>
+  <h2><span class="num">1</span>Diagrama de casos de uso</h2>
+  <p class="lead">El modelo de casos de uso describe <b>qué</b> hace el sistema desde el punto de vista de sus actores. Se presenta un diagrama general y tres vistas por actor para mantener la legibilidad. Cada caso tiene una especificación completa (precondiciones, garantías, flujo principal, alternos, excepciones y reglas de negocio) en <code>entregables/analisis/casos-de-uso/UC01…UC20.md</code>.</p>
+  <h3>Actores</h3>
+  <table class="t">
+    <tr><th style="width:34mm">Actor</th><th>Tipo</th><th>Responsabilidad</th></tr>
+    <tr><td><b>Cliente</b></td><td>Primario, humano</td><td>Consulta el catálogo y el mapa, compra o alquila, paga, desbloquea y usa vehículos.</td></tr>
+    <tr><td><b>Operador</b></td><td>Primario, humano (hereda de Cliente)</td><td>Supervisa la flota y los gemelos digitales, atiende alertas, administra catálogo, hubs y mantenimiento, asigna entregas.</td></tr>
+    <tr><td><b>Domiciliario</b></td><td>Primario, humano (hereda de Cliente)</td><td>Ejecuta las entregas a domicilio y reporta retrasos.</td></tr>
+    <tr><td><b>Vehículo IoT</b></td><td>Primario, sistema</td><td>Reporta telemetría (posición, batería, impacto, casco) y recibe el comando de desbloqueo.</td></tr>
+    <tr><td>Pasarela de pagos · Mapas · Correo</td><td>Secundarios, sistemas externos</td><td>Bold / pasarela simulada, OpenStreetMap, Brevo.</td></tr>
+  </table>
+</section>
+
+<section class="fig-page " id="uc-general">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de casos de uso general</h3><span class="tag">UML · Casos de uso · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Plano maestro con los <b>20 casos de uso</b> y los tres roles. El Operador y el Domiciliario <b>heredan</b> del Cliente (generalización de actores). Se modelan como actores secundarios la pasarela de pagos, el servicio de mapas, el correo (Brevo) y el vehículo IoT.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/02-casos-de-uso-general.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="Diagrama de casos de uso general"></div>
+      <figcaption><b>Figura 1.</b> Diagrama de casos de uso general. Fuente: <code>entregables/diagramas/fuentes/02-casos-de-uso-general.py</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="uc-cliente">
+  <div class="wrap">
+    <div class="fig-head"><h3>Casos de uso del Cliente</h3><span class="tag">UML · Casos de uso · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p><code>Comprar</code> y <code>Alquilar</code> <b>«include»</b> <code>Pagar</code>, que a su vez exige sesión. <code>Desbloquear con rostro</code> <b>«extend»</b> <code>Desbloquear (QR + casco)</code>: solo ocurre cuando el QR no se puede leer y hay consentimiento biométrico.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/03-casos-de-uso-cliente.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Casos de uso del Cliente"></div>
+      <figcaption><b>Figura 2.</b> Casos de uso del Cliente. Fuente: <code>entregables/diagramas/fuentes/03-casos-de-uso-cliente.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="uc-operador">
+  <div class="wrap">
+    <div class="fig-head"><h3>Casos de uso del Operador</h3><span class="tag">UML · Casos de uso · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Supervisión de la flota (KPIs y gemelos digitales), simulación de eventos IoT, bitácora de alertas, catálogo de vehículos y hubs y asignación de entregas. La telemetría del vehículo (UC20) <b>«include»</b> el registro en la bitácora (UC12).</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/04-casos-de-uso-operador.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Casos de uso del Operador"></div>
+      <figcaption><b>Figura 3.</b> Casos de uso del Operador. Fuente: <code>entregables/diagramas/fuentes/04-casos-de-uso-operador.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="uc-domiciliario">
+  <div class="wrap">
+    <div class="fig-head"><h3>Casos de uso del Domiciliario</h3><span class="tag">UML · Casos de uso · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p><code>Marcar entrega tardía</code> <b>«extend»</b> <code>Realizar entrega</code> (solo si se vence el plazo) y <code>Notificar retraso por correo</code> <b>«extend»</b> la tardía.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/05-casos-de-uso-domiciliario.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Casos de uso del Domiciliario"></div>
+      <figcaption><b>Figura 4.</b> Casos de uso del Domiciliario. Fuente: <code>entregables/diagramas/fuentes/05-casos-de-uso-domiciliario.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="uc-catalogo">
+  <h3>Catálogo de casos de uso</h3>
+  <p>La última columna enlaza el diagrama de secuencia que realiza cada caso de uso (capítulo 3).</p>
+  <table class="t compact">
+    <tr><th>ID</th><th>Caso de uso</th><th>Actor principal</th><th>Requisitos</th><th>Prioridad</th><th>Secuencia</th></tr>
+    <tr><td><b>UC01</b></td><td>Registrarse y dar consentimiento</td><td>Compartido</td><td>RF-20</td><td>P1</td><td><a href="#seq-15">D-15</a></td></tr><tr><td><b>UC02</b></td><td>Iniciar o cerrar sesión</td><td>Compartido</td><td>RF-21</td><td>P1</td><td><a href="#seq-15">D-15</a></td></tr><tr><td><b>UC03</b></td><td>Ver catálogo de venta</td><td>Cliente</td><td>RF-02</td><td>P2</td><td><a href="#seq-28">D-28</a></td></tr><tr><td><b>UC04</b></td><td>Comprar vehículo</td><td>Cliente</td><td>RF-03</td><td>P1</td><td><a href="#seq-16">D-16</a></td></tr><tr><td><b>UC05</b></td><td>Alquilar vehículo (hub o domicilio)</td><td>Cliente</td><td>RF-05, RF-06</td><td>P1</td><td><a href="#seq-17">D-17</a></td></tr><tr><td><b>UC06</b></td><td>Ver flota y mapa multicapa</td><td>Cliente</td><td>RF-04, RF-08</td><td>P1</td><td><a href="#seq-28">D-28</a></td></tr><tr><td><b>UC07</b></td><td>Ver detalle de hub</td><td>Cliente</td><td>RF-07</td><td>P2</td><td><a href="#seq-28">D-28</a></td></tr><tr><td><b>UC08</b></td><td>Desbloquear vehículo (QR + casco)</td><td>Cliente</td><td>RF-09</td><td>P1</td><td><a href="#seq-18">D-18</a></td></tr><tr><td><b>UC09</b></td><td>Desbloquear con rostro</td><td>Cliente («extend» UC08)</td><td>RF-10, RF-22</td><td>P2</td><td><a href="#seq-18">D-18</a></td></tr><tr><td><b>UC10</b></td><td>Ver KPIs y gemelos digitales</td><td>Operador</td><td>RF-13, RF-14</td><td>P1</td><td><a href="#seq-29">D-29</a></td></tr><tr><td><b>UC11</b></td><td>Simular evento IoT</td><td>Operador</td><td>RF-15</td><td>P1</td><td><a href="#seq-19">D-19</a></td></tr><tr><td><b>UC12</b></td><td>Revisar bitácora de alertas</td><td>Operador</td><td>RF-12</td><td>P1</td><td><a href="#seq-19">D-19</a></td></tr><tr><td><b>UC13</b></td><td>Gestionar catálogo y hubs</td><td>Operador</td><td>RF-23, RF-24</td><td>P3</td><td><a href="#seq-29">D-29</a></td></tr><tr><td><b>UC14</b></td><td>Asignar entrega a domiciliario</td><td>Operador</td><td>RF-25</td><td>P2</td><td><a href="#seq-20">D-20</a></td></tr><tr><td><b>UC15</b></td><td>Ver entregas asignadas</td><td>Domiciliario</td><td>RF-25</td><td>P2</td><td><a href="#seq-20">D-20</a></td></tr><tr><td><b>UC16</b></td><td>Realizar entrega de vehículo</td><td>Domiciliario</td><td>RF-25</td><td>P2</td><td><a href="#seq-20">D-20</a></td></tr><tr><td><b>UC17</b></td><td>Marcar entrega tardía</td><td>Domiciliario / sistema</td><td>RF-27</td><td>P2</td><td><a href="#seq-20">D-20</a></td></tr><tr><td><b>UC18</b></td><td>Realizar pago</td><td>Sistema (vía UC04/UC05)</td><td>RF-26</td><td>P1</td><td><a href="#seq-16">D-16</a>, <a href="#seq-17">D-17</a></td></tr><tr><td><b>UC19</b></td><td>Notificar retraso por correo</td><td>Sistema</td><td>RF-27</td><td>P2</td><td><a href="#seq-20">D-20</a></td></tr><tr><td><b>UC20</b></td><td>Reportar telemetría y alertas</td><td>Vehículo IoT</td><td>RF-08, RF-11</td><td>P1</td><td><a href="#seq-19">D-19</a></td></tr>
+  </table>
+  <div class="callout"><p><b>Casos representativos del problema.</b> Los casos de prueba del capítulo 7 se escogieron sobre UC05/UC18 (alquiler y pago), UC08 (desbloqueo con QR y casco) y UC16/UC17 (entrega a domicilio y retraso): son el núcleo del negocio de micromovilidad y no casos transversales como registro o inicio de sesión.</p></div>
+</section>
+<section class="chapter wrap" id="cap-3">
+  <div class="eyebrow">Producto 2</div>
+  <h2><span class="num">2</span>Diagrama de clases UML — vista estática</h2>
+  <p class="lead">La vista estática describe la estructura del sistema: las clases del dominio con sus atributos y operaciones, las relaciones (asociación, composición, generalización y realización) y sus multiplicidades.</p>
+  <h3>Clases principales</h3>
+  <table class="t compact">
+    <tr><th style="width:34mm">Clase</th><th>Responsabilidad</th><th style="width:52mm">Relaciones clave</th></tr>
+    <tr><td><b>Usuario</b></td><td>Identidad, rol (cliente, operador, domiciliario) y credenciales con hash.</td><td>1 — 0..* Consentimiento, Reserva, Compra; 1 — 0..* Entrega (como domiciliario)</td></tr>
+    <tr><td><b>Consentimiento</b></td><td>Autorización explícita de datos personales y biometría (Ley 1581), revocable.</td><td>* — 1 Usuario</td></tr>
+    <tr><td><b>Hub</b></td><td>Estación física con capacidad, carga y ubicación.</td><td>1 — 0..* Vehículo</td></tr>
+    <tr><td><b>Vehículo</b></td><td>Gemelo digital: tipo, modo (venta/alquiler), estado, batería, posición, tarifa por minuto y QR.</td><td>* — 0..1 Hub; 1 — 0..* Alerta, Orden de mantenimiento</td></tr>
+    <tr><td><b>Reserva</b></td><td>Alquiler con modalidad hub/domicilio y máquina de estados.</td><td>* — 1 Usuario, Vehículo; 1 — 0..* Pago; 1 — 0..1 Entrega</td></tr>
+    <tr><td><b>Compra</b></td><td>Venta de un vehículo.</td><td>1 — 0..* Pago</td></tr>
+    <tr><td><b>Pago</b></td><td>Comprobante (base, cargo de viaje o compra) con referencia de la pasarela.</td><td>* — 1 Reserva o Compra</td></tr>
+    <tr><td><b>SesionDesbloqueo</b></td><td>Estado del desbloqueo (qr → helmet → ready / denied / expired) con vencimiento a 120 s.</td><td>* — 1 Reserva</td></tr>
+    <tr><td><b>Entrega</b></td><td>Reparto a domicilio con plazo, estado y causa de retraso.</td><td>0..1 — 1 Reserva; * — 1 Domiciliario</td></tr>
+    <tr><td><b>Alerta</b></td><td>Incidente de seguridad (sin casco, caída, sin GPS, batería crítica); solo inserción.</td><td>* — 1 Vehículo</td></tr>
+  </table>
+  <h3>Abstracciones y principios de diseño OO</h3>
+  <ul>
+    <li><b>Polimorfismo por interfaz:</b> <code>PasarelaDePagos</code> tiene dos realizaciones (simulada determinista y Bold); el servidor elige una según la configuración, sin cambiar el caso de uso (patrón <i>Strategy</i>).</li>
+    <li><b>Inversión de dependencias:</b> la interfaz <code>FuenteDeDatos</code> (<code>DataSource</code>) desacopla los componentes de React del origen de los datos (<i>mock</i> o API REST).</li>
+    <li><b>Reglas como objetos:</b> <code>ReglaDeSeguridad</code> se especializa en casco, caída, GPS y batería, evaluadas en orden de gravedad por <code>evaluateTelemetry</code>.</li>
+    <li><b>Encapsulamiento de la persistencia:</b> los repositorios son el único punto que escribe SQL (patrón <i>Repository</i>); el dominio es puro y se prueba sin base de datos.</li>
+  </ul>
+</section>
+
+<section class="fig-page " id="clases-dominio">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de clases — vista estática del dominio</h3><span class="tag">UML · Clases · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Entidades con atributos tipados, multiplicidades y navegabilidad. Incluye dos jerarquías de POO: la interfaz <code>FuenteDeDatos</code> (implementaciones <i>mock</i> y API real) y <code>ReglaDeSeguridad</code> (casco, caída, GPS y batería), además de <code>PasarelaDePagos</code> (simulada y Bold).</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/13-clases.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="Diagrama de clases — vista estática del dominio"></div>
+      <figcaption><b>Figura 5.</b> Diagrama de clases — vista estática del dominio. Fuente: <code>entregables/diagramas/fuentes/13-clases.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="clases-bce">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de clases de análisis BCE (Boundary–Control–Entity)</h3><span class="tag">UML · Clases de análisis · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Tres capas: <b>«boundary»</b> (pantallas y servicios externos) → <b>«control»</b> (reglas de negocio) → <b>«entity»</b> (datos). Una interfaz nunca accede a una entidad directamente.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/25-clases-bce.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Diagrama de clases de análisis BCE (Boundary–Control–Entity)"></div>
+      <figcaption><b>Figura 6.</b> Diagrama de clases de análisis BCE (Boundary–Control–Entity). Fuente: <code>entregables/diagramas/fuentes/25-clases-bce.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="modelo-datos">
+  <div class="wrap">
+    <div class="fig-head"><h3>Modelo de datos persistente</h3><span class="tag">Entidad–relación · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Proyección del modelo de clases sobre SQLite (<code>src/server/db/schema.sql</code>): cardinalidades 1:N y 1:0..1; la bitácora de alertas es de solo inserción (no se borra).</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/14-modelo-datos.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Modelo de datos persistente"></div>
+      <figcaption><b>Figura 7.</b> Modelo de datos persistente. Fuente: <code>entregables/diagramas/fuentes/14-modelo-datos.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-4">
+  <div class="eyebrow">Producto 3</div>
+  <h2><span class="num">3</span>Diagramas de secuencia de los casos de uso</h2>
+  <p class="lead">Cada diagrama de secuencia realiza uno o varios casos de uso y muestra el intercambio de mensajes en el tiempo entre actor, interfaz, servidor, servicios externos y base de datos, con los fragmentos combinados <code>alt</code>, <code>opt</code>, <code>loop</code> y <code>group</code> para los flujos alternos y las excepciones. Los diagramas D-28 y D-29 se añadieron en esta entrega para que <b>los 20 casos de uso</b> tengan su secuencia.</p>
+  <h3>Cobertura de casos de uso</h3>
+  <table class="t compact">
+    <tr><th>Diagrama</th><th>Casos de uso que realiza</th><th>Regla de negocio destacada</th></tr>
+    <tr><td><a href="#seq-15">D-15</a></td><td>UC01, UC02</td><td>Sin consentimiento no hay cuenta; contraseña con hash</td></tr>
+    <tr><td><a href="#seq-16">D-16</a></td><td>UC04, UC18</td><td>Pago rechazado ⇒ el vehículo no se vende</td></tr>
+    <tr><td><a href="#seq-17">D-17</a></td><td>UC05, UC18</td><td>Prepago base de $10.000; resto por minuto</td></tr>
+    <tr><td><a href="#seq-18">D-18</a></td><td>UC08, UC09</td><td>QR + casco en sesión de 120 s; rostro como alterno</td></tr>
+    <tr><td><a href="#seq-19">D-19</a></td><td>UC20, UC12, UC11</td><td>Alerta en el panel en menos de 1 s; historial no se borra</td></tr>
+    <tr><td><a href="#seq-20">D-20</a></td><td>UC14, UC15, UC16, UC17, UC19</td><td>Máx. 5 entregas activas; correo de retraso sin duplicados</td></tr>
+    <tr><td><a href="#seq-28">D-28</a></td><td>UC03, UC06, UC07</td><td>Posición en vivo cada 2 s; «sin señal» si supera 5 s</td></tr>
+    <tr><td><a href="#seq-29">D-29</a></td><td>UC10, UC13</td><td>RBAC; hub con vehículos no se borra (RF-24)</td></tr>
+  </table>
+</section>
+
+<section class="fig-page " id="seq-15">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-15 · Registro, inicio de sesión y fin del viaje</h3><span class="tag">Secuencia · UC01, UC02 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Sin aceptar el tratamiento de datos (Ley 1581) no se crea la cuenta; la contraseña se guarda con <code>scrypt</code> y sal; ante credenciales erradas no se revela cuál dato falló. Al cerrar el viaje se cobra el valor por minuto.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/15-secuencia-registro-login-cierre.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-15 · Registro, inicio de sesión y fin del viaje"></div>
+      <figcaption><b>Figura 8.</b> D-15 · Registro, inicio de sesión y fin del viaje. Fuente: <code>entregables/diagramas/fuentes/15-secuencia-registro-login-cierre.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-16">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-16 · Comprar un vehículo (incluye Pagar)</h3><span class="tag">Secuencia · UC04 → UC18 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>La compra nace <i>pendiente</i>; solo con pago aprobado el vehículo queda <i>vendido</i>. Si el pago se rechaza, el vehículo <b>no</b> cambia de estado.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/16-secuencia-compra-pago.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-16 · Comprar un vehículo (incluye Pagar)"></div>
+      <figcaption><b>Figura 9.</b> D-16 · Comprar un vehículo (incluye Pagar). Fuente: <code>entregables/diagramas/fuentes/16-secuencia-compra-pago.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-17">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-17 · Alquilar un vehículo y pagar el prepago</h3><span class="tag">Secuencia · UC05 → UC18 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Reserva <i>solicitada</i>, cobro del valor base de $10.000 y vehículo <i>reservado</i>; el resto se cobra por minuto al terminar. Base del caso de prueba <a href="#cp-01">CP0001_ALQUILER</a>.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/17-secuencia-alquiler-pago.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-17 · Alquilar un vehículo y pagar el prepago"></div>
+      <figcaption><b>Figura 10.</b> D-17 · Alquilar un vehículo y pagar el prepago. Fuente: <code>entregables/diagramas/fuentes/17-secuencia-alquiler-pago.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-18">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-18 · Desbloquear el vehículo (QR + casco, alterno con rostro)</h3><span class="tag">Secuencia · UC08, UC09 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Tres pasos dentro de una sesión de 120 s: QR, casco y «Iniciar viaje». El rostro reemplaza al QR, nunca al casco. Base del caso de prueba <a href="#cp-02">CP0002_DESBLOQUEO</a>.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/18-secuencia-desbloqueo.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-18 · Desbloquear el vehículo (QR + casco, alterno con rostro)"></div>
+      <figcaption><b>Figura 11.</b> D-18 · Desbloquear el vehículo (QR + casco, alterno con rostro). Fuente: <code>entregables/diagramas/fuentes/18-secuencia-desbloqueo.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="seq-19">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-19 · Telemetría y alerta de un vehículo</h3><span class="tag">Secuencia · UC20, UC12, UC11 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Cada lectura se evalúa contra las reglas en orden de gravedad; si hay incidente se guarda en la bitácora y llega al panel en menos de 1 s por SSE. El operador puede simular el evento (origen <i>simulator</i>).</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/19-secuencia-alerta.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="D-19 · Telemetría y alerta de un vehículo"></div>
+      <figcaption><b>Figura 12.</b> D-19 · Telemetría y alerta de un vehículo. Fuente: <code>entregables/diagramas/fuentes/19-secuencia-alerta.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-20">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-20 · Entrega a domicilio y retraso</h3><span class="tag">Secuencia · UC14–UC17, UC19 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Máximo 5 entregas activas por domiciliario; confirmación atómica; si hay retraso (manual o por barrido) se envía correo una sola vez. Base del caso de prueba <a href="#cp-03">CP0003_ENTREGA</a>.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/20-secuencia-entrega-domicilio.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-20 · Entrega a domicilio y retraso"></div>
+      <figcaption><b>Figura 13.</b> D-20 · Entrega a domicilio y retraso. Fuente: <code>entregables/diagramas/fuentes/20-secuencia-entrega-domicilio.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-28">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-28 · Consultas del Cliente: catálogo, mapa y detalle de hub</h3><span class="tag">Secuencia · UC03, UC06, UC07 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Catálogo público indexable, mapa multicapa con posiciones en vivo cada 2 s por SSE (marcadas «sin señal» si superan 5 s) y detalle de ocupación de un hub.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/28-secuencia-consultas-cliente.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-28 · Consultas del Cliente: catálogo, mapa y detalle de hub"></div>
+      <figcaption><b>Figura 14.</b> D-28 · Consultas del Cliente: catálogo, mapa y detalle de hub. Fuente: <code>entregables/diagramas/fuentes/28-secuencia-consultas-cliente.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="seq-29">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-29 · Operador: KPIs, gemelos digitales, catálogo, hubs y mantenimiento</h3><span class="tag">Secuencia · UC10, UC13 · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Control de rol en cada operación; los vehículos no se borran (cambian de estado); un hub con vehículos no se da de baja (RF-24); un vehículo en viaje no pasa a mantenimiento.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/29-secuencia-operador-kpis-catalogo.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-29 · Operador: KPIs, gemelos digitales, catálogo, hubs y mantenimiento"></div>
+      <figcaption><b>Figura 15.</b> D-29 · Operador: KPIs, gemelos digitales, catálogo, hubs y mantenimiento. Fuente: <code>entregables/diagramas/fuentes/29-secuencia-operador-kpis-catalogo.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="st-21">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-21 · Estados de la reserva</h3><span class="tag">UML · Máquina de estados · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Solicitada → Activa → Completada, o Cancelada desde Solicitada o Activa.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/21-estados-reserva.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-21 · Estados de la reserva"></div>
+      <figcaption><b>Figura 16.</b> D-21 · Estados de la reserva. Fuente: <code>entregables/diagramas/fuentes/21-estados-reserva.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="st-22">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-22 · Estados del vehículo</h3><span class="tag">UML · Máquina de estados · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Estado compuesto <i>En uso</i> con sub-estados de alerta; <i>En mantenimiento</i> no es visible para el cliente y no admite viajes.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/22-estados-vehiculo.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="D-22 · Estados del vehículo"></div>
+      <figcaption><b>Figura 17.</b> D-22 · Estados del vehículo. Fuente: <code>entregables/diagramas/fuentes/22-estados-vehiculo.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="st-23">
+  <div class="wrap">
+    <div class="fig-head"><h3>D-23 · Estados de la entrega</h3><span class="tag">UML · Máquina de estados · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Asignada → En camino → Entregada; Tardía por plazo vencido o por aviso del domiciliario.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/23-estados-entrega.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="D-23 · Estados de la entrega"></div>
+      <figcaption><b>Figura 18.</b> D-23 · Estados de la entrega. Fuente: <code>entregables/diagramas/fuentes/23-estados-entrega.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-5">
+  <div class="eyebrow">Producto 4</div>
+  <h2><span class="num">4</span>Diagrama de paquetes</h2>
+  <p class="lead">El diagrama de paquetes organiza el código en unidades cohesivas y hace explícitas sus dependencias, lo que permite razonar sobre acoplamiento y sobre el impacto de un cambio.</p>
+  <table class="t compact">
+    <tr><th style="width:44mm">Paquete</th><th>Contenido</th><th style="width:52mm">Carpeta</th></tr>
+    <tr><td>Experiencia de usuario (UX)</td><td>Rutas, páginas y componentes de React por rol</td><td><code>src/routes</code>, <code>src/components</code></td></tr>
+    <tr><td>Servicios de movilidad</td><td>Reservas, desbloqueo, flota, entregas, mantenimiento</td><td><code>src/server/api</code>, <code>services</code></td></tr>
+    <tr><td>Servicios de apoyo</td><td>Pagos (Bold / simulada), correo (Brevo), SSE, sesiones</td><td><code>src/server/services</code></td></tr>
+    <tr><td>Inteligencia artificial</td><td>Detección de casco YOLOv8 (navegador y sidecar)</td><td><code>src/lib/helmet-model.ts</code>, <code>vision-service</code></td></tr>
+    <tr><td>Dominio</td><td>Reglas puras sin HTTP ni SQL</td><td><code>src/server/domain</code></td></tr>
+    <tr><td>Datos</td><td>Esquema, migraciones, seeders y repositorios</td><td><code>src/server/db</code>, <code>repositories.ts</code></td></tr>
+    <tr><td>Compartido</td><td>Tipos del dominio usados por cliente y servidor</td><td><code>src/shared/types</code></td></tr>
+  </table>
+  <div class="callout"><p><b>Regla de dependencias.</b> Interfaz → servicios → dominio → datos. Ningún componente de interfaz importa la base de datos ni los datos de prueba directamente (se accede siempre por <code>DataSource</code>), y el dominio no depende de ningún otro paquete, por eso se prueba de forma aislada con Vitest.</p></div>
+</section>
+
+<section class="fig-page land" id="paquetes">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de paquetes</h3><span class="tag">UML · Paquetes · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Agrupación del código fuente por responsabilidad y sus dependencias «import». Las dependencias van siempre hacia abajo: interfaz → servicios → dominio → datos; el dominio no conoce HTTP ni SQL.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/10-paquetes.svg" style="max-height:128mm;width:100%;object-fit:contain" alt="Diagrama de paquetes"></div>
+      <figcaption><b>Figura 19.</b> Diagrama de paquetes. Fuente: <code>entregables/diagramas/fuentes/10-paquetes.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-6">
+  <div class="eyebrow">Producto 5</div>
+  <h2><span class="num">5</span>Diagrama de componentes</h2>
+  <p class="lead">El diagrama de componentes muestra las piezas ejecutables reemplazables del sistema y los contratos entre ellas. Se complementa con el nivel 3 del modelo C4, que detalla los componentes internos del servidor.</p>
+  <table class="t compact">
+    <tr><th style="width:44mm">Interfaz</th><th>Provee</th><th>Requiere</th><th>Protocolo</th></tr>
+    <tr><td>API REST <code>/api/*</code></td><td>Servidor</td><td>Sitio web, panel, app del domiciliario</td><td>HTTPS + JSON, cookie de sesión</td></tr>
+    <tr><td>Canal en vivo <code>/api/stream</code></td><td>Servidor (SSE)</td><td>Mapa y panel del operador</td><td>Server-Sent Events</td></tr>
+    <tr><td>Ingesta IoT <code>/api/ingest</code></td><td>Servidor</td><td>Vehículo / ESP32-CAM</td><td>HTTPS + clave <code>x-ingest-key</code></td></tr>
+    <tr><td>Veredicto de casco</td><td><code>umh-vision</code> (127.0.0.1:8090)</td><td>Servidor</td><td>HTTP interno + WebSocket de cámara</td></tr>
+    <tr><td>Pagos</td><td>Bold / pasarela simulada</td><td>Servidor</td><td>Checkout embebido + webhook HMAC</td></tr>
+    <tr><td>Correo</td><td>Brevo</td><td>Servidor</td><td>REST (fetch)</td></tr>
+    <tr><td>Persistencia</td><td>SQLite</td><td>Repositorios</td><td><code>node:sqlite</code></td></tr>
+  </table>
+</section>
+
+<section class="fig-page " id="componentes">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de componentes</h3><span class="tag">UML · Componentes · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Componentes del navegador y del servidor con interfaces <b>provistas</b> (círculo) y <b>requeridas</b> (semicírculo): REST <code>/api</code>, canal SSE, pagos Bold, correo Brevo, ingesta IoT <code>POST /api/ingest</code> y base SQLite.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/11-componentes.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="Diagrama de componentes"></div>
+      <figcaption><b>Figura 20.</b> Diagrama de componentes. Fuente: <code>entregables/diagramas/fuentes/11-componentes.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="c4-componentes">
+  <div class="wrap">
+    <div class="fig-head"><h3>C4 nivel 3 — Componentes del contenedor «Servidor (API)»</h3><span class="tag">C4 · Componentes · <a href="#indice">↑ Índice</a></span></div>
+    
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/26-c4-componentes.svg" style="max-height:146mm;width:100%;object-fit:contain" alt="C4 nivel 3 — Componentes del contenedor «Servidor (API)»"></div>
+      <figcaption><b>Figura 21.</b> C4 nivel 3 — Componentes del contenedor «Servidor (API)». Fuente: <code>entregables/diagramas/fuentes/26-c4-componentes.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-7">
+  <div class="eyebrow">Producto 6</div>
+  <h2><span class="num">6</span>Diagrama de nodos</h2>
+  <p class="lead">El diagrama de nodos (despliegue) asigna los artefactos de software a los nodos físicos y de ejecución, con los protocolos de comunicación entre ellos.</p>
+  <table class="t compact">
+    <tr><th style="width:42mm">Nodo</th><th>Entorno de ejecución</th><th>Artefactos</th></tr>
+    <tr><td>Celular / PC del usuario</td><td>Navegador moderno (Chromium, Safari)</td><td>SPA de React, <code>onnxruntime-web</code> con el modelo de casco</td></tr>
+    <tr><td>Vehículo IoT</td><td>ESP32-CAM (firmware Arduino)</td><td>Captura de fotogramas y telemetría hacia <code>/api/camera/frame</code> e <code>/api/ingest</code></td></tr>
+    <tr><td>VM Azure (2 vCPU, Ubuntu 24.04)</td><td>Nginx (TLS Let's Encrypt, HSTS) → systemd <code>umh</code> (Node 24) en :8080</td><td><code>.output/server/index.mjs</code>, <code>umh-vision</code> en :8090, <code>/var/lib/umh/umh.db</code></td></tr>
+    <tr><td>Servicios de terceros</td><td>SaaS</td><td>Bold (pagos), Brevo (correo), OpenStreetMap (teselas), GitHub (código y CI)</td></tr>
+  </table>
+  <div class="callout"><p><b>Topología de demostración local.</b> Para la presentación, el mismo artefacto corre en el portátil del equipo (<code>sh scripts/demo-local.sh</code>): servidor y web en :8080, visión en :8090, un túnel <code>cloudflared</code> con HTTPS para abrir la app desde el celular, y la webcam del PC haciendo de ESP32-CAM. El procedimiento está en <code>docs/LANZAMIENTO.md</code>.</p></div>
+</section>
+
+<section class="fig-page " id="nodos">
+  <div class="wrap">
+    <div class="fig-head"><h3>Diagrama de nodos (despliegue)</h3><span class="tag">UML · Despliegue · <a href="#indice">↑ Índice</a></span></div>
+    <div class="fig-desc"><p>Dispositivos cliente, VM Azure (Ubuntu 24.04) con Nginx + Let's Encrypt, servicio systemd <code>umh</code> (Node 24), sidecar <code>umh-vision</code> y SQLite; terceros Bold, Brevo, OpenStreetMap y GitHub. Línea continua = operativo; punteada = previsto.</p></div>
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/12-nodos.svg" style="max-height:210mm;width:100%;object-fit:contain" alt="Diagrama de nodos (despliegue)"></div>
+      <figcaption><b>Figura 22.</b> Diagrama de nodos (despliegue). Fuente: <code>entregables/diagramas/fuentes/12-nodos.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-9">
+  <div class="eyebrow">Producto 7</div>
+  <h2><span class="num">7</span>Casos de prueba</h2>
+  <p class="lead">Cada integrante elaboró un caso de prueba funcional sobre un caso de uso representativo del problema de micromovilidad. Ninguno corresponde a casos transversales (registro, inicio de sesión o similares).</p>
+  <table class="t">
+    <tr><th>ID</th><th>Caso de prueba</th><th>Caso de uso</th><th>Responsable</th></tr>
+    <tr><td><a href="#cp-01"><b>CP0001_ALQUILER</b></a></td><td>Alquilar un vehículo en hub y pagar el prepago</td><td>UC05 Alquilar vehículo </td><td>Jaime Alejandro Vega Barbosa</td></tr><tr><td><a href="#cp-02"><b>CP0002_DESBLOQUEO</b></a></td><td>Desbloquear el vehículo con QR y verificación de casco</td><td>UC08 Desbloquear vehículo (QR + casco) </td><td>José Alejandro Téllez Prada</td></tr><tr><td><a href="#cp-03"><b>CP0003_ENTREGA</b></a></td><td>Realizar una entrega a domicilio y marcar una entrega tardía</td><td>UC16 Realizar entrega </td><td>David Santiago González Nigrinis</td></tr>
+  </table>
+  <h3>Formato</h3>
+  <p>Los casos siguen la <b>plantilla de caso de prueba indicada en clase</b>: identificador <code>CP####_xxxxxxxx</code>, función a probar, objetivo, descripción, criterios de éxito y de falla, precondiciones, perfil del usuario, necesidades (datos y configuración), autor, fecha de creación, flujo del caso de prueba (No. paso · usuario del sistema · sistema) y postcondiciones. Debajo de cada plantilla se agrega, como información complementaria, la trazabilidad con casos de uso y diagramas, las variantes negativas probadas y la evidencia de ejecución automatizada.</p>
+</section>
+
+<section class="tc wrap" id="cp-01">
+  <table class="plantilla">
+    <tr><th colspan="4" class="pt-title">Caso de prueba</th></tr>
+    <tr><th>Identificador caso de prueba</th><td colspan="3"><b>CP0001_ALQUILER</b> — Alquilar un vehículo en hub y pagar el prepago</td></tr>
+    <tr><th>Función a probar</th><td colspan="3">Módulo de reservas y pagos del cliente: creación de la reserva de alquiler (<code>POST /api/reservations</code>) y cobro del prepago base (<code>POST /api/payments</code>, pasarela simulada o Bold). Casos de uso UC05 Alquilar vehículo y UC18 Realizar pago.</td></tr>
+    <tr><th>Objetivo</th><td colspan="3">Verificar que un cliente autenticado puede reservar un vehículo de alquiler disponible en un hub, que el sistema cobra el prepago base de $10.000 COP antes de habilitar el desbloqueo, y que las reglas de negocio de la reserva (una sola reserva abierta sin pagar, vehículo no disponible, rechazo del pago) se cumplen.</td></tr>
+    <tr><th>Descripción</th><td colspan="3">El caso recorre el alquiler de una patineta en un hub desde la app web: el cliente elige el vehículo en el mapa, selecciona la modalidad «Recoger en hub», confirma la reserva y paga el prepago de $10.000 COP. Se comprueba que antes del pago el desbloqueo está bloqueado y que después del pago queda habilitado, porque el prepago es la garantía del alquiler en el modelo de negocio de micromovilidad.</td></tr>
+    <tr><th>Criterios de éxito</th><td colspan="3"><ul><li>La reserva se crea en estado <i>Solicitada</i> y el vehículo pasa a <i>Reservado</i> (deja de aparecer como disponible).</li><li>Antes de pagar, el desbloqueo responde 402 y no se abre ninguna sesión de desbloqueo.</li><li>El pago queda registrado como <code>kind = base</code>, <i>aprobado</i>, por $10.000 COP y con referencia de la pasarela.</li><li>La tarjeta de la reserva muestra «Prepago pagado ($10.000). Ya puedes desbloquearlo» y aparece en <i>Mis reservas</i>.</li></ul></td></tr>
+    <tr><th>Criterios de falla</th><td colspan="3"><ul><li>Se crea la reserva sobre un vehículo no disponible, o el vehículo no cambia a <i>Reservado</i>.</li><li>Se permite desbloquear sin prepago aprobado.</li><li>El monto cobrado es distinto de $10.000 COP, el pago no queda registrado o queda sin referencia.</li><li>Un pago rechazado deja la reserva habilitada para desbloquear, o el sistema muestra un error no controlado (5xx).</li></ul></td></tr>
+    <tr><th>Precondiciones</th><td colspan="3"><ul><li>Aplicación desplegada (local con <code>sh scripts/demo-local.sh</code> o producción) con datos sembrados (<code>UMH_SEED_DEMO=1</code>).</li><li>Cuenta <code>cliente@demo.co</code> / <code>Demo1234!</code> sin reservas abiertas.</li><li>Vehículo de alquiler <code>SC-1042</code> (Volt S2) en estado <i>Disponible</i> en Hub Cabecera.</li><li>Pasarela de pagos simulada (sin llaves de Bold) o Bold en modo sandbox.</li></ul></td></tr>
+    <tr><th>Perfil del usuario</th><td colspan="3">Cliente (rol <code>customer</code>) autenticado: <code>cliente@demo.co</code>.</td></tr>
+    <tr><th>Necesidades para el caso de prueba</th><td colspan="3"><b>Datos de prueba:</b><ul><li><b>Usuario:</b> cliente@demo.co / Demo1234!</li><li><b>Vehículo válido:</b> SC-1042 · patineta eléctrica · modo alquiler · disponible</li><li><b>Modalidad:</b> hub (recoger en el hub)</li><li><b>Prepago esperado:</b> $10.000 COP (<code>BASE_PREPAY_COP</code>)</li><li><b>Vehículo no válido:</b> Un vehículo en estado <i>reservado</i> o <i>en mantenimiento</i></li></ul><b>Configuración:</b> aplicación local (<code>sh scripts/demo-local.sh</code>, SQLite con <code>UMH_SEED_DEMO=1</code>) o producción (https://urbanmobility.duckdns.org); navegador Chromium; pasarela simulada o Bold sandbox; Brevo opcional.</td></tr>
+    <tr><th>Autor</th><td colspan="3">Jaime Alejandro Vega Barbosa</td></tr>
+    <tr><th>Fecha de creación</th><td colspan="3">20/11/2026</td></tr>
+    <tr class="pt-flow"><th rowspan="7">Flujo del caso de prueba</th><th class="np">No. paso</th><th style="width:62mm">Usuario del sistema</th><th>Sistema</th></tr>
+    <tr><td class="np">1</td><td>Iniciar sesión en <code>/login</code> con el usuario de prueba.<br><span class="small">Entrada: Credenciales válidas</span></td><td>Redirige a la app; la cabecera muestra el nombre del cliente.</td></tr><tr><td class="np">2</td><td>Abrir <code>/app</code>, modo <b>Alquilar</b>, y tocar el vehículo SC-1042 en el mapa.<br><span class="small">Entrada: SC-1042</span></td><td>Se abre la ficha con modelo, batería, tarifa por minuto y hub.</td></tr><tr><td class="np">3</td><td>Elegir <b>Recoger en hub</b> y confirmar la reserva (paso 2 y 3 de RNF-07).<br><span class="small">Entrada: modality = hub</span></td><td><code>POST /api/reservations</code> → 201. Reserva en estado <i>Solicitada</i>; el vehículo pasa a <i>Reservado</i> y desaparece de los disponibles.</td></tr><tr><td class="np">4</td><td>Sin pagar, pulsar <b>Desbloquear</b> en la tarjeta de la reserva.</td><td>El sistema lo impide con 402: «Paga el prepago de esta reserva para desbloquear el vehículo» (con Bold: «Completa el pago del prepago en Bold…»).</td></tr><tr><td class="np">5</td><td>Pulsar <b>Pagar prepago</b> y completar el pago.<br><span class="small">Entrada: $10.000 COP</span></td><td>Se registra un pago <code>kind = base</code> aprobado con referencia; la tarjeta muestra «Prepago pagado ($10.000). Ya puedes desbloquearlo».</td></tr><tr><td class="np">6</td><td>Abrir <code>/mis-reservas</code>.</td><td>La reserva aparece con su referencia, vehículo, hub y estado del prepago.</td></tr>
+    <tr><th>Post condiciones</th><td colspan="3">Existe una reserva <i>Solicitada</i> con prepago aprobado; el vehículo queda <i>Reservado</i> y el desbloqueo (UC08) está habilitado. En los alternos no queda ningún cambio de negocio parcial.</td></tr>
+  </table>
+  <div class="tc-extra">
+    <h4>Información complementaria (fuera de la plantilla)</h4>
+    <p class="small"><b>Caso de uso:</b> UC05 Alquilar vehículo · UC18 Realizar pago («include») · <b>Requisitos:</b> RF-05, RF-06, RF-26 · RNF-07 (máx. 3 pasos) · <b>Diagramas:</b> <a href="#seq-17">D-17 Secuencia alquilar y pagar</a> · <a href="#st-21">D-21 Estados de la reserva</a> · <b>Técnica:</b> Caja negra · partición de equivalencias sobre el estado del vehículo y del pago · transición de estados de la reserva (requested → active).</p>
+    <table class="t compact"><tr><th style="width:9mm">ID</th><th style="width:62mm">Variante negativa / alterna</th><th>Resultado esperado</th><th style="width:17mm">Resultado</th></tr>
+    <tr><td>A1</td><td>Reservar un segundo vehículo sin haber pagado el primero.</td><td>La reserva anterior sin pagar se cancela y su vehículo vuelve a <i>Disponible</i> (máx. 1 reserva abierta sin pagar).</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A2</td><td>Reservar un vehículo que otro cliente acaba de reservar.</td><td>409 «Ese vehículo no está disponible para alquiler»; no se crea reserva.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A3</td><td>Elegir <b>A domicilio</b> en un vehículo no apto para reparto.</td><td>422 «Este vehículo no tiene entrega a domicilio; recógelo en su hub».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A4</td><td>Pago rechazado o pasarela sin respuesta (timeout).</td><td>402 con el motivo; el pago queda <i>rechazado</i> y la reserva sigue sin habilitar el desbloqueo.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A5</td><td>Reserva sin pagar con más de 30 min.</td><td>Se cancela automáticamente al listar las reservas y el vehículo se libera.</td><td><span class="pill ok">Conforme</span></td></tr></table>
+    <p class="small"><b>Evidencia de ejecución (20-nov-2026, Vitest 156/156 aprobadas):</b></p>
+    <ul class="small"><li><code>tests/integration/flujo-cliente.test.ts</code> — «sin pagar el prepago no hay desbloqueo (402); pagado, sí», «máximo una reserva abierta sin pagar…», «las solicitudes sin pagar de hace más de 30 min se cancelan al listar».</li><li><code>tests/integration/api-reglas.test.ts</code> — «RF-05: reserva a domicilio» (apto / no apto) y «UC18-E2: timeout de la pasarela».</li><li><code>tests/unit/pasarela.test.ts</code> y <code>tests/integration/bold.test.ts</code> — aprobación, rechazo y firma del webhook de Bold.</li><li><code>tests/e2e/reserva-desbloqueo.spec.ts</code> — recorrido en navegador: reservar, pagar, desbloquear, viajar y terminar.</li></ul>
+  </div>
+</section>
+<section class="tc wrap" id="cp-02">
+  <table class="plantilla">
+    <tr><th colspan="4" class="pt-title">Caso de prueba</th></tr>
+    <tr><th>Identificador caso de prueba</th><td colspan="3"><b>CP0002_DESBLOQUEO</b> — Desbloquear el vehículo con QR y verificación de casco</td></tr>
+    <tr><th>Función a probar</th><td colspan="3">Módulo de desbloqueo seguro: sesión de desbloqueo (<code>/api/unlock/sessions</code>), validación del QR, verificación de casco con visión por computador (YOLOv8n, cámara del vehículo) e inicio del viaje. Caso de uso UC08 Desbloquear vehículo (QR + casco).</td></tr>
+    <tr><th>Objetivo</th><td colspan="3">Comprobar que el viaje solo inicia cuando, dentro de una sesión de desbloqueo de 120 s, el cliente escanea el QR que corresponde al vehículo reservado y el sistema detecta el casco con la confianza mínima exigida; y que cualquier fallo (QR equivocado, sin casco, orden alterado o sesión vencida) deja intactos la reserva y el vehículo.</td></tr>
+    <tr><th>Descripción</th><td colspan="3">El caso verifica la regla de seguridad central del negocio: un vehículo solo se desbloquea si quien lo reservó está frente a él (QR del manubrio) y lleva casco puesto. Se ejecuta el flujo completo de tres pasos —escanear QR, verificar casco e iniciar viaje— dentro de una sesión de 120 s, y se termina el viaje para comprobar el cobro por minuto.</td></tr>
+    <tr><th>Criterios de éxito</th><td colspan="3"><ul><li>La sesión nace en el paso <i>qr</i> con vencimiento a 120 s.</li><li>Con el QR <code>UMH:SC-1042</code> la sesión avanza a <i>helmet</i>; con el casco detectado avanza a <i>ready</i>.</li><li>Al iniciar el viaje la reserva pasa a <i>Activa</i> y el vehículo a <i>En uso</i>; el mapa muestra el seguimiento.</li><li>Al terminar se registra el cargo por minuto y la reserva queda <i>Completada</i>.</li></ul></td></tr>
+    <tr><th>Criterios de falla</th><td colspan="3"><ul><li>El viaje inicia con un QR de otro vehículo, sin casco o con la sesión vencida.</li><li>Se puede verificar el casco o iniciar el viaje sin haber escaneado el QR (orden de pasos alterado).</li><li>Tras un rechazo cambia el estado de la reserva o del vehículo.</li><li>Al terminar el viaje no se registra el cobro o la reserva no se cierra.</li></ul></td></tr>
+    <tr><th>Precondiciones</th><td colspan="3"><ul><li>Reserva del cliente en estado <i>Solicitada</i> con prepago aprobado (resultado de CP0001_ALQUILER).</li><li>Vehículo SC-1042 en estado <i>Reservado</i> con el QR <code>UMH:SC-1042</code> (impreso desde <code>/admin/qr</code>).</li><li>Cámara disponible: webcam del navegador o panel <b>Cámara del PC</b> del operador actuando como ESP32-CAM; servicio de visión <code>umh-vision</code> (YOLOv8n ONNX) en marcha.</li></ul></td></tr>
+    <tr><th>Perfil del usuario</th><td colspan="3">Cliente (rol <code>customer</code>) autenticado y dueño de la reserva: <code>cliente@demo.co</code>.</td></tr>
+    <tr><th>Necesidades para el caso de prueba</th><td colspan="3"><b>Datos de prueba:</b><ul><li><b>QR válido:</b> <code>UMH:SC-1042</code> (o el código manual <code>SC-1042</code>)</li><li><b>QR inválido:</b> <code>UMH:BK-2201</code> (otro vehículo) y un texto sin formato</li><li><b>Casco:</b> Persona con casco puesto (confianza ≈ 0,9) y persona sin casco</li><li><b>Tiempo:</b> Sesión de desbloqueo de 120 s (<code>UNLOCK_TTL_MS</code>)</li></ul><b>Configuración:</b> aplicación local (<code>sh scripts/demo-local.sh</code>, SQLite con <code>UMH_SEED_DEMO=1</code>) o producción (https://urbanmobility.duckdns.org); navegador Chromium; pasarela simulada o Bold sandbox; Brevo opcional.</td></tr>
+    <tr><th>Autor</th><td colspan="3">José Alejandro Téllez Prada</td></tr>
+    <tr><th>Fecha de creación</th><td colspan="3">20/11/2026</td></tr>
+    <tr class="pt-flow"><th rowspan="6">Flujo del caso de prueba</th><th class="np">No. paso</th><th style="width:62mm">Usuario del sistema</th><th>Sistema</th></tr>
+    <tr><td class="np">1</td><td>En la tarjeta de la reserva pulsar <b>Desbloquear</b>.<br><span class="small">Entrada: Reserva pagada</span></td><td><code>POST /api/unlock/sessions</code>: se abre una sesión en el paso <i>qr</i> con vencimiento a 120 s.</td></tr><tr><td class="np">2</td><td>Escanear el QR del manubrio con la cámara (o escribir el código).<br><span class="small">Entrada: UMH:SC-1042</span></td><td>El QR coincide con el vehículo de la reserva: la sesión avanza al paso <i>helmet</i>.</td></tr><tr><td class="np">3</td><td>Ponerse el casco frente a la cámara del vehículo.<br><span class="small">Entrada: Con casco</span></td><td>El servicio de visión devuelve «Con casco» con confianza ≥ al umbral; la sesión pasa a <i>ready</i>.</td></tr><tr><td class="np">4</td><td>Pulsar <b>Iniciar viaje</b>.</td><td>La reserva pasa a <i>Activa</i>, el vehículo a <i>En uso</i> y se emite el comando de desbloqueo; el mapa empieza a seguir la posición.</td></tr><tr><td class="np">5</td><td>Terminar el viaje.</td><td>Se calcula el cargo por minuto (<code>rate_per_min_cop</code>), se registra el pago del viaje y la reserva queda <i>Completada</i>.</td></tr>
+    <tr><th>Post condiciones</th><td colspan="3">Con el flujo completo: reserva <i>Activa</i> → <i>Completada</i> al terminar, vehículo <i>En uso</i> → <i>Disponible</i>, un pago de viaje registrado. En los alternos la reserva sigue <i>Solicitada</i> y el vehículo <i>Reservado</i>.</td></tr>
+  </table>
+  <div class="tc-extra">
+    <h4>Información complementaria (fuera de la plantilla)</h4>
+    <p class="small"><b>Caso de uso:</b> UC08 Desbloquear vehículo (QR + casco) · «extend» UC09 rostro · <b>Requisitos:</b> RF-09 · RNF-07 (3 pasos) · R-10 del SRS (orden obligatorio) · <b>Diagramas:</b> <a href="#seq-18">D-18 Secuencia de desbloqueo</a> · <a href="#st-22">D-22 Estados del vehículo</a> · <b>Técnica:</b> Caja negra · máquina de estados (qr → helmet → ready, con denied / expired) · análisis de valores límite en la confianza del casco y en el tiempo de la sesión.</p>
+    <table class="t compact"><tr><th style="width:9mm">ID</th><th style="width:62mm">Variante negativa / alterna</th><th>Resultado esperado</th><th style="width:17mm">Resultado</th></tr>
+    <tr><td>A1</td><td>Escanear el QR de otro vehículo.</td><td>Sesión <i>denied</i>: «El código QR no corresponde a este vehículo». Reserva y vehículo sin cambios.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A2</td><td>Verificar sin casco (o confianza por debajo del umbral).</td><td>Sesión <i>denied</i>; el viaje no inicia.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A3</td><td>Enviar la verificación de casco antes de escanear el QR.</td><td>Error de orden («Primero escanea el código QR»); no hay cambio de estado.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A4</td><td>Dejar pasar más de 120 s antes de iniciar.</td><td>Sesión <i>expired</i>; hay que abrir una nueva. A los 120 s exactos aún es válida.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A5</td><td>Intentar desbloquear un vehículo en mantenimiento.</td><td>409 «Este vehículo está en mantenimiento y no se puede desbloquear».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A6</td><td>Identidad por rostro (UC09) con similitud 0,84 / 0,85.</td><td>0,84 → <i>denied</i>; 0,85 → avanza a <i>helmet</i>. El rostro reemplaza al QR, nunca al casco.</td><td><span class="pill ok">Conforme</span></td></tr></table>
+    <p class="small"><b>Evidencia de ejecución (20-nov-2026, Vitest 156/156 aprobadas):</b></p>
+    <ul class="small"><li><code>tests/unit/unlock.test.ts</code> — TC-UNL-01 a TC-UNL-18: flujo feliz, sin casco, límites de confianza (0,69 / 0,70), QR de otro vehículo, orden obligatorio, caducidad a 120 s y rostro (0,84 / 0,85 / sin consentimiento).</li><li><code>tests/unit/camera.test.ts</code>, <code>helmet-vision.test.ts</code>, <code>helmet-model.test.ts</code> — veredicto de la cámara del vehículo y postproceso YOLOv8.</li><li><code>tests/integration/mantenimiento.test.ts</code> — un vehículo en mantenimiento no se desbloquea.</li><li><code>tests/e2e/reserva-desbloqueo.spec.ts</code> — desbloqueo con código manual, viaje y fin en el navegador.</li></ul>
+  </div>
+</section>
+<section class="tc wrap" id="cp-03">
+  <table class="plantilla">
+    <tr><th colspan="4" class="pt-title">Caso de prueba</th></tr>
+    <tr><th>Identificador caso de prueba</th><td colspan="3"><b>CP0003_ENTREGA</b> — Realizar una entrega a domicilio y marcar una entrega tardía</td></tr>
+    <tr><th>Función a probar</th><td colspan="3">Módulo de logística a domicilio: bandeja del domiciliario (<code>/entregas</code>), transiciones de la entrega (<code>PATCH /api/deliveries/{id}</code>: start, deliver, late) y notificación de retraso por correo (Brevo). Casos de uso UC16 Realizar entrega, UC17 Marcar entrega tardía y UC19 Notificar retraso.</td></tr>
+    <tr><th>Objetivo</th><td colspan="3">Validar el ciclo de vida de una entrega a domicilio desde la bandeja del domiciliario (asignada → en camino → entregada) con cierre coherente de la reserva y el vehículo, y que el retraso se registra una sola vez, con causa obligatoria, y dispara el aviso por correo sin duplicados.</td></tr>
+    <tr><th>Descripción</th><td colspan="3">El caso valida el ciclo de vida de una entrega a domicilio desde el punto de vista del domiciliario: iniciar el recorrido, confirmar la entrega al cliente y, en otra entrega, reportar un retraso con su causa. Se comprueba que el cierre deja coherentes la entrega, la reserva y el vehículo, y que el retraso genera un único aviso por correo al cliente y al operador.</td></tr>
+    <tr><th>Criterios de éxito</th><td colspan="3"><ul><li>La entrega pasa de <i>Asignada</i> a <i>En camino</i> y luego a <i>Entregada</i>, con hora de entrega fijada por el servidor.</li><li>Al confirmar, la reserva queda <i>Activa</i> y el vehículo <i>En uso</i> en la misma transacción.</li><li>Al marcar el retraso con causa, la entrega queda <i>Tardía</i> con la causa guardada.</li><li>La bitácora de correos muestra un aviso por destinatario (<i>sent</i>, o <i>simulated</i> sin llave), sin duplicados.</li></ul></td></tr>
+    <tr><th>Criterios de falla</th><td colspan="3"><ul><li>Se puede confirmar o marcar tardía una entrega de otro domiciliario.</li><li>Se acepta un retraso sin causa o se marca dos veces como tardía.</li><li>La entrega queda <i>Entregada</i> pero la reserva o el vehículo no cambian (estado incoherente).</li><li>Se envía más de un correo por el mismo retraso, o una falla del correo cambia el estado de la entrega.</li></ul></td></tr>
+    <tr><th>Precondiciones</th><td colspan="3"><ul><li>Reserva a domicilio pagada de un cliente sobre un vehículo apto para reparto.</li><li>El operador (<code>operador@demo.co</code>) asignó la entrega a <code>domi1@demo.co</code> desde <code>/admin</code> → Entregas (UC14).</li><li>El domiciliario tiene menos de 5 entregas abiertas.</li><li>Brevo configurado, o sin llave (el correo queda en estado <i>simulated</i>).</li></ul></td></tr>
+    <tr><th>Perfil del usuario</th><td colspan="3">Domiciliario (rol <code>courier</code>) autenticado: <code>domi1@demo.co</code>. El operador (<code>operador@demo.co</code>) prepara la precondición.</td></tr>
+    <tr><th>Necesidades para el caso de prueba</th><td colspan="3"><b>Datos de prueba:</b><ul><li><b>Domiciliario:</b> domi1@demo.co / Demo1234!</li><li><b>Otro domiciliario:</b> domi2@demo.co (para la prueba de autorización)</li><li><b>Causa de retraso:</b> «Tráfico en la Autopista a Floridablanca»</li><li><b>Tope:</b> <code>MAX_ACTIVE_DELIVERIES = 5</code></li></ul><b>Configuración:</b> aplicación local (<code>sh scripts/demo-local.sh</code>, SQLite con <code>UMH_SEED_DEMO=1</code>) o producción (https://urbanmobility.duckdns.org); navegador Chromium; pasarela simulada o Bold sandbox; Brevo opcional.</td></tr>
+    <tr><th>Autor</th><td colspan="3">David Santiago González Nigrinis</td></tr>
+    <tr><th>Fecha de creación</th><td colspan="3">20/11/2026</td></tr>
+    <tr class="pt-flow"><th rowspan="6">Flujo del caso de prueba</th><th class="np">No. paso</th><th style="width:62mm">Usuario del sistema</th><th>Sistema</th></tr>
+    <tr><td class="np">1</td><td>Iniciar sesión como domiciliario y abrir <code>/entregas</code>.<br><span class="small">Entrada: domi1</span></td><td>La bandeja lista la entrega asignada con dirección, cliente y cuenta atrás hasta el plazo.</td></tr><tr><td class="np">2</td><td>Pulsar <b>Iniciar</b>.<br><span class="small">Entrada: action = start</span></td><td>La entrega pasa de <i>Asignada</i> a <i>En camino</i>.</td></tr><tr><td class="np">3</td><td>Pulsar <b>Confirmar entrega</b>.<br><span class="small">Entrada: action = deliver</span></td><td>En una sola transacción: entrega <i>Entregada</i> con <code>delivered_at</code> del servidor, reserva <i>Activa</i> (el cliente ya tiene el vehículo) y vehículo <i>En uso</i>.</td></tr><tr><td class="np">4</td><td>En otra entrega en curso, pulsar <b>Marcar tardía</b> y escribir la causa.<br><span class="small">Entrada: Causa de retraso</span></td><td>La entrega pasa a <i>Tardía</i> con la causa guardada; se encola el correo al cliente y al operador.</td></tr><tr><td class="np">5</td><td>Revisar en <code>/admin</code> la bitácora de correos Brevo.</td><td>Aparecen los avisos con estado <i>sent</i> (o <i>simulated</i> sin llave) sin duplicados.</td></tr>
+    <tr><th>Post condiciones</th><td colspan="3">La entrega queda <i>Entregada</i> (o <i>Tardía</i> con su causa) y el estado de reserva y vehículo es coherente. Cada retraso genera como máximo un correo por destinatario.</td></tr>
+  </table>
+  <div class="tc-extra">
+    <h4>Información complementaria (fuera de la plantilla)</h4>
+    <p class="small"><b>Caso de uso:</b> UC16 Realizar entrega · UC17 Marcar entrega tardía («extend») · UC19 Notificar retraso · <b>Requisitos:</b> RF-25, RF-27 · <b>Diagramas:</b> <a href="#seq-20">D-20 Secuencia de entrega a domicilio</a> · <a href="#st-23">D-23 Estados de la entrega</a> · <b>Técnica:</b> Caja negra · transición de estados de la entrega · pruebas negativas de autorización y de transiciones inválidas.</p>
+    <table class="t compact"><tr><th style="width:9mm">ID</th><th style="width:62mm">Variante negativa / alterna</th><th>Resultado esperado</th><th style="width:17mm">Resultado</th></tr>
+    <tr><td>A1</td><td>Marcar tardía sin escribir causa.</td><td>422 «Escribe la causa del retraso».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A2</td><td>Marcar tardía una entrega que ya es tardía.</td><td>409 «La entrega ya está marcada como tardía»; no se reenvía el correo.</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A3</td><td>Confirmar una entrega tardía sin justificación.</td><td>422 «Una entrega tardía se confirma con justificación».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A4</td><td><code>domi2</code> intenta actuar sobre la entrega de <code>domi1</code>.</td><td>403 «Solo tu entrega».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A5</td><td>Asignar una sexta entrega a un domiciliario con 5 abiertas.</td><td>422: «ya tiene 5 entregas abiertas (máximo 5); elige otro».</td><td><span class="pill ok">Conforme</span></td></tr><tr><td>A6</td><td>Vence el plazo sin acción del domiciliario.</td><td>El barrido periódico del servidor marca la entrega como tardía con causa automática.</td><td><span class="pill ok">Conforme</span></td></tr></table>
+    <p class="small"><b>Evidencia de ejecución (20-nov-2026, Vitest 156/156 aprobadas):</b></p>
+    <ul class="small"><li><code>tests/integration/api-reglas.test.ts</code> — «UC16/UC17: realizar entrega y marcarla tardía» (sin causa → 422; dos veces → 409; estado coherente al entregar) y «UC14-E2: tope de entregas por domiciliario».</li><li><code>tests/integration/backend-flows.test.ts</code> — «asignada → en camino → entregada con cierre atómico de reserva», «overdue detecta solo vencidas abiertas — base del cron UC17», UNIQUE de notificaciones.</li><li><code>tests/unit/brevo.test.ts</code> — UC19: <i>simulated</i> sin llave, anti-duplicado, 200 → <i>sent</i>, 500 → <i>failed</i> sin alterar la entrega.</li></ul>
+  </div>
+</section>
+<section class="chapter wrap" id="anexo-a">
+  <div class="eyebrow">Anexo A</div>
+  <h2>Arquitectura y tecnologías</h2>
+  <h3 id="cap-1-4"><span class="num">A.1</span>Stack por capa</h3>
+  <table class="t">
+    <tr><th style="width:36mm">Capa</th><th>Tecnología</th><th style="width:58mm">Ubicación en el código</th></tr>
+    <tr><td>Interfaz web (SPA + SSR)</td><td>React 19, TanStack Start / Router / Query, Tailwind CSS 4, shadcn/ui (Radix), Leaflet + OpenStreetMap, Recharts, Framer Motion</td><td><code>src/routes/</code>, <code>src/components/</code></td></tr>
+    <tr><td>Capa de datos del cliente</td><td>Interfaz <code>DataSource</code> con dos implementaciones (mock y API REST); hooks de TanStack Query</td><td><code>src/lib/data/</code></td></tr>
+    <tr><td>Servidor</td><td>Node 24 + Nitro (Vite 8), router REST propio, SSE para tiempo real, WebSocket para la cámara</td><td><code>src/server/api/handlers.ts</code>, <code>src/server/services/</code></td></tr>
+    <tr><td>Dominio (reglas puras)</td><td>Desbloqueo, alertas, máquina de estados de reservas, seguimiento</td><td><code>src/server/domain/</code></td></tr>
+    <tr><td>Persistencia</td><td>SQLite (<code>node:sqlite</code>), repositorios como único punto de SQL, migraciones y seeders</td><td><code>src/server/db/</code>, <code>src/server/repositories.ts</code></td></tr>
+    <tr><td>Seguridad</td><td>Sesión HMAC-SHA256 en cookie httpOnly/Secure (24 h), RBAC por rol, contraseñas <code>scrypt</code>, CSRF en server functions, HTTPS + HSTS</td><td><code>src/server/services/sessions.ts</code>, <code>deploy/</code></td></tr>
+    <tr><td>Visión por computador</td><td>YOLOv8n ONNX (detección de casco) en <code>onnxruntime-web</code> y en el sidecar <code>umh-vision</code></td><td><code>vision-service/</code>, <code>models/</code>, <code>src/lib/helmet-model.ts</code></td></tr>
+    <tr><td>IoT</td><td>Firmware ESP32-CAM (aprovisionamiento Wi-Fi por Bluetooth), ingesta <code>POST /api/ingest</code>, gemelos digitales simulados</td><td><code>firmware/esp32cam-helmet/</code>, <code>src/server/services/fleet-sim.ts</code></td></tr>
+    <tr><td>Integraciones</td><td>Bold (checkout embebido + webhook firmado HMAC), Brevo (correo transaccional)</td><td><code>src/server/services/bold.ts</code>, <code>brevo.ts</code></td></tr>
+    <tr><td>Calidad</td><td>Vitest (unitarias + integración), Playwright (E2E), Lighthouse CI, ESLint, commitlint + Husky, GitHub Actions</td><td><code>tests/</code>, <code>.github/workflows/</code></td></tr>
+    <tr><td>Despliegue</td><td>VM Azure Ubuntu 24.04, systemd, Nginx, Let's Encrypt, DuckDNS</td><td><code>deploy/</code></td></tr>
+  </table>
+  <h3><span class="num">A.2</span>Convenciones de notación</h3>
+  <p>Los diagramas UML se escribieron como código en <b>PlantUML</b> (con un estilo común en <code>estilo.iuml</code>) y se versionan junto al software; los diagramas 01 y 02 se generan con Python y la matriz de riesgos con Mermaid. Los mensajes de los diagramas de secuencia usan lenguaje de negocio («guarda la reserva», «cobra el valor base») en lugar de SQL o rutas HTTP; el detalle técnico está en el contrato <code>docs/api/openapi.yaml</code> (OpenAPI, 44 rutas y 48 operaciones) y en <code>src/server/db/schema.sql</code>. Se conservan las reglas cuantitativas (sesión de desbloqueo de 120 s, prepago de $10.000, alerta en menos de 1 s, máximo 5 entregas por domiciliario) y la notación UML estándar: <code>«include»</code>, <code>«extend»</code>, generalización, fragmentos <code>alt</code>/<code>opt</code>/<code>loop</code>/<code>group</code>, interfaces provistas y requeridas y estereotipos BCE.</p>
+</section>
+<section class="chapter wrap" id="cap-8">
+  <div class="eyebrow">Anexo B</div>
+  <h2>Vistas arquitectónicas C4</h2>
+  <p class="lead">El modelo C4 describe la arquitectura con cuatro niveles de zoom: contexto, contenedores, componentes y código. Complementa los diagramas UML anteriores; el nivel 3 está en el <a href="#c4-componentes">capítulo 5</a>.</p>
+</section>
+
+<section class="fig-page land" id="c4-contexto">
+  <div class="wrap">
+    <div class="fig-head"><h3>C4 nivel 1 — Contexto del sistema</h3><span class="tag">C4 · Contexto · <a href="#indice">↑ Índice</a></span></div>
+    
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/08-c4-contexto.svg" style="max-height:146mm;width:100%;object-fit:contain" alt="C4 nivel 1 — Contexto del sistema"></div>
+      <figcaption><b>Figura 23.</b> C4 nivel 1 — Contexto del sistema. Fuente: <code>entregables/diagramas/fuentes/08-c4-contexto.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page " id="c4-contenedores">
+  <div class="wrap">
+    <div class="fig-head"><h3>C4 nivel 2 — Contenedores</h3><span class="tag">C4 · Contenedores · <a href="#indice">↑ Índice</a></span></div>
+    
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/09-c4-contenedores.svg" style="max-height:230mm;width:100%;object-fit:contain" alt="C4 nivel 2 — Contenedores"></div>
+      <figcaption><b>Figura 24.</b> C4 nivel 2 — Contenedores. Fuente: <code>entregables/diagramas/fuentes/09-c4-contenedores.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="fig-page land" id="c4-codigo">
+  <div class="wrap">
+    <div class="fig-head"><h3>C4 nivel 4 — Código: de la ingesta IoT a la alerta</h3><span class="tag">C4 · Código · <a href="#indice">↑ Índice</a></span></div>
+    
+    <figure>
+      <div class="frame"><img src="../../diagramas/img/27-c4-codigo.svg" style="max-height:146mm;width:100%;object-fit:contain" alt="C4 nivel 4 — Código: de la ingesta IoT a la alerta"></div>
+      <figcaption><b>Figura 25.</b> C4 nivel 4 — Código: de la ingesta IoT a la alerta. Fuente: <code>entregables/diagramas/fuentes/27-c4-codigo.puml</code></figcaption>
+    </figure>
+  </div>
+</section>
+<section class="chapter wrap" id="cap-10">
+  <div class="eyebrow">Anexo C</div>
+  <h2>Avance técnico del desarrollo</h2>
+  <h3><span class="num">C.1</span>Cronología</h3>
+  <table class="t compact">
+    <tr><th style="width:24mm">Fecha</th><th>Hito</th></tr>
+    <tr><td>01-oct-2026</td><td>SRS v1.2 y plan de aseguramiento de calidad (SQA).</td></tr>
+    <tr><td>08-oct-2026</td><td>20 casos de uso especificados; pruebas unitarias, de integración y E2E; contrato OpenAPI v0.2; revisiones SQA de diseño y código con registro de defectos; manual técnico.</td></tr>
+    <tr><td>09-oct-2026</td><td>Detección de casco con YOLOv8n-ONNX en el navegador; landing con fotos reales.</td></tr>
+    <tr><td>21-oct-2026</td><td>Diagramas de paquetes, componentes y nodos; investigación UML.</td></tr>
+    <tr><td>26-oct-2026</td><td>Auditoría de brechas de RF, RNF y casos de uso.</td></tr>
+    <tr><td>05-nov-2026</td><td>Despliegue en producción con HTTPS; API en el build de producción; accesibilidad de la landing de 80 a 100.</td></tr>
+    <tr><td>06-nov-2026</td><td>Ronda de QA con 5 usuarios y correcciones.</td></tr>
+    <tr><td>09-nov-2026</td><td>Casco verificado por la cámara ESP32-CAM del vehículo; escaneo real de QR; WebSocket de cámara.</td></tr>
+    <tr><td>10-nov-2026</td><td>Pagos con Bold: link de pago, checkout embebido con firma de integridad y página de resultado.</td></tr>
+    <tr><td>13–16-nov-2026</td><td>Migración a VM nueva; seeder de datos de demostración; confirmación de reserva por correo con Brevo.</td></tr>
+    <tr><td>17-nov-2026</td><td>Integración de la cámara de casco, QR por vehículo y modelo fp32 en la VM; diagramas C4 niveles 3 y 4.</td></tr>
+    <tr><td>19–20-nov-2026</td><td>Módulo de mantenimiento con telemetría histórica, panel de cámara del PC, hoja de QR imprimible, tarjetas de reserva; diagramas D-28 y D-29; guía de lanzamiento.</td></tr>
+  </table>
+  <h3><span class="num">C.2</span>Estado de verificación</h3>
+  <table class="t compact">
+    <tr><th>Verificación</th><th>Resultado</th><th>Fecha</th></tr>
+    <tr><td>Tipado estático (<code>tsc --noEmit</code>)</td><td><span class="pill ok">0 errores</span></td><td>20-nov-2026</td></tr>
+    <tr><td>Pruebas unitarias + integración (Vitest, 20 archivos)</td><td><span class="pill ok">156 / 156</span></td><td>20-nov-2026</td></tr>
+    <tr><td>Pruebas E2E (Playwright, Chromium escritorio + Pixel 7)</td><td><span class="pill ok">19 aprobadas, 1 omitida</span></td><td>06-nov-2026</td></tr>
+    <tr><td>Smoke de API (13 pasos, login a RBAC)</td><td><span class="pill ok">13 / 13</span></td><td>08-oct-2026</td></tr>
+    <tr><td>Cobertura del dominio (<code>src/server/domain</code>)</td><td><span class="pill ok">100 % líneas · 90,9 % ramas</span></td><td>último reporte</td></tr>
+    <tr><td>Lighthouse producción <code>/</code> (rend./acc./BP/SEO)</td><td><span class="pill ok">92 / 100 / 100 / 100</span></td><td>05-nov-2026</td></tr>
+    <tr><td>Lighthouse producción <code>/catalogo</code></td><td><span class="pill ok">100 / 100 / 100 / 100</span></td><td>05-nov-2026</td></tr>
+    <tr><td>Revisión de código SQA</td><td><span class="pill info">0 críticos · 0 altos · 2 medios</span></td><td>08-oct-2026</td></tr>
+  </table>
+  <h3><span class="num">C.3</span>Evidencia del software en ejecución</h3>
+  <p>El documento de pantallazos contiene el recorrido completo; aquí se incluyen tres evidencias de las funciones más recientes.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n01-admin-monitoreo.png" style="max-height:92mm" alt="Panel del operador: KPIs, simulador de eventos IoT y mapa de flota (local, 20-nov-2026)."></div><figcaption><b>Figura 26.</b> Panel del operador: KPIs, simulador de eventos IoT y mapa de flota (local, 20-nov-2026).</figcaption></figure><figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n12-app-viaje-activo.png" style="max-height:92mm" alt="App del cliente: mapa de flota con «Mis reservas» y el botón Desbloquear."></div><figcaption><b>Figura 27.</b> App del cliente: mapa de flota con «Mis reservas» y el botón Desbloquear.</figcaption></figure><figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n02-admin-mantenimiento.png" style="max-height:92mm" alt="Nuevo módulo de mantenimiento: órdenes abiertas e historial."></div><figcaption><b>Figura 28.</b> Nuevo módulo de mantenimiento: órdenes abiertas e historial.</figcaption></figure>
+  <h3><span class="num">C.4</span>Decisiones técnicas relevantes</h3>
+  <ul>
+    <li><b>El servidor decide la seguridad.</b> El veredicto de casco que vale es el de la cámara del vehículo procesado en el servidor (si el fotograma tiene menos de 5 s), no el del navegador; la clave de ingesta nunca llega al cliente.</li>
+    <li><b>Prepago obligatorio.</b> No hay desbloqueo sin un pago base aprobado (402), y un cliente tiene como máximo una reserva abierta sin pagar.</li>
+    <li><b>Atomicidad.</b> Cerrar una entrega actualiza entrega, reserva y vehículo en una sola transacción; un rechazo de pago no cambia el negocio.</li>
+    <li><b>Historial inmutable.</b> Las alertas y los vehículos no se borran: cambian de estado, para conservar la auditoría.</li>
+    <li><b>Integraciones degradables.</b> Sin llaves, Bold se reemplaza por la pasarela simulada y Brevo deja los correos en estado <i>simulated</i>; la demo nunca depende de un tercero.</li>
+  </ul>
+  <h3><span class="num">C.5</span>Pendientes conocidos</h3>
+  <table class="t compact">
+    <tr><th>Pendiente</th><th>Impacto</th><th>Plan</th></tr>
+    <tr><td>Biometría facial real (plantilla cifrada AES-GCM)</td><td>El desbloqueo facial funciona en modo demostración</td><td>Enrolamiento con consentimiento desde la cuenta y plantilla cifrada en servidor</td></tr>
+    <tr><td>Broker MQTT real para comandos al vehículo</td><td>Los gemelos digitales están simulados</td><td>Broker gestionado y topics <code>umh/vehicle/{id}/*</code></td></tr>
+    <tr><td>Alinear el umbral de casco en la documentación</td><td>El código usa 0,70; D-18 y UC08 indican 0,80</td><td>Fijar un único valor tras la calibración del modelo</td></tr>
+    <tr><td>Guardas de ruta en <code>/admin</code> y <code>/entregas</code> en el cliente</td><td>Bajo: la API ya exige el rol</td><td>Redirección en el router</td></tr>
+  </table>
+</section>
+<section class="chapter wrap" id="cap-11">
+  <div class="eyebrow">Anexo D</div>
+  <h2>Matriz de trazabilidad</h2>
+  <p class="lead">Relación entre requisitos, casos de uso, diagramas de diseño y pruebas.</p>
+  <table class="t compact">
+    <tr><th>Req.</th><th>Caso de uso</th><th>Secuencia / estados</th><th>Clases / componentes</th><th>Pruebas</th></tr>
+    <tr><td>RF-02, RF-03</td><td>UC03, UC04</td><td>D-28, D-16</td><td>Vehículo, Compra, Pago</td><td>e2e reserva-desbloqueo (compra)</td></tr>
+    <tr><td>RF-04, RF-08</td><td>UC06, UC20</td><td>D-28, D-19</td><td>Vehículo, SSE, fleet-sim</td><td>tracking, alerts, geo</td></tr>
+    <tr><td>RF-05, RF-06</td><td>UC05</td><td>D-17, D-21</td><td>Reserva, Hub</td><td><b>CP0001_ALQUILER</b>, flujo-cliente, api-reglas</td></tr>
+    <tr><td>RF-07</td><td>UC07</td><td>D-28</td><td>Hub</td><td>backend-flows</td></tr>
+    <tr><td>RF-09</td><td>UC08</td><td>D-18, D-22</td><td>SesionDesbloqueo, ReglaDeSeguridad</td><td><b>CP0002_DESBLOQUEO</b>, unlock, camera, helmet-*</td></tr>
+    <tr><td>RF-10, RF-22</td><td>UC09</td><td>D-18</td><td>Consentimiento, SesionDesbloqueo</td><td>unlock (TC-UNL-10..13, 18)</td></tr>
+    <tr><td>RF-11, RF-12</td><td>UC20, UC12</td><td>D-19</td><td>Alerta, ReglaDeSeguridad</td><td>alerts, api-reglas (R2)</td></tr>
+    <tr><td>RF-13 a RF-15</td><td>UC10, UC11</td><td>D-29, D-19</td><td>KPIs, simulador</td><td>backend-flows (KPIs)</td></tr>
+    <tr><td>RF-20, RF-21</td><td>UC01, UC02</td><td>D-15</td><td>Usuario, Consentimiento, sesiones</td><td>sessions, smoke e2e, qa-usuarios</td></tr>
+    <tr><td>RF-23, RF-24</td><td>UC13</td><td>D-29, D-22</td><td>Vehículo, Hub, mantenimiento</td><td>backend-flows (RF-24), mantenimiento</td></tr>
+    <tr><td>RF-25</td><td>UC14–UC16</td><td>D-20, D-23</td><td>Entrega</td><td><b>CP0003_ENTREGA</b>, api-reglas, backend-flows</td></tr>
+    <tr><td>RF-26</td><td>UC18</td><td>D-16, D-17</td><td>Pago, PasarelaDePagos</td><td>pasarela, bold, api-reglas (timeout)</td></tr>
+    <tr><td>RF-27</td><td>UC17, UC19</td><td>D-20, D-23</td><td>Entrega, Notificación</td><td><b>CP0003_ENTREGA</b>, brevo</td></tr>
+  </table>
+</section>
+<section class="chapter wrap" id="cap-12">
+  <div class="eyebrow">Anexo E</div>
+  <h2>Índice de figuras y regeneración</h2>
+  <table class="t compact">
+    <tr><th style="width:16mm">Figura</th><th>Título</th></tr>
+    <tr><td>1</td><td><a href="#uc-general">Diagrama de casos de uso general</a></td></tr><tr><td>2</td><td><a href="#uc-cliente">Casos de uso del Cliente</a></td></tr><tr><td>3</td><td><a href="#uc-operador">Casos de uso del Operador</a></td></tr><tr><td>4</td><td><a href="#uc-domiciliario">Casos de uso del Domiciliario</a></td></tr><tr><td>5</td><td><a href="#clases-dominio">Diagrama de clases — vista estática del dominio</a></td></tr><tr><td>6</td><td><a href="#clases-bce">Diagrama de clases de análisis BCE (Boundary–Control–Entity)</a></td></tr><tr><td>7</td><td><a href="#modelo-datos">Modelo de datos persistente</a></td></tr><tr><td>8</td><td><a href="#seq-15">D-15 · Registro, inicio de sesión y fin del viaje</a></td></tr><tr><td>9</td><td><a href="#seq-16">D-16 · Comprar un vehículo (incluye Pagar)</a></td></tr><tr><td>10</td><td><a href="#seq-17">D-17 · Alquilar un vehículo y pagar el prepago</a></td></tr><tr><td>11</td><td><a href="#seq-18">D-18 · Desbloquear el vehículo (QR + casco, alterno con rostro)</a></td></tr><tr><td>12</td><td><a href="#seq-19">D-19 · Telemetría y alerta de un vehículo</a></td></tr><tr><td>13</td><td><a href="#seq-20">D-20 · Entrega a domicilio y retraso</a></td></tr><tr><td>14</td><td><a href="#seq-28">D-28 · Consultas del Cliente: catálogo, mapa y detalle de hub</a></td></tr><tr><td>15</td><td><a href="#seq-29">D-29 · Operador: KPIs, gemelos digitales, catálogo, hubs y mantenimiento</a></td></tr><tr><td>16</td><td><a href="#st-21">D-21 · Estados de la reserva</a></td></tr><tr><td>17</td><td><a href="#st-22">D-22 · Estados del vehículo</a></td></tr><tr><td>18</td><td><a href="#st-23">D-23 · Estados de la entrega</a></td></tr><tr><td>19</td><td><a href="#paquetes">Diagrama de paquetes</a></td></tr><tr><td>20</td><td><a href="#componentes">Diagrama de componentes</a></td></tr><tr><td>21</td><td><a href="#c4-componentes">C4 nivel 3 — Componentes del contenedor «Servidor (API)»</a></td></tr><tr><td>22</td><td><a href="#nodos">Diagrama de nodos (despliegue)</a></td></tr><tr><td>23</td><td><a href="#c4-contexto">C4 nivel 1 — Contexto del sistema</a></td></tr><tr><td>24</td><td><a href="#c4-contenedores">C4 nivel 2 — Contenedores</a></td></tr><tr><td>25</td><td><a href="#c4-codigo">C4 nivel 4 — Código: de la ingesta IoT a la alerta</a></td></tr>
+  </table>
+  <h3>Cómo regenerar los diagramas y este documento</h3>
+  <table class="t compact">
+    <tr><th>Tarea</th><th>Comando (Git Bash, desde la raíz del repositorio)</th></tr>
+    <tr><td>Diagramas PlantUML (requiere Java)</td><td><code>sh entregables/diagramas/generar.sh</code></td></tr>
+    <tr><td>Dependencias del generador de PDF</td><td><code>npm --prefix entregables/entrega-final/tools install</code></td></tr>
+    <tr><td>Este documento y el de pantallazos</td><td><code>node entregables/entrega-final/tools/build.mjs</code></td></tr>
+    <tr><td>Pruebas</td><td><code>npm run typecheck</code> · <code>npm test</code> · <code>npm run test:e2e</code></td></tr>
+  </table>
+</section></body></html>

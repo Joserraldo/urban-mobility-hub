@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Urban Mobility Hub — Pantallazos</title>
+<style>@page { size: A4; margin: 16mm 0 16mm 0; }
+@page land { size: A4 landscape; margin: 14mm 0 14mm 0; }
+
+:root {
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --soft: #f1f5f9;
+  --accent: #1d4ed8;
+  --accent-2: #0ea5e9;
+  --accent-soft: #eff6ff;
+  --ok: #15803d;
+  --ok-soft: #f0fdf4;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --bad: #b91c1c;
+}
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Inter", system-ui, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.wrap { padding: 0 17mm; }
+a { color: var(--accent); text-decoration: none; }
+code, .mono { font-family: "Cascadia Code", Consolas, "Courier New", monospace; font-size: 8.6pt; background: var(--soft); padding: 0 3px; border-radius: 3px; color: #1e293b; }
+p { margin: 0 0 7px; text-align: justify; hyphens: auto; }
+ul, ol { margin: 0 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+strong, b { color: var(--ink); }
+
+/* ---------- Portada ---------- */
+.cover { height: 265mm; position: relative; page-break-after: always; overflow: hidden; }
+.cover-band { position: absolute; left: 0; top: 0; bottom: 0; width: 13mm; background: linear-gradient(180deg, var(--accent), var(--accent-2)); }
+.cover-body { padding: 18mm 20mm 0 32mm; }
+.cover-uni { font-size: 9.5pt; color: var(--muted); letter-spacing: .02em; line-height: 1.5; }
+.cover-kicker { margin-top: 38mm; font-size: 10pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.cover-title { font-size: 29pt; line-height: 1.12; margin: 4mm 0 5mm; font-weight: 800; letter-spacing: -.01em; }
+.cover-sub { font-size: 12.5pt; color: var(--ink-2); max-width: 150mm; }
+.cover-product { margin-top: 9mm; padding: 4mm 5mm; background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: 9.5pt; color: var(--ink-2); max-width: 150mm; }
+.cover-product .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 4px; }
+.cover-meta { position: absolute; bottom: 14mm; left: 32mm; right: 20mm; border-collapse: collapse; font-size: 9.5pt; }
+.cover-meta th { text-align: left; width: 32mm; color: var(--muted); font-weight: 600; vertical-align: top; padding: 2.2mm 0; border-top: 1px solid var(--line); }
+.cover-meta td { padding: 2.2mm 0; border-top: 1px solid var(--line); }
+.cover-chips { margin-top: 7mm; display: flex; flex-wrap: wrap; gap: 2mm; max-width: 150mm; }
+.chip { font-size: 8pt; border: 1px solid var(--line); border-radius: 20px; padding: 1mm 3mm; color: var(--ink-2); background: #fff; }
+
+/* ---------- Índice ---------- */
+.toc { page-break-after: always; }
+.toc h2 { margin-top: 0; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a { display: flex; align-items: baseline; color: var(--ink); padding: .55mm 0; }
+.toc .t { flex: 0 1 auto; }
+.toc .dots { flex: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 2mm; transform: translateY(-2px); }
+.toc .pg { color: var(--accent); font-weight: 600; min-width: 7mm; text-align: right; }
+.toc .toc-l1 a { font-weight: 700; font-size: 10.2pt; margin-top: 1.3mm; }
+.toc .toc-l2 a { padding-left: 6mm; font-size: 9.4pt; }
+.toc .toc-l3 a { padding-left: 12mm; font-size: 8.8pt; color: var(--ink-2); }
+.toc-cols { columns: 2; column-gap: 9mm; }
+.toc-cols li { break-inside: avoid; }
+
+/* ---------- Títulos ---------- */
+h2 { font-size: 17pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid var(--ink); letter-spacing: -.01em; }
+h2 .num { color: var(--accent); margin-right: 3mm; }
+h3 { font-size: 12.5pt; margin: 6mm 0 2.5mm; color: var(--ink); }
+h3 .num { color: var(--accent); margin-right: 2mm; }
+h4 { font-size: 10.5pt; margin: 4mm 0 1.5mm; color: var(--ink-2); }
+.chapter { page-break-before: always; }
+.lead { font-size: 10.6pt; color: var(--ink-2); }
+.eyebrow { font-size: 8pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1mm; }
+
+/* ---------- Tablas ---------- */
+table.t { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 8.7pt; page-break-inside: auto; }
+table.t th { background: var(--ink); color: #fff; text-align: left; padding: 1.6mm 2mm; font-weight: 600; }
+table.t td { padding: 1.5mm 2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t tr:nth-child(even) td { background: #f8fafc; }
+table.t tr { page-break-inside: avoid; }
+table.t.compact td, table.t.compact th { padding: 1.1mm 1.6mm; font-size: 8.2pt; }
+table.kv { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.9pt; }
+table.kv th { width: 38mm; text-align: left; vertical-align: top; background: var(--soft); padding: 1.6mm 2.4mm; border: 1px solid var(--line); font-weight: 600; color: var(--ink-2); }
+table.kv td { padding: 1.6mm 2.4mm; border: 1px solid var(--line); vertical-align: top; }
+
+/* ---------- Figuras ---------- */
+figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+figure .frame { border: 1px solid var(--line); border-radius: 2mm; padding: 2mm; background: #fff; text-align: center; }
+figure img { max-width: 100%; display: block; margin: 0 auto; }
+figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.8mm; text-align: center; }
+figcaption b { color: var(--ink-2); }
+.fig-page { page-break-before: always; page-break-inside: avoid; }
+.fig-page.land { page: land; }
+.fig-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; margin-bottom: 2mm; }
+.fig-head h3 { margin: 0; }
+.fig-head .tag { font-size: 8pt; color: var(--muted); white-space: nowrap; }
+.fig-desc { font-size: 9pt; color: var(--ink-2); margin-bottom: 2mm; }
+.fig-desc p { margin-bottom: 1.5mm; }
+.shot img { border: 1px solid #cbd5e1; border-radius: 1.6mm; box-shadow: 0 2px 10px rgba(15,23,42,.12); }
+.back { font-size: 8pt; text-align: right; margin-top: 1mm; }
+
+/* ---------- Bloques ---------- */
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 2.6mm 4mm; margin: 3mm 0 4mm; font-size: 9pt; page-break-inside: avoid; }
+.callout.ok { border-color: var(--ok); background: var(--ok-soft); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout p:last-child { margin-bottom: 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.card { border: 1px solid var(--line); border-radius: 2mm; padding: 3mm 3.5mm; page-break-inside: avoid; background: #fff; }
+.card h4 { margin-top: 0; }
+.kpi { border: 1px solid var(--line); border-radius: 2mm; padding: 3mm; text-align: center; }
+.kpi .v { font-size: 17pt; font-weight: 800; color: var(--accent); line-height: 1.1; }
+.kpi .l { font-size: 7.8pt; color: var(--muted); margin-top: 1mm; }
+.pill { display: inline-block; font-size: 7.4pt; font-weight: 700; padding: .3mm 2mm; border-radius: 10px; letter-spacing: .02em; }
+.pill.ok { background: #dcfce7; color: var(--ok); }
+.pill.warn { background: #fef3c7; color: var(--warn); }
+.pill.info { background: #dbeafe; color: var(--accent); }
+.pill.bad { background: #fee2e2; color: var(--bad); }
+
+/* ---------- Casos de prueba ---------- */
+.tc { page-break-before: always; }
+.tc-head { background: var(--ink); color: #fff; padding: 3.5mm 4.5mm; border-radius: 2mm 2mm 0 0; display: flex; justify-content: space-between; align-items: center; }
+.tc-head .id { font-size: 9pt; letter-spacing: .1em; color: #93c5fd; font-weight: 700; }
+.tc-head .name { font-size: 13pt; font-weight: 700; }
+.tc-head .who { text-align: right; font-size: 8.6pt; color: #cbd5e1; }
+.tc-head .who b { color: #fff; }
+.tc table.kv { margin-top: 0; }
+table.steps th:nth-child(1) { width: 7mm; }
+table.steps td:nth-child(1) { text-align: center; font-weight: 700; color: var(--accent); }
+.sign { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6mm; margin-top: 8mm; font-size: 8.4pt; color: var(--muted); }
+.sign div { border-top: 1px solid var(--ink-2); padding-top: 1.5mm; }
+
+.small { font-size: 8.4pt; color: var(--muted); }
+.nobreak { page-break-inside: avoid; }
+
+/* ---------- Plantilla de caso de prueba (formato de clase) ---------- */
+table.plantilla { width: 100%; border-collapse: collapse; font-size: 8.4pt; line-height: 1.4; margin-bottom: 4mm; }
+table.plantilla th, table.plantilla td { border: 1px solid #334155; padding: 1.3mm 2.2mm; vertical-align: top; text-align: left; }
+table.plantilla th { background: #e2e8f0; width: 38mm; font-weight: 700; color: var(--ink); }
+table.plantilla .pt-title { background: var(--ink); color: #fff; text-align: center; font-size: 11pt; letter-spacing: .04em; }
+table.plantilla .pt-flow th { background: #cbd5e1; }
+table.plantilla .pt-flow th:not(:first-child) { width: auto; text-align: center; }
+table.plantilla .np, table.plantilla th.np { width: 14mm; text-align: center; font-weight: 700; }
+table.plantilla ul { margin: 0; padding-left: 4.5mm; }
+table.plantilla tr { page-break-inside: avoid; }
+.tc-extra { margin-top: 2mm; }
+.tc-extra h4 { margin-top: 2mm; }
+.toc .toc-group { font-size: 8pt; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 3mm 0 0; padding-bottom: .8mm; border-bottom: 1px solid var(--line); }
+</style></head><body>
+<section class="cover">
+  <div class="cover-band"></div>
+  <div class="cover-body">
+    <div class="cover-uni">Universidad Autónoma de Bucaramanga · Facultad de Ingeniería<br>Ingeniería de Sistemas · Ingeniería de Software II</div>
+    <div class="cover-kicker">Entrega del proyecto del curso</div>
+    <h1 class="cover-title">Pantallazos de la página web y del software</h1>
+    <div class="cover-sub">Recorrido por módulo y por rol: sitio público, cliente, operador, domiciliario y correos transaccionales</div>
+    <div class="cover-product"><span class="dot"></span> Urban Mobility Hub · <b>NODO Mobility</b> — Plataforma multimodal de micromovilidad, logística y venta de vehículos urbanos</div>
+    
+    <table class="cover-meta">
+      <tr><th>Integrantes</th><td>Jaime Alejandro Vega Barbosa<br>José Alejandro Téllez Prada<br>David Santiago González Nigrinis</td></tr>
+      <tr><th>Docente</th><td>Daniel Arenas Seleey</td></tr>
+      <tr><th>Fecha</th><td>20 de noviembre de 2026</td></tr>
+      <tr><th>Producción</th><td>https://urbanmobility.duckdns.org</td></tr>
+      <tr><th>Repositorio</th><td>github.com/Joserraldo/urban-mobility-hub</td></tr>
+    </table>
+  </div>
+</section>
+<section class="toc wrap" id="indice">
+  <h2>Tabla de contenido</h2>
+  <p class="small">Cada entrada es un enlace a la pantalla correspondiente; cada pantalla tiene un enlace «↑ Índice» en su encabezado.</p>
+  <ol>
+    <li class="toc-l1"><a href="#intro"><span class="t">Introducción y cuentas de demostración</span><span class="dots"></span><span class="pg" data-for="intro">3</span></a></li>
+    <li class="toc-l1"><a><span class="t">Sitio público</span></a></li><li class="toc-l2"><a href="#p-landing"><span class="t">Figura 1–3 · Landing — página de inicio (escritorio)</span><span class="dots"></span><span class="pg" data-for="p-landing">4</span></a></li><li class="toc-l2"><a href="#p-landing-movil"><span class="t">Figura 4 · Landing en móvil</span><span class="dots"></span><span class="pg" data-for="p-landing-movil">7</span></a></li><li class="toc-l2"><a href="#p-catalogo"><span class="t">Figura 5 · Catálogo público de venta</span><span class="dots"></span><span class="pg" data-for="p-catalogo">8</span></a></li><li class="toc-l2"><a href="#p-hubs"><span class="t">Figura 6 · Listado de hubs</span><span class="dots"></span><span class="pg" data-for="p-hubs">9</span></a></li><li class="toc-l2"><a href="#p-hub-detalle"><span class="t">Figura 7 · Detalle de un hub</span><span class="dots"></span><span class="pg" data-for="p-hub-detalle">10</span></a></li><li class="toc-l2"><a href="#p-faq"><span class="t">Figura 8 · Preguntas frecuentes</span><span class="dots"></span><span class="pg" data-for="p-faq">11</span></a></li><li class="toc-l2"><a href="#p-guias"><span class="t">Figura 9 · Guías de uso</span><span class="dots"></span><span class="pg" data-for="p-guias">12</span></a></li><li class="toc-l1"><a><span class="t">Autenticación</span></a></li><li class="toc-l2"><a href="#p-registro"><span class="t">Figura 10 · Registro con consentimiento explícito</span><span class="dots"></span><span class="pg" data-for="p-registro">13</span></a></li><li class="toc-l2"><a href="#p-login"><span class="t">Figura 11 · Inicio de sesión</span><span class="dots"></span><span class="pg" data-for="p-login">14</span></a></li><li class="toc-l1"><a><span class="t">Cliente</span></a></li><li class="toc-l2"><a href="#p-app-alquilar"><span class="t">Figura 12 · App — mapa en modo alquiler</span><span class="dots"></span><span class="pg" data-for="p-app-alquilar">15</span></a></li><li class="toc-l2"><a href="#p-app-comprar"><span class="t">Figura 13 · App — modo compra</span><span class="dots"></span><span class="pg" data-for="p-app-comprar">16</span></a></li><li class="toc-l2"><a href="#p-mapa-flota"><span class="t">Figura 14 · Mapa de flota y hubs</span><span class="dots"></span><span class="pg" data-for="p-mapa-flota">17</span></a></li><li class="toc-l2"><a href="#p-reservas-app"><span class="t">Figura 15 · Mis reservas en el mapa y botón Desbloquear</span><span class="dots"></span><span class="pg" data-for="p-reservas-app">18</span></a></li><li class="toc-l2"><a href="#p-mis-reservas"><span class="t">Figura 16 · Historial de reservas y compras</span><span class="dots"></span><span class="pg" data-for="p-mis-reservas">19</span></a></li><li class="toc-l2"><a href="#p-pago"><span class="t">Figura 17 · Resultado del pago con Bold</span><span class="dots"></span><span class="pg" data-for="p-pago">20</span></a></li><li class="toc-l2"><a href="#p-movil-app"><span class="t">Figura 18 · App del cliente en el celular</span><span class="dots"></span><span class="pg" data-for="p-movil-app">21</span></a></li><li class="toc-l1"><a><span class="t">Operador</span></a></li><li class="toc-l2"><a href="#p-admin-monitoreo"><span class="t">Figura 19 · Panel del operador — Monitoreo</span><span class="dots"></span><span class="pg" data-for="p-admin-monitoreo">22</span></a></li><li class="toc-l2"><a href="#p-admin-completo"><span class="t">Figura 20–21 · Panel del operador — vista completa en producción</span><span class="dots"></span><span class="pg" data-for="p-admin-completo">23</span></a></li><li class="toc-l2"><a href="#p-admin-mant"><span class="t">Figura 22 · Mantenimiento de vehículos</span><span class="dots"></span><span class="pg" data-for="p-admin-mant">25</span></a></li><li class="toc-l2"><a href="#p-admin-catalogo"><span class="t">Figura 23 · Gestión de catálogo y hubs</span><span class="dots"></span><span class="pg" data-for="p-admin-catalogo">26</span></a></li><li class="toc-l2"><a href="#p-admin-entregas"><span class="t">Figura 24 · Asignación de entregas y bitácora de correos</span><span class="dots"></span><span class="pg" data-for="p-admin-entregas">27</span></a></li><li class="toc-l2"><a href="#p-admin-camara"><span class="t">Figura 25 · Cámara del PC como ESP32-CAM</span><span class="dots"></span><span class="pg" data-for="p-admin-camara">28</span></a></li><li class="toc-l2"><a href="#p-admin-qr"><span class="t">Figura 26 · Hoja de QR imprimible por vehículo</span><span class="dots"></span><span class="pg" data-for="p-admin-qr">29</span></a></li><li class="toc-l1"><a><span class="t">Domiciliario</span></a></li><li class="toc-l2"><a href="#p-entregas-bandeja"><span class="t">Figura 27 · Bandeja de entregas del domiciliario</span><span class="dots"></span><span class="pg" data-for="p-entregas-bandeja">30</span></a></li><li class="toc-l2"><a href="#p-entregas-prod"><span class="t">Figura 28 · Entregas del domiciliario en producción</span><span class="dots"></span><span class="pg" data-for="p-entregas-prod">31</span></a></li><li class="toc-l1"><a><span class="t">Correos</span></a></li><li class="toc-l2"><a href="#p-correo"><span class="t">Figura 29 · Correo de entrega tardía (plantilla Brevo)</span><span class="dots"></span><span class="pg" data-for="p-correo">32</span></a></li>
+    <li class="toc-l1"><a href="#resumen"><span class="t">Anexo. Tabla resumen de pantallas</span><span class="dots"></span><span class="pg" data-for="resumen">33</span></a></li>
+  </ol>
+</section>
+<section class="chapter wrap" id="intro">
+  <div class="eyebrow">Introducción</div>
+  <h2>Recorrido visual del software</h2>
+  <p class="lead">Este documento presenta los principales pantallazos de la página web pública y de la aplicación de <b>Urban Mobility Hub · NODO Mobility</b>, organizados por módulo y por rol de usuario. Cada pantalla indica su ruta, el rol que la usa, el caso de uso que implementa y el componente del código fuente que la construye.</p>
+  <h3>Origen de las capturas</h3>
+  <table class="t compact">
+    <tr><th>Origen</th><th>Descripción</th></tr>
+    <tr><td><b>Producción</b></td><td>https://urbanmobility.duckdns.org (VM Azure, HTTPS), capturadas el 13-nov-2026.</td></tr>
+    <tr><td><b>Local</b></td><td>Aplicación con backend SQLite en http://localhost:8080, capturadas con Playwright (<code>entregables/_tools/capturar.mjs</code>).</td></tr>
+    <tr><td><b>Local · 20-nov</b></td><td>Funciones nuevas capturadas el 20-nov-2026 con datos de demostración (<code>entregables/entrega-final/tools/capturar-nuevas.mjs</code>).</td></tr>
+  </table>
+  <h3>Cuentas de demostración</h3>
+  <table class="t compact">
+    <tr><th>Rol</th><th>Usuario</th><th>Contraseña</th><th>Qué ver</th></tr>
+    <tr><td>Cliente</td><td><code>cliente@demo.co</code></td><td><code>Demo1234!</code></td><td>Mapa, reserva, pago, desbloqueo, historial</td></tr>
+    <tr><td>Cliente con viajes</td><td><code>viajero@demo.co</code></td><td><code>Demo1234!</code></td><td>Tres alquileres en curso</td></tr>
+    <tr><td>Operador</td><td><code>operador@demo.co</code></td><td><code>Demo1234!</code></td><td>Panel, mantenimiento, catálogo, entregas, cámara, QR</td></tr>
+    <tr><td>Domiciliario</td><td><code>domi1@demo.co</code></td><td><code>Demo1234!</code></td><td>Bandeja de entregas</td></tr>
+  </table>
+  <div class="grid3" style="margin-top:4mm">
+    <div class="kpi"><div class="v">26</div><div class="l">pantallas documentadas</div></div>
+    <div class="kpi"><div class="v">29</div><div class="l">figuras</div></div>
+    <div class="kpi"><div class="v">3</div><div class="l">roles: cliente, operador, domiciliario</div></div>
+  </div>
+</section>
+<section class="fig-page wrap" id="p-landing">
+  <div class="fig-head"><h3>Figura 1. Landing — página de inicio (escritorio) (parte 1 de 3)</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/</code></td><th style="width:22mm">Rol</th><td>Visitante</td></tr>
+  <tr><th>Caso de uso</th><td>—</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/Landing.tsx</code></td></tr></table>
+  <p class="fig-desc">Propuesta de valor, flota con fotos reales, servicios, entrega a domicilio, tarifas en COP, seguridad IoT, hubs, preguntas frecuentes y cuentas de demostración. Animaciones de aparición al desplazarse; accesibilidad 100 en Lighthouse.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/01-landing-escritorio-p1.png" style="max-height:182mm;" alt="Landing — página de inicio (escritorio)"></div>
+  <figcaption><b>Figura 1.</b> Landing — página de inicio (escritorio) (parte 1 de 3).</figcaption></figure>
+</section>
+<section class="fig-page wrap" >
+  <div class="fig-head"><h3>Figura 2. Landing — página de inicio (escritorio) (parte 2 de 3)</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/01-landing-escritorio-p2.png" style="max-height:228mm;" alt="Landing — página de inicio (escritorio)"></div>
+  <figcaption><b>Figura 2.</b> Landing — página de inicio (escritorio) (parte 2 de 3).</figcaption></figure>
+</section>
+<section class="fig-page wrap" >
+  <div class="fig-head"><h3>Figura 3. Landing — página de inicio (escritorio) (parte 3 de 3)</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/01-landing-escritorio-p3.png" style="max-height:228mm;" alt="Landing — página de inicio (escritorio)"></div>
+  <figcaption><b>Figura 3.</b> Landing — página de inicio (escritorio) (parte 3 de 3).</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-landing-movil">
+  <div class="fig-head"><h3>Figura 4. Landing en móvil</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/</code></td><th style="width:22mm">Rol</th><td>Visitante</td></tr>
+  <tr><th>Caso de uso</th><td>—</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/Landing.tsx</code></td></tr></table>
+  <p class="fig-desc">Diseño adaptable a 390 px de ancho, sin desbordamiento horizontal (verificado por la prueba E2E landing.spec.ts).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/02-landing-movil.png" style="max-height:182mm;max-width:80mm" alt="Landing en móvil"></div>
+  <figcaption><b>Figura 4.</b> Landing en móvil.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-catalogo">
+  <div class="fig-head"><h3>Figura 5. Catálogo público de venta</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/catalogo</code></td><th style="width:22mm">Rol</th><td>Visitante / Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC03</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/catalogo.index.tsx</code></td></tr></table>
+  <p class="fig-desc">Vehículos en venta con foto, precio en COP, condición y hub. Página indexable (SEO 100) con ficha por vehículo en /catalogo/$slug.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/03-catalogo.png" style="max-height:182mm;" alt="Catálogo público de venta"></div>
+  <figcaption><b>Figura 5.</b> Catálogo público de venta.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-hubs">
+  <div class="fig-head"><h3>Figura 6. Listado de hubs</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/hubs</code></td><th style="width:22mm">Rol</th><td>Visitante / Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC07</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/hubs.index.tsx</code></td></tr></table>
+  <p class="fig-desc">Estaciones de recogida con capacidad y ocupación.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/06-hubs.png" style="max-height:182mm;" alt="Listado de hubs"></div>
+  <figcaption><b>Figura 6.</b> Listado de hubs.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-hub-detalle">
+  <div class="fig-head"><h3>Figura 7. Detalle de un hub</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/hubs/HUB-01</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC07</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/hubs.$hubId.tsx</code></td></tr></table>
+  <p class="fig-desc">Capacidad, vehículos ocupados, en carga y disponibles en el hub.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/07-hub-detalle.png" style="max-height:182mm;" alt="Detalle de un hub"></div>
+  <figcaption><b>Figura 7.</b> Detalle de un hub.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-faq">
+  <div class="fig-head"><h3>Figura 8. Preguntas frecuentes</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/faq</code></td><th style="width:22mm">Rol</th><td>Visitante</td></tr>
+  <tr><th>Caso de uso</th><td>—</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/faq.tsx</code></td></tr></table>
+  <p class="fig-desc">Preguntas sobre alquiler, pagos, seguridad y datos personales, con datos estructurados para buscadores (AEO).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/11-faq-p1.png" style="max-height:182mm;" alt="Preguntas frecuentes"></div>
+  <figcaption><b>Figura 8.</b> Preguntas frecuentes.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-guias">
+  <div class="fig-head"><h3>Figura 9. Guías de uso</h3><span class="tag">Sitio público · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/guias</code></td><th style="width:22mm">Rol</th><td>Visitante</td></tr>
+  <tr><th>Caso de uso</th><td>—</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/guias.index.tsx</code></td></tr></table>
+  <p class="fig-desc">Artículos de ayuda para cada flujo del cliente.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/12-guias.png" style="max-height:182mm;" alt="Guías de uso"></div>
+  <figcaption><b>Figura 9.</b> Guías de uso.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-registro">
+  <div class="fig-head"><h3>Figura 10. Registro con consentimiento explícito</h3><span class="tag">Autenticación · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/registro</code></td><th style="width:22mm">Rol</th><td>Visitante</td></tr>
+  <tr><th>Caso de uso</th><td>UC01</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/auth/AuthForm.tsx</code></td></tr></table>
+  <p class="fig-desc">Formulario de cuenta con aceptación obligatoria del tratamiento de datos (Ley 1581) y consentimiento biométrico opcional. Sin consentimiento el servidor responde 422.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/08-registro.png" style="max-height:182mm;" alt="Registro con consentimiento explícito"></div>
+  <figcaption><b>Figura 10.</b> Registro con consentimiento explícito.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-login">
+  <div class="fig-head"><h3>Figura 11. Inicio de sesión</h3><span class="tag">Autenticación · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/login</code></td><th style="width:22mm">Rol</th><td>Todos</td></tr>
+  <tr><th>Caso de uso</th><td>UC02</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/auth/AuthForm.tsx</code></td></tr></table>
+  <p class="fig-desc">Correo y contraseña; la sesión se firma con HMAC-SHA256 en una cookie httpOnly y Secure. Los errores no revelan cuál dato falló.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/02-login.png" style="max-height:182mm;" alt="Inicio de sesión"></div>
+  <figcaption><b>Figura 11.</b> Inicio de sesión.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-app-alquilar">
+  <div class="fig-head"><h3>Figura 12. App — mapa en modo alquiler</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/app</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC06, UC05</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/MobilityApp.tsx, FleetMap.tsx</code></td></tr></table>
+  <p class="fig-desc">Mapa Leaflet + OpenStreetMap con vehículos disponibles y hubs; las posiciones llegan en vivo por SSE. Colores por nivel de batería.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/03-app-alquilar.png" style="max-height:182mm;" alt="App — mapa en modo alquiler"></div>
+  <figcaption><b>Figura 12.</b> App — mapa en modo alquiler.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-app-comprar">
+  <div class="fig-head"><h3>Figura 13. App — modo compra</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/app</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC04</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/MobilityApp.tsx</code></td></tr></table>
+  <p class="fig-desc">Stock en venta por hub con precio y condición; la compra incluye el pago (UC18).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/04-app-comprar.png" style="max-height:182mm;" alt="App — modo compra"></div>
+  <figcaption><b>Figura 13.</b> App — modo compra.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-mapa-flota">
+  <div class="fig-head"><h3>Figura 14. Mapa de flota y hubs</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/app</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC06</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/FleetMap.tsx</code></td></tr></table>
+  <p class="fig-desc">Vista del cliente en producción: capas de vehículos y hubs, leyenda de batería y acceso a reservar.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/04-mapa-flota.png" style="max-height:182mm;" alt="Mapa de flota y hubs"></div>
+  <figcaption><b>Figura 14.</b> Mapa de flota y hubs.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-reservas-app">
+  <div class="fig-head"><h3>Figura 15. Mis reservas en el mapa y botón Desbloquear</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/app</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC05, UC08</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/MyOpenReservations.tsx, ReservationCard.tsx</code></td></tr></table>
+  <p class="fig-desc">Tarjetas de reserva con estado del prepago («Prepago pagado ($10.000). Ya puedes desbloquearlo»), ubicación del vehículo, Desbloquear, Cómo llegar y Cancelar.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n12-app-viaje-activo.png" style="max-height:182mm;" alt="Mis reservas en el mapa y botón Desbloquear"></div>
+  <figcaption><b>Figura 15.</b> Mis reservas en el mapa y botón Desbloquear.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-mis-reservas">
+  <div class="fig-head"><h3>Figura 16. Historial de reservas y compras</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/mis-reservas</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC05, UC18</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/mis-reservas.tsx</code></td></tr></table>
+  <p class="fig-desc">Reservas, compras y pagos del cliente con su referencia y estado.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/05-mis-reservas.png" style="max-height:182mm;" alt="Historial de reservas y compras"></div>
+  <figcaption><b>Figura 16.</b> Historial de reservas y compras.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-pago">
+  <div class="fig-head"><h3>Figura 17. Resultado del pago con Bold</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/pago/resultado</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC18</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/pago.resultado.tsx</code></td></tr></table>
+  <p class="fig-desc">Retorno del checkout embebido de Bold (sandbox). El estado definitivo lo confirma el webhook firmado con HMAC.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/09-pago-bold-resultado.png" style="max-height:182mm;" alt="Resultado del pago con Bold"></div>
+  <figcaption><b>Figura 17.</b> Resultado del pago con Bold.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-movil-app">
+  <div class="fig-head"><h3>Figura 18. App del cliente en el celular</h3><span class="tag">Cliente · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/app</code></td><th style="width:22mm">Rol</th><td>Cliente</td></tr>
+  <tr><th>Caso de uso</th><td>UC05, UC08</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/MobileNav.tsx</code></td></tr></table>
+  <p class="fig-desc">Versión móvil: modos Alquilar / Comprar, reserva activa con Desbloquear y mapa a pantalla completa.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n15-movil-app.png" style="max-height:182mm;max-width:80mm" alt="App del cliente en el celular"></div>
+  <figcaption><b>Figura 18.</b> App del cliente en el celular.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-monitoreo">
+  <div class="fig-head"><h3>Figura 19. Panel del operador — Monitoreo</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC10, UC11</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/TelemetryDashboard.tsx</code></td></tr></table>
+  <p class="fig-desc">KPIs de flota (vehículos conectados, hubs activos, batería media, alertas activas, en mantenimiento), simulador de eventos IoT (sin casco, caída, pérdida de GPS, batería crítica) y mapa de flota en vivo.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n01-admin-monitoreo.png" style="max-height:182mm;" alt="Panel del operador — Monitoreo"></div>
+  <figcaption><b>Figura 19.</b> Panel del operador — Monitoreo.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-completo">
+  <div class="fig-head"><h3>Figura 20. Panel del operador — vista completa en producción (parte 1 de 2)</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC10, UC12, UC14, UC19</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/TelemetryDashboard.tsx</code></td></tr></table>
+  <p class="fig-desc">Tabla de gemelos digitales, bitácora de alertas, entregas y bitácora de correos Brevo.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/06-admin-panel-p1.png" style="max-height:182mm;" alt="Panel del operador — vista completa en producción"></div>
+  <figcaption><b>Figura 20.</b> Panel del operador — vista completa en producción (parte 1 de 2).</figcaption></figure>
+</section>
+<section class="fig-page wrap" >
+  <div class="fig-head"><h3>Figura 21. Panel del operador — vista completa en producción (parte 2 de 2)</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../assets/06-admin-panel-p2.png" style="max-height:228mm;" alt="Panel del operador — vista completa en producción"></div>
+  <figcaption><b>Figura 21.</b> Panel del operador — vista completa en producción (parte 2 de 2).</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-mant">
+  <div class="fig-head"><h3>Figura 22. Mantenimiento de vehículos</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin → Mantenimiento</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC13 (ext.)</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/MaintenancePanel.tsx</code></td></tr></table>
+  <p class="fig-desc">Abrir una orden con motivo y notas, órdenes abiertas e historial. Un vehículo en mantenimiento desaparece de la app del cliente y no se puede desbloquear.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n02-admin-mantenimiento.png" style="max-height:182mm;" alt="Mantenimiento de vehículos"></div>
+  <figcaption><b>Figura 22.</b> Mantenimiento de vehículos.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-catalogo">
+  <div class="fig-head"><h3>Figura 23. Gestión de catálogo y hubs</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin → Catálogo</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC13</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/AdminCatalog.tsx</code></td></tr></table>
+  <p class="fig-desc">Alta y edición de vehículos (tipo, modo, precio, batería, hub, condición) y de hubs (zona, capacidad, coordenadas). Un hub con vehículos no se puede dar de baja (RF-24).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n03-admin-catalogo.png" style="max-height:182mm;" alt="Gestión de catálogo y hubs"></div>
+  <figcaption><b>Figura 23.</b> Gestión de catálogo y hubs.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-entregas">
+  <div class="fig-head"><h3>Figura 24. Asignación de entregas y bitácora de correos</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin → Entregas</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC14, UC19</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/DeliveriesPanel.tsx</code></td></tr></table>
+  <p class="fig-desc">Reservas a domicilio esperando asignación (con el domiciliario y el plazo), entregas en curso con su estado tardío y bitácora de correos Brevo (sent / simulated / failed).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n04-admin-entregas.png" style="max-height:182mm;" alt="Asignación de entregas y bitácora de correos"></div>
+  <figcaption><b>Figura 24.</b> Asignación de entregas y bitácora de correos.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-camara">
+  <div class="fig-head"><h3>Figura 25. Cámara del PC como ESP32-CAM</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin → Cámara PC</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC08</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/PcCameraPanel.tsx</code></td></tr></table>
+  <p class="fig-desc">Demostración del casco: la webcam del PC envía fotogramas al servidor, que los reenvía al servicio de visión YOLOv8n y publica el veredicto «Con casco / Sin casco» con su confianza.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n05-admin-camara-pc.png" style="max-height:182mm;" alt="Cámara del PC como ESP32-CAM"></div>
+  <figcaption><b>Figura 25.</b> Cámara del PC como ESP32-CAM.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-admin-qr">
+  <div class="fig-head"><h3>Figura 26. Hoja de QR imprimible por vehículo</h3><span class="tag">Operador · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/admin/qr</code></td><th style="width:22mm">Rol</th><td>Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC08</td><th>Origen</th><td>Local · 20-nov</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/admin_.qr.tsx</code></td></tr></table>
+  <p class="fig-desc">QR <code>UMH:&lt;id&gt;</code> de cada vehículo con código manual, modelo, hub y estado, filtrable por hub y tipo, listo para imprimir y pegar en el manubrio.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../capturas-nuevas/n10-admin-qr.png" style="max-height:182mm;" alt="Hoja de QR imprimible por vehículo"></div>
+  <figcaption><b>Figura 26.</b> Hoja de QR imprimible por vehículo.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-entregas-bandeja">
+  <div class="fig-head"><h3>Figura 27. Bandeja de entregas del domiciliario</h3><span class="tag">Domiciliario · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/entregas</code></td><th style="width:22mm">Rol</th><td>Domiciliario</td></tr>
+  <tr><th>Caso de uso</th><td>UC15, UC16, UC17</td><th>Origen</th><td>Local</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/components/mobility/CourierApp.tsx</code></td></tr></table>
+  <p class="fig-desc">Entrega asignada con dirección, cliente y cuenta atrás hasta el plazo; acciones Iniciar, Confirmar entrega y Marcar tardía (con causa obligatoria).</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../interfaces/img/13-entregas-bandeja.png" style="max-height:182mm;" alt="Bandeja de entregas del domiciliario"></div>
+  <figcaption><b>Figura 27.</b> Bandeja de entregas del domiciliario.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-entregas-prod">
+  <div class="fig-head"><h3>Figura 28. Entregas del domiciliario en producción</h3><span class="tag">Domiciliario · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>/entregas</code></td><th style="width:22mm">Rol</th><td>Domiciliario</td></tr>
+  <tr><th>Caso de uso</th><td>UC15</td><th>Origen</th><td>Producción</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/routes/entregas.tsx</code></td></tr></table>
+  <p class="fig-desc">Vista en producción de la bandeja del domiciliario.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/07-entregas-domiciliario.png" style="max-height:182mm;" alt="Entregas del domiciliario en producción"></div>
+  <figcaption><b>Figura 28.</b> Entregas del domiciliario en producción.</figcaption></figure>
+</section>
+<section class="fig-page wrap" id="p-correo">
+  <div class="fig-head"><h3>Figura 29. Correo de entrega tardía (plantilla Brevo)</h3><span class="tag">Correos · <a href="#indice">↑ Índice</a></span></div>
+  <table class="kv"><tr><th>Ruta</th><td><code>correo</code></td><th style="width:22mm">Rol</th><td>Cliente / Operador</td></tr>
+  <tr><th>Caso de uso</th><td>UC19</td><th>Origen</th><td>Render de plantilla</td></tr>
+  <tr><th>Implementación</th><td colspan="3"><code>src/server/services/brevo.ts</code></td></tr></table>
+  <p class="fig-desc">Plantilla HTML del aviso de retraso enviada por Brevo; se envía una sola vez por entrega y destinatario.</p>
+  <figure class="shot"><div class="frame" style="padding:2mm"><img src="../../../docs/capturas/08-correo-entrega-tardia.png" style="max-height:182mm;max-width:80mm" alt="Correo de entrega tardía (plantilla Brevo)"></div>
+  <figcaption><b>Figura 29.</b> Correo de entrega tardía (plantilla Brevo).</figcaption></figure>
+</section>
+<section class="chapter wrap" id="resumen">
+  <div class="eyebrow">Anexo</div>
+  <h2>Tabla resumen de pantallas</h2>
+  <table class="t compact">
+    <tr><th>Fig.</th><th>Pantalla</th><th>Ruta</th><th>Rol</th><th>UC</th></tr>
+    <tr><td><a href="#p-landing">1</a></td><td>Landing — página de inicio (escritorio)</td><td><code>/</code></td><td>Visitante</td><td>—</td></tr><tr><td><a href="#p-landing-movil">4</a></td><td>Landing en móvil</td><td><code>/</code></td><td>Visitante</td><td>—</td></tr><tr><td><a href="#p-catalogo">5</a></td><td>Catálogo público de venta</td><td><code>/catalogo</code></td><td>Visitante / Cliente</td><td>UC03</td></tr><tr><td><a href="#p-hubs">6</a></td><td>Listado de hubs</td><td><code>/hubs</code></td><td>Visitante / Cliente</td><td>UC07</td></tr><tr><td><a href="#p-hub-detalle">7</a></td><td>Detalle de un hub</td><td><code>/hubs/HUB-01</code></td><td>Cliente</td><td>UC07</td></tr><tr><td><a href="#p-faq">8</a></td><td>Preguntas frecuentes</td><td><code>/faq</code></td><td>Visitante</td><td>—</td></tr><tr><td><a href="#p-guias">9</a></td><td>Guías de uso</td><td><code>/guias</code></td><td>Visitante</td><td>—</td></tr><tr><td><a href="#p-registro">10</a></td><td>Registro con consentimiento explícito</td><td><code>/registro</code></td><td>Visitante</td><td>UC01</td></tr><tr><td><a href="#p-login">11</a></td><td>Inicio de sesión</td><td><code>/login</code></td><td>Todos</td><td>UC02</td></tr><tr><td><a href="#p-app-alquilar">12</a></td><td>App — mapa en modo alquiler</td><td><code>/app</code></td><td>Cliente</td><td>UC06, UC05</td></tr><tr><td><a href="#p-app-comprar">13</a></td><td>App — modo compra</td><td><code>/app</code></td><td>Cliente</td><td>UC04</td></tr><tr><td><a href="#p-mapa-flota">14</a></td><td>Mapa de flota y hubs</td><td><code>/app</code></td><td>Cliente</td><td>UC06</td></tr><tr><td><a href="#p-reservas-app">15</a></td><td>Mis reservas en el mapa y botón Desbloquear</td><td><code>/app</code></td><td>Cliente</td><td>UC05, UC08</td></tr><tr><td><a href="#p-mis-reservas">16</a></td><td>Historial de reservas y compras</td><td><code>/mis-reservas</code></td><td>Cliente</td><td>UC05, UC18</td></tr><tr><td><a href="#p-pago">17</a></td><td>Resultado del pago con Bold</td><td><code>/pago/resultado</code></td><td>Cliente</td><td>UC18</td></tr><tr><td><a href="#p-movil-app">18</a></td><td>App del cliente en el celular</td><td><code>/app</code></td><td>Cliente</td><td>UC05, UC08</td></tr><tr><td><a href="#p-admin-monitoreo">19</a></td><td>Panel del operador — Monitoreo</td><td><code>/admin</code></td><td>Operador</td><td>UC10, UC11</td></tr><tr><td><a href="#p-admin-completo">20</a></td><td>Panel del operador — vista completa en producción</td><td><code>/admin</code></td><td>Operador</td><td>UC10, UC12, UC14, UC19</td></tr><tr><td><a href="#p-admin-mant">22</a></td><td>Mantenimiento de vehículos</td><td><code>/admin → Mantenimiento</code></td><td>Operador</td><td>UC13 (ext.)</td></tr><tr><td><a href="#p-admin-catalogo">23</a></td><td>Gestión de catálogo y hubs</td><td><code>/admin → Catálogo</code></td><td>Operador</td><td>UC13</td></tr><tr><td><a href="#p-admin-entregas">24</a></td><td>Asignación de entregas y bitácora de correos</td><td><code>/admin → Entregas</code></td><td>Operador</td><td>UC14, UC19</td></tr><tr><td><a href="#p-admin-camara">25</a></td><td>Cámara del PC como ESP32-CAM</td><td><code>/admin → Cámara PC</code></td><td>Operador</td><td>UC08</td></tr><tr><td><a href="#p-admin-qr">26</a></td><td>Hoja de QR imprimible por vehículo</td><td><code>/admin/qr</code></td><td>Operador</td><td>UC08</td></tr><tr><td><a href="#p-entregas-bandeja">27</a></td><td>Bandeja de entregas del domiciliario</td><td><code>/entregas</code></td><td>Domiciliario</td><td>UC15, UC16, UC17</td></tr><tr><td><a href="#p-entregas-prod">28</a></td><td>Entregas del domiciliario en producción</td><td><code>/entregas</code></td><td>Domiciliario</td><td>UC15</td></tr><tr><td><a href="#p-correo">29</a></td><td>Correo de entrega tardía (plantilla Brevo)</td><td><code>correo</code></td><td>Cliente / Operador</td><td>UC19</td></tr>
+  </table>
+</section></body></html>
