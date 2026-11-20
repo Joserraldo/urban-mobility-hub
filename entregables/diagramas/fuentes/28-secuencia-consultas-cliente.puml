@@ -1,0 +1,55 @@
+@startuml 28-secuencia-consultas-cliente
+!include estilo.iuml
+title Consultas del Cliente: catálogo, mapa de la flota y detalle de hub (UC03, UC06, UC07)
+
+actor Cliente as U
+participant "Sitio web" as UI
+participant "Servidor" as API
+participant "Canal en vivo\n(SSE)" as SSE
+participant "Simulador de flota\n(gemelos digitales)" as SIM
+participant "Mapas\n(OpenStreetMap)" as MAP
+database "Base de datos" as DB
+
+group UC03 · Ver catálogo de venta
+  U -> UI : abre el catálogo
+  UI -> API : pide los vehículos en venta
+  API -> DB : busca vehículos en venta\n(sin los que están en mantenimiento)
+  DB -->> API : lista con precio y condición
+  API -->> UI : catálogo
+  UI -->> U : tarjetas con foto, precio en COP y hub
+  note right of UI : No exige sesión: la página es pública\ne indexable (SEO)
+end
+
+group UC06 · Ver flota y mapa multicapa
+  U -> UI : abre el mapa
+  UI -> MAP : pide las teselas de la zona
+  MAP -->> UI : mapa base
+  UI -> API : pide vehículos de alquiler y hubs
+  API -> DB : vehículos disponibles y hubs activos
+  DB -->> API : posiciones, batería y estado
+  API -->> UI : capas "vehículos" y "hubs"
+  UI -> SSE : se suscribe al canal en vivo
+  loop cada 2 s mientras el mapa está abierto
+    SIM -> DB : actualiza la posición del gemelo digital
+    SIM -> SSE : publica la nueva posición
+    SSE -->> UI : evento de posición
+    UI -->> U : mueve el marcador
+  end
+  alt la posición tiene más de 5 s
+    UI -->> U : marca el vehículo como "sin señal reciente"
+  end
+end
+
+group UC07 · Ver detalle de hub
+  U -> UI : toca un hub en el mapa o en la lista
+  UI -> API : pide el detalle del hub
+  API -> DB : busca el hub y sus vehículos
+  alt el hub no existe
+    API -->> UI : "Hub no encontrado"
+  else existe
+    DB -->> API : capacidad, ocupados, en carga y vehículos
+    API -->> UI : detalle del hub
+    UI -->> U : ocupación y vehículos listos para alquilar
+  end
+end
+@enduml

@@ -595,6 +595,110 @@ paths:
             description: OK,
             content: { application/json: { schema: { $ref: "#/components/schemas/Vehicle" } } },
           }
+  /api/admin/vehicles/{id}/status:
+    patch:
+      tags: [admin]
+      summary: Cambiar el estado de un vehículo (solo operador). 409 si está en viaje (`in_use`) y se pide `offline` o `maintenance`. `maintenance` crea una orden "Retiro manual"; salir de mantenimiento por aquí cierra la orden abierta ("Cierre manual").
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [available, reserved, in_use, offline, maintenance] }
+      responses:
+        "200": { description: OK (`vehicle` y `cancelled` = reservas canceladas) }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/admin/vehicles/{id}/maintenance:
+    post:
+      tags: [admin]
+      summary: Enviar un vehículo a mantenimiento. 409 si está en viaje, vendido o ya tiene orden abierta. Cancela sus reservas abiertas. Solo operador.
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Orden abierta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: "#/components/schemas/MaintenanceOrder" }
+                  cancelled: { type: integer }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { description: Falta el motivo }
+  /api/admin/maintenance/{orderId}/close:
+    post:
+      tags: [admin]
+      summary: Cerrar una orden de mantenimiento. El vehículo queda `available` y su alerta en `ok`. Solo operador.
+      security: [{ bearer: [] }]
+      parameters: [{ name: orderId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution]
+              properties:
+                resolution: { type: string }
+      responses:
+        "200":
+          description: Orden cerrada y vehículo disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: "#/components/schemas/MaintenanceOrder" }
+                  vehicle: { $ref: "#/components/schemas/Vehicle" }
+        "404": { description: Orden inexistente }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/admin/maintenance:
+    get:
+      tags: [admin]
+      summary: Órdenes abiertas y las últimas 50 cerradas, con modelo y tipo del vehículo. Solo operador.
+      security: [{ bearer: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  open: { type: array, items: { $ref: "#/components/schemas/MaintenanceOrder" } }
+                  closed: { type: array, items: { $ref: "#/components/schemas/MaintenanceOrder" } }
+  /api/admin/vehicles/{id}/telemetry:
+    get:
+      tags: [admin]
+      summary: Historial de telemetría (máx. 1 lectura cada ~10 s, retención 24 h). Solo operador.
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: minutes, in: query, schema: { type: integer, default: 60, minimum: 1, maximum: 1440 } }
+      responses:
+        "200":
+          description: Lecturas en orden cronológico
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TelemetrySample" }
+        "404": { description: Vehículo inexistente }
   /api/realtime/config:
     get:
       tags: [realtime]
@@ -847,7 +951,33 @@ components:
         alert: { $ref: "#/components/schemas/AlertType" }
         delivery: { type: boolean }
         qrCode: { type: string, example: "UMH:SC-1042" }
-        status: { type: string, enum: [available, reserved, in-use, sold, offline] }
+        status: { type: string, enum: [available, reserved, in_use, sold, offline, maintenance] }
+    MaintenanceOrder:
+      type: object
+      properties:
+        id: { type: string, example: MNT-1a2b3c }
+        vehicle_id: { type: string }
+        vehicle_model: { type: string, description: "Solo en GET /api/admin/maintenance" }
+        vehicle_kind: { type: string, description: "Solo en GET /api/admin/maintenance" }
+        reason: { type: string }
+        notes: { type: string }
+        opened_at: { type: integer, description: epoch ms }
+        opened_by: { type: string }
+        closed_at: { type: integer, nullable: true }
+        closed_by: { type: string, nullable: true }
+        resolution: { type: string, nullable: true }
+    TelemetrySample:
+      type: object
+      properties:
+        vehicle_id: { type: string }
+        ts: { type: integer, description: epoch ms (hora del servidor) }
+        lat: { type: number }
+        lng: { type: number }
+        battery: { type: number }
+        speed_kmh: { type: number }
+        helmet_on: { type: integer, enum: [0, 1] }
+        impact_g: { type: number }
+        alert: { type: string }
     HubDetail:
       allOf:
         - { $ref: "#/components/schemas/Hub" }
@@ -954,6 +1084,7 @@ components:
         activeHubs: { type: integer }
         averageBattery: { type: integer }
         activeAlerts: { type: integer }
+        inMaintenance: { type: integer }
     MapConfig:
       type: object
       properties:

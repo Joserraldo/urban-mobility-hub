@@ -1,0 +1,62 @@
+@startuml 29-secuencia-operador-kpis-catalogo
+!include estilo.iuml
+title Operador: indicadores, gemelos digitales y catálogo de vehículos y hubs (UC10, UC13)
+
+actor Operador as O
+participant "Panel del operador" as UI
+participant "Servidor" as API
+participant "Canal en vivo\n(SSE)" as SSE
+database "Base de datos" as DB
+
+group UC10 · Ver KPIs y gemelos digitales
+  O -> UI : abre el panel
+  UI -> API : pide indicadores
+  API -> API : ¿la sesión es de un operador?
+  alt no es operador
+    API -->> UI : "No autorizado"
+  else es operador
+    API -> DB : cuenta vehículos por estado, viajes activos,\nalertas abiertas, ingresos y entregas
+    DB -->> API : totales
+    API -->> UI : KPIs
+    UI -> SSE : se suscribe a posiciones y alertas
+    SSE -->> UI : cambios en vivo de cada gemelo digital
+    UI -->> O : tarjetas de KPI y tabla de gemelos\n(batería, posición, estado, última señal)
+  end
+end
+
+group UC13 · Gestionar catálogo y hubs
+  O -> UI : registra o edita un vehículo
+  UI -> API : guardar vehículo
+  API -> API : ¿es operador?
+  API -> DB : guarda tipo, modelo, modo (venta o alquiler),\nprecio o tarifa y hub
+  API -->> UI : vehículo guardado
+  opt quiere retirar un vehículo
+    O -> UI : intenta borrarlo
+    UI -> API : borrar vehículo
+    API -->> UI : "Los vehículos no se borran: cambia su estado"
+    note right : el historial de viajes y pagos\nnunca pierde su vehículo
+  end
+  O -> UI : da de baja un hub
+  UI -> API : borrar hub
+  API -> DB : ¿el hub tiene vehículos asignados?
+  alt tiene vehículos
+    API -->> UI : "No puedes dar de baja un hub con vehículos" (RF-24)
+  else vacío
+    API -> DB : elimina el hub
+    API -->> UI : hub eliminado
+  end
+end
+
+group Mantenimiento (extensión de UC13)
+  O -> UI : abre una orden de mantenimiento
+  UI -> API : enviar a mantenimiento
+  API -> DB : ¿el vehículo está en un viaje?
+  alt está en uso
+    API -->> UI : rechazo: no se interrumpe un viaje
+  else libre
+    API -> DB : crea la orden y pasa el vehículo a "En mantenimiento"
+    API -> SSE : publica el cambio de estado
+    API -->> UI : orden abierta (el cliente ya no lo ve)
+  end
+end
+@enduml

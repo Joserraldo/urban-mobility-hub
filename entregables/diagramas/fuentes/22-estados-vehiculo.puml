@@ -6,6 +6,7 @@ state "Disponible" as D
 state "Reservado" as R
 state "Vendido" as V
 state "Fuera de servicio" as F
+state "En mantenimiento" as M
 state "En uso" as E {
   state "Sin novedad" as OK
   state "Sin casco" as NC
@@ -31,11 +32,20 @@ E --> D : termina el viaje
 D --> V : alguien lo compra
 D --> F : el operador lo retira
 F --> D : vuelve a servicio
+D --> M : el operador abre una orden
+F --> M : el operador abre una orden
+M --> D : se cierra la orden
 V --> [*]
 
 note right of E
   Mientras está en uso, el vehículo
   puede pasar a un estado de alerta.
   La alerta queda en el historial.
+end note
+
+note right of M
+  No se reserva, no se compra y no se ve
+  en la app del cliente. Un vehículo en
+  viaje no puede pasar a mantenimiento.
 end note
 @enduml

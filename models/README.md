@@ -1,16 +1,26 @@
 # Modelo de detección de cascos (backend)
 
-**Modelo incluido (no versionado, ~100 MB):** `JarvanLee/yolov8-helmet-violation-detection` (Hugging Face, licencia Apache-2.0),
-YOLOv8m con clases `helmet`, `head` (cabeza sin casco) y `person`. Se descargó `weights/best.pt` y se exportó a ONNX a
-640×480 (el tamaño del fotograma VGA de la cámara, sin relleno):
+**Modelo actual (`models/helmet.onnx`, 12 MB, fp32):** YOLOv8n de 2 clases `{0: "With Helmet", 1: "Without Helmet"}` a 640×640, el mismo del
+navegador (`public/models/helmet.onnx`, fp16) pero convertido a float32, porque `onnxruntime-node` alimenta tensores float32 y con fp16 falla
+(`Unexpected input data type`). Conversión: cambiar initializers, nodos `Cast` y tipos de entrada/salida de FLOAT16 a FLOAT (librería `onnx`).
+`models/helmet.labels.json` debe coincidir con esas 2 clases:
 
-```
-python -c "from ultralytics import YOLO; YOLO('best.pt').export(format='onnx', imgsz=[480,640], simplify=True, opset=17)"
-# copiar el .onnx a models/helmet.onnx
+```json
+{
+  "input": 640,
+  "classes": ["With Helmet", "Without Helmet"],
+  "positive": ["With Helmet"],
+  "negative": ["Without Helmet"],
+  "scoreThreshold": 0.35,
+  "iouThreshold": 0.5
+}
 ```
 
-Medido en este PC (CPU, 4 hilos): ~350 ms por fotograma por la API completa (~2,8 fps máx.). Probar sin cámara:
-`npx tsx scripts/bench-helmet.ts foto.jpg`. Si necesitas más velocidad, entrena/exporta una variante `n` o `s`.
+(Antes decía 3 clases helmet/head/person a 480: no correspondía al modelo, el decodificador fallaba y la cámara quedaba "offline".
+`models/helmet-yolov8n.labels.json`, sin versionar, es una copia de ese error y ya no se usa.)
+
+Medido en este PC (CPU, 4 hilos): ~56 ms por fotograma (~18 fps máx.). Probar sin cámara:
+`npx tsx scripts/bench-helmet.ts foto.jpg`.
 
 El backend carga al arrancar `models/helmet.onnx` + `models/helmet.labels.json` (rutas cambiables con
 `HELMET_MODEL_PATH` / `HELMET_LABELS_PATH`). Sin ellos la API sigue funcionando y `POST /api/camera/frame`
@@ -28,9 +38,9 @@ Cualquier detector YOLO exportado a ONNX (Ultralytics `yolo export format=onnx i
 ```json
 {
   "input": 640,
-  "classes": ["helmet", "no-helmet"],
-  "positive": ["helmet"],
-  "negative": ["no-helmet"],
+  "classes": ["With Helmet", "Without Helmet"],
+  "positive": ["With Helmet"],
+  "negative": ["Without Helmet"],
   "scoreThreshold": 0.35,
   "iouThreshold": 0.5
 }
@@ -46,12 +56,3 @@ Cualquier detector YOLO exportado a ONNX (Ultralytics `yolo export format=onnx i
 Un modelo nano/small (`yolov8n`, `yolo11n`) a 640 px tarda ~30-80 ms por fotograma en CPU de portátil. Variables útiles:
 `VISION_THREADS` (hilos de ONNX Runtime, 2 por defecto) y `CAMERA_FRESH_MS` (antigüedad máxima del fotograma
 usado para desbloquear, 5000 por defecto).
-
-## Modelo en la VM (2026-11-17)
-
-La VM usa el YOLOv8n de `public/models/helmet.onnx` (el del navegador, 2 clases `With Helmet` / `Without Helmet`, 640×640)
-**convertido de float16 a float32**, porque `onnxruntime-node` en el servidor alimenta tensores float32 y con el fp16 original
-falla con `Unexpected input data type`. Conversión: cambiar initializers, nodos `Cast` y tipos de entrada/salida de FLOAT16 a FLOAT
-(librería `onnx`). Etiquetas en la VM (`/opt/umh-vision/models/helmet.labels.json`):
-`{"input":640,"classes":["With Helmet","Without Helmet"],"positive":["With Helmet"],"negative":["Without Helmet"]}`.
-Para pasar al YOLOv8m de 3 clases descrito arriba, reemplazar ambos archivos y reiniciar `umh-vision`.

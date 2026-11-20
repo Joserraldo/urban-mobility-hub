@@ -12,7 +12,7 @@ Este repositorio corresponde al **segundo avance**: portal web funcional con **b
 
 **Desplegado:** <https://urbanmobility.duckdns.org> — VM Ubuntu 24.04 + Nginx + HTTPS + Node 24 + SQLite. Guía de operación y actualizaciones en [`deploy/README.md`](deploy/README.md). El build de producción sirve la interfaz **y** el API `/api/*` en el mismo proceso.
 
-Datos demo: [`docs/SEEDER.md`](docs/SEEDER.md) · Bold y Brevo (con capturas y plantilla de correo): [`docs/INTEGRACIONES.md`](docs/INTEGRACIONES.md) · Capturas: [`docs/capturas/`](docs/capturas/README.md). · Cámara de casco ESP32-CAM: [`firmware/esp32cam-helmet/README.md`](firmware/esp32cam-helmet/README.md).
+Lanzamiento (guía del día de la demo): [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md) · Servidor en el laptop: [`docs/DEMO-LOCAL.md`](docs/DEMO-LOCAL.md) (`sh scripts/demo-local.sh`) · Guion: [`docs/RECORRIDO-DEMO.md`](docs/RECORRIDO-DEMO.md) · Flujos cliente: [`docs/FLUJOS-CLIENTE.md`](docs/FLUJOS-CLIENTE.md) · Mantenimiento: [`docs/MANTENIMIENTO.md`](docs/MANTENIMIENTO.md) · Datos demo: [`docs/SEEDER.md`](docs/SEEDER.md) · Bold y Brevo (con capturas y plantilla de correo): [`docs/INTEGRACIONES.md`](docs/INTEGRACIONES.md) · Capturas: [`docs/capturas/`](docs/capturas/README.md). · Cámara de casco ESP32-CAM: [`firmware/esp32cam-helmet/README.md`](firmware/esp32cam-helmet/README.md).
 
 ## Funcionalidades
 

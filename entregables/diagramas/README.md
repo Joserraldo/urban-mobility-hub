@@ -11,7 +11,7 @@ hace el sistema (análisis) y después **cómo** está construido (diseño).
 
 **Criterio de redacción.** Los diagramas usan lenguaje del negocio ("guarda la reserva", "cobra el
 valor base") en lugar de SQL, rutas HTTP o nombres de archivos. Se conservan la notación UML,
-las ramas alternativas (`alt`, `opt`), las reglas con números (casco ≥ 80 %, sesión de desbloqueo
+las ramas alternativas (`alt`, `opt`), las reglas con números (casco ≥ 70 %, sesión de desbloqueo
 de 2 minutos, valor base de $10.000) y las relaciones `«include»`/`«extend»`. El detalle técnico
 (tablas, endpoints) queda en `docs/api/openapi.yaml` y `src/server/db/schema.sql`.
 
@@ -61,14 +61,16 @@ Domiciliario también son Clientes).
 
 ### Comportamiento: secuencias (quién le habla a quién y en qué orden)
 
-| #   | Diagrama                                                                       | Caso de uso      | Lo importante                                                                     |
-| --- | ------------------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------- |
-| 15  | [Registro, sesión y fin del viaje](img/15-secuencia-registro-login-cierre.png) | UC01, UC02       | Sin aceptar el uso de datos no hay cuenta; la contraseña nunca se guarda en claro |
-| 16  | [Comprar y pagar](img/16-secuencia-compra-pago.png)                            | UC04 → UC18      | Si el pago se rechaza, el vehículo **no** queda vendido                           |
-| 17  | [Alquilar y pagar](img/17-secuencia-alquiler-pago.png)                         | UC05 → UC18      | Se cobra un valor base al reservar y el resto por minuto al terminar              |
-| 18  | [Desbloquear](img/18-secuencia-desbloqueo.png)                                 | UC08, UC09       | Tres pasos: QR, casco (≥ 80 %) e iniciar; el rostro reemplaza al QR               |
-| 19  | [Alerta de un vehículo](img/19-secuencia-alerta.png)                           | UC20, UC12, UC11 | Las alertas llegan al operador en menos de 1 s y el historial no se borra         |
-| 20  | [Entrega a domicilio](img/20-secuencia-entrega-domicilio.png)                  | UC14–UC17, UC19  | Máximo 5 entregas activas por domiciliario; si hay retraso se envía correo        |
+| #   | Diagrama                                                                       | Caso de uso      | Lo importante                                                                         |
+| --- | ------------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------- |
+| 15  | [Registro, sesión y fin del viaje](img/15-secuencia-registro-login-cierre.png) | UC01, UC02       | Sin aceptar el uso de datos no hay cuenta; la contraseña nunca se guarda en claro     |
+| 16  | [Comprar y pagar](img/16-secuencia-compra-pago.png)                            | UC04 → UC18      | Si el pago se rechaza, el vehículo **no** queda vendido                               |
+| 17  | [Alquilar y pagar](img/17-secuencia-alquiler-pago.png)                         | UC05 → UC18      | Se cobra un valor base al reservar y el resto por minuto al terminar                  |
+| 18  | [Desbloquear](img/18-secuencia-desbloqueo.png)                                 | UC08, UC09       | Tres pasos: QR, casco (≥ 70 %) e iniciar; el rostro reemplaza al QR                   |
+| 19  | [Alerta de un vehículo](img/19-secuencia-alerta.png)                           | UC20, UC12, UC11 | Las alertas llegan al operador en menos de 1 s y el historial no se borra             |
+| 20  | [Entrega a domicilio](img/20-secuencia-entrega-domicilio.png)                  | UC14–UC17, UC19  | Máximo 5 entregas activas por domiciliario; si hay retraso se envía correo            |
+| 28  | [Consultas del cliente](img/28-secuencia-consultas-cliente.png)                | UC03, UC06, UC07 | Catálogo público, mapa en vivo cada 2 s («sin señal» pasados 5 s) y detalle de hub    |
+| 29  | [Operador: KPIs y catálogo](img/29-secuencia-operador-kpis-catalogo.png)       | UC10, UC13       | Solo el operador entra; un hub con vehículos no se da de baja; no se borran vehículos |
 
 ### Comportamiento: estados (por qué etapas pasa algo)
 
